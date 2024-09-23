@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Academics &mdash; Our Teachers</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  {% load static %}
+
+  <link href="https://fonts.googleapis.com/css?family=Muli:300,400,700,900" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'fonts/icomoon/style.css' %}">
+  <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/jquery-ui.css' %}">
+  <link rel="stylesheet" href="{% static 'css/owl.carousel.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/owl.theme.default.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/jquery.fancybox.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/bootstrap-datepicker.css' %}">
+  <link rel="stylesheet" href="{% static 'fonts/flaticon/font/flaticon.css' %}">
+  <link rel="stylesheet" href="{% static 'css/aos.css' %}">
+  <link href="{% static 'css/jquery.mb.YTPlayer.min.css' %}" media="all" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <style>
+    /* Custom styles for dropdown */
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .dropdown-menu {
+        display: none;
+        position: absolute;
+        background-color: white;
+        border: 1px solid #ccc;
+        z-index: 1000;
+        min-width: 160px; /* Adjust width as needed */
+    }
+    
+    .dropdown:hover .dropdown-menu {
+        display: block;
+    }
+  
+    .dropdown-item {
+        display: block;
+        padding: 10px 15px; /* Adjust padding for row height */
+        color: #000; /* Text color */
+        text-decoration: none; /* Remove underline */
+    }
+  
+    .dropdown-item:hover {
+        background-color: #f1f1f1; /* Hover effect */
+    }
+  </style>
+  
+</head>
+
+<body data-spy="scroll" data-target=".site-navbar-target" data-offset="300">
+
+  <div class="site-wrap">
+
+    <div class="site-mobile-menu site-navbar-target">
+      <div class="site-mobile-menu-header">
+        <div class="site-mobile-menu-close mt-3">
+          <span class="icon-close2 js-menu-toggle"></span>
+        </div>
+      </div>
+      <div class="site-mobile-menu-body"></div>
+    </div>
+
+    <div class="py-2 bg-light">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-lg-9 d-none d-lg-block">
+            <a href="#" class="small mr-3"><span class="icon-question-circle-o mr-2"></span> Have a question?</a> 
+            
+          </div>
+          <div class="col-lg-3 text-right">
+            <a href="{% url 'login' %}" class="small mr-3"><span class="icon-unlock-alt"></span> Log In</a>
+            <div class="dropdown">
+              <a href="#" class="small btn btn-primary px-4 py-2 rounded-0" id="registerDropdown"> 
+                  <span class="icon-users"></span> Register
+              </a>
+              <div class="dropdown-menu" aria-labelledby="registerDropdown">
+                  <a class="dropdown-item" href="{% url 'register_teacher' %}">Teacher</a>
+                  <a class="dropdown-item" href="{% url 'register' %}">Student</a>
+              </div>
+          </div>
+          
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <header class="site-navbar py-4 js-sticky-header site-navbar-target" role="banner">
+      <div class="container">
+        <div class="d-flex align-items-center">
+          <div class="site-logo">
+            <a href="{% url 'index' %}" class="d-block">
+              <img src="{% static 'images/logo.png' %}" alt="Image" class="img-fluid">
+            </a>
+          </div>
+          <div class="mr-auto">
+            <nav class="site-navigation position-relative text-right" role="navigation">
+              <ul class="site-menu main-menu js-clone-nav mr-auto d-none d-lg-block">
+                <li>
+                  <a href="{% url 'index' %}" class="nav-link text-left">Home</a>
+                </li>
+                <li class="has-children">
+                  <a href="{% url 'about' %}" class="nav-link text-left">About Us</a>
+                  <ul class="dropdown">
+                    <li><a href="{% url 'teachers' %}">Our Teachers</a></li>
+                    <li><a href="{% url 'about' %}">Our School</a></li>
+                  </ul>
+                </li>
+                <li>
+                  <a href="{% url 'admissions' %}" class="nav-link text-left">Admissions</a>
+                </li>
+                <li>
+                  <a href="{% url 'courses' %}" class="nav-link text-left">Courses</a>
+                </li>
+                <li>
+                  <a href="{% url 'contact' %}" class="nav-link text-left">Contact</a>
+                </li>
+              </ul>
+            </nav>
+          </div>
+          
+        </div>
+      </div>
+    </header>
+
+    <div class="site-section ftco-subscribe-1 site-blocks-cover pb-4" style="background-image: url('{% static 'images/bg_1.jpg' %}')">
+        <div class="container">
+          <div class="row align-items-end">
+            <div class="col-lg-7">
+              <h2 class="mb-0">Our Teachers</h2>
+              <p>Meet our dedicated and experienced teachers.</p>
+            </div>
+          </div>
+        </div>
+      </div> 
+
+    <div class="custom-breadcrumns border-bottom">
+      <div class="container">
+        <a href="{% url 'index' %}">Home</a>
+        <span class="mx-3 icon-keyboard_arrow_right"></span>
+        <span class="current">Our Teachers</span>
+      </div>
+    </div>
+
+    <div class="site-section">
+        <div class="container">
+            <div class="row mb-5 justify-content-center text-center">
+                <div class="col-lg-6 mb-5">
+                    <h2 class="section-title-underline mb-3">
+                        <span>Meet Our Teachers</span>
+                    </h2>
+                    <p>Learn more about the educators who make a difference in our students' lives.</p>
+                    <!-- Add Join Our Team Button Here -->
+                    <a href="{% url 'register_teacher' %}" class="btn btn-primary px-4 py-2">Join Our Team</a>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Teacher 1 -->
+                <div class="col-lg-4 col-md-6 mb-4 mb-lg-0">
+                    <div class="feature-1 border person text-center">
+                        <img src="{% static 'images/person_1.jpg' %}" alt="Image" class="img-fluid">
+                        <div class="feature-1-content">
+                            <h2>Benjamin Stone</h2>
+                            <span class="position mb-3 d-block">Math Teacher</span>
+                            <p>Benjamin brings over a decade of experience in teaching mathematics. He loves integrating technology into his lessons to make math both accessible and enjoyable for all students.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Teacher 2 -->
+                <div class="col-lg-4 col-md-6 mb-4 mb-lg-0">
+                    <div class="feature-1 border person text-center">
+                        <img src="{% static 'images/person_2.jpg' %}" alt="Image" class="img-fluid">
+                        <div class="feature-1-content">
+                            <h2>David Brain</h2>
+                            <span class="position mb-3 d-block">Physics Teacher</span>
+                            <p>David's passion for physics is contagious. His interactive teaching style and real-world examples help students grasp complex concepts with ease.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Teacher 3 -->
+                <div class="col-lg-4 col-md-6 mb-4 mb-lg-0">
+                    <div class="feature-1 border person text-center">
+                        <img src="{% static 'images/person_3.jpg' %}" alt="Image" class="img-fluid">
+                        <div class="feature-1-content">
+                            <h2>Daniel Wilson</h2>
+                            <span class="position mb-3 d-block">English Teacher</span>
+                            <p>With a love for literature and language, Daniel inspires students to explore the world of English through engaging lessons and discussions.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-bg style-1" style="background-image: url('{% static 'images/hero_1.jpg' %}');">
+        <div class="container">
+          <div class="row">
+            <div class="col-lg-4 col-md-6 mb-5 mb-lg-0">
+              <span class="icon flaticon-mortarboard"></span>
+              <h3>Our Philosophy</h3>
+              <p>Our educational philosophy focuses on nurturing critical thinking and problem-solving skills in our students.</p>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-5 mb-lg-0">
+              <span class="icon flaticon-school-material"></span>
+              <h3>Our Curriculum</h3>
+              <p>We offer a well-rounded curriculum that prepares students for success in higher education and beyond.</p>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-5 mb-lg-0">
+              <span class="icon flaticon-library"></span>
+              <h3>Our Facilities</h3>
+              <p>Our state-of-the-art facilities provide a conducive environment for learning and exploration.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div style="height: 50px;"></div>
+
+    <footer class="footer">
+        <div class="container">
+          <div class="row">
+            <div class="col-lg-3">
+              <div class="footer-widget mb-5">
+                <h3 class="mb-4">About</h3>
+                <p>Our mission is to provide quality education and foster a love for lifelong learning in our students.</p>
+              </div>
+            </div>
+            
+            <div class="col-lg-3">
+              <div class="footer-widget mb-5">
+                <h3 class="mb-4">Quick Links</h3>
+                <ul class="list-unstyled">
+                  <li><a href="{% url 'about' %}">About Us</a></li>
+                  <li><a href="{% url 'admissions' %}">Admissions</a></li>
+                  <li><a href="{% url 'courses' %}">Courses</a></li>
+                  <li><a href="{% url 'contact' %}">Contact</a></li>
+                  <li><a href="{% url 'teachers' %}">Our Teachers</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12 text-center">
+              <p>&copy; 2024 Academics. All Rights Reserved.</p>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+  </div>
+
+  <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+  <script src="{% static 'js/jquery-migrate-3.0.1.min.js' %}"></script>
+  <script src="{% static 'js/jquery-ui.js' %}"></script>
+  <script src="{% static 'js/popper.min.js' %}"></script>
+  <script src="{% static 'js/bootstrap.min.js' %}"></script>
+  <script src="{% static 'js/owl.carousel.min.js' %}"></script>
+  <script src="{% static 'js/jquery.stellar.min.js' %}"></script>
+  <script src="{% static 'js/jquery.countdown.min.js' %}"></script>
+  <script src="{% static 'js/bootstrap-datepicker.min.js' %}"></script>
+  <script src="{% static 'js/jquery.easing.1.3.js' %}"></script>
+  <script src="{% static 'js/aos.js' %}"></script>
+  <script src="{% static 'js/jquery.fancybox.min.js' %}"></script>
+  <script src="{% static 'js/jquery.sticky.js' %}"></script>
+  <script src="{% static 'js/jquery.mb.YTPlayer.min.js' %}"></script>
+  <script src="{% static 'js/main.js' %}"></script>
+
+</body>
+
+</html>

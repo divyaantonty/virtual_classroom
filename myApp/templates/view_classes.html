@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scheduled Classes</title>
+    <style>
+        /* Add your CSS styling here */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Your Scheduled Classes</h1>
+
+    {% if scheduled_classes %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Class Name</th>
+                    <th>Course Name</th>
+                    <th>Date</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Meeting Link</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for class in scheduled_classes %}
+                <tr>
+                    <td>{{ class.class_name }}</td>
+                    <td>{{ class.course_name.course_name }}</td>
+                    <td>{{ class.date }}</td>
+                    <td>{{ class.start_time }}</td>
+                    <td>{{ class.end_time }}</td>
+                    <td><a href="{{ class.meeting_link }}" target="_blank">Join</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No scheduled classes found for your course.</p>
+    {% endif %}
+    
+    <a href="{% url 'student_dashboard' %}">Back to Dashboard</a>
+</body>
+</html>

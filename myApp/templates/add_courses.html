@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Add Course &mdash; Website by Colorlib</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    {% load static %}
+
+    <link href="https://fonts.googleapis.com/css?family=Muli:300,400,700,900" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'fonts/icomoon/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+    <style>
+        footer {
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 15px 0;
+            position: relative;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body data-spy="scroll" data-target=".site-navbar-target" data-offset="300">
+
+    <div class="site-wrap">
+
+        <!-- Header -->
+        <header class="site-navbar py-4 js-sticky-header site-navbar-target" role="banner">
+            <div class="container">
+                <div class="d-flex align-items-center">
+                    <div class="site-logo">
+                        <a href="{% url 'index' %}" class="d-block">
+                            <img src="{% static 'images/logo.png' %}" alt="Image" class="img-fluid">
+                        </a>
+                    </div>
+                    <div class="mr-auto">
+                        <nav class="site-navigation position-relative text-right" role="navigation">
+                            <ul class="site-menu main-menu js-clone-nav mr-auto d-none d-lg-block">
+                                <li><a href="{% url 'index' %}" class="nav-link text-left">Home</a></li>
+                                <li><a href="{% url 'about' %}" class="nav-link text-left">About Us</a></li>
+                                <li><a href="{% url 'admissions' %}" class="nav-link text-left">Admissions</a></li>
+                                <li class="active"><a href="{% url 'courses' %}" class="nav-link text-left">Courses</a></li>
+                                <li><a href="{% url 'contact' %}" class="nav-link text-left">Contact</a></li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="site-section">
+            <div class="container">
+                <h2 class="mb-5 text-center">Add New Course</h2>
+
+                <form method="post" action="{% url 'add_courses' %}" class="form">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label for="course_name">Course Name:</label>
+                            <input type="text" name="course_name" id="course_name" class="form-control form-control-lg" required>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label for="duration">Duration (in weeks):</label>
+                            <input type="number" name="duration" id="duration" class="form-control form-control-lg" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 form-group">
+                            <label for="description">Course Description:</label>
+                            <textarea name="description" id="description" cols="30" rows="5" class="form-control" required></textarea>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <input type="submit" value="Add Course" class="btn btn-primary btn-lg px-5">
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    <!-- .site-wrap -->
+
+    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+
+</body>
+
+</html>

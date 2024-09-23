@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <style>
+    .icon-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100px;
+      width: 100px;
+      border-radius: 50%;
+      background-color: #007bff; /* Adjust this color as needed */
+    }
+  
+    .feature-1-content {
+      text-align: center;
+      margin-top: 20px;
+    }
+  
+    .fas {
+      font-size: 2em; /* Adjust icon size as needed */
+    }
+  </style>
+  <title>Admissions &mdash; Online Education Platform</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  {% load static %}
+
+  <link href="https://fonts.googleapis.com/css?family=Muli:300,400,700,900" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'fonts/icomoon/style.css' %}">
+  <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/jquery-ui.css' %}">
+  <link rel="stylesheet" href="{% static 'css/owl.carousel.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/owl.theme.default.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/jquery.fancybox.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/bootstrap-datepicker.css' %}">
+  <link rel="stylesheet" href="{% static 'fonts/flaticon/font/flaticon.css' %}">
+  <link rel="stylesheet" href="{% static 'css/aos.css' %}">
+  <link href="{% static 'css/jquery.mb.YTPlayer.min.css' %}" media="all" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+  <style>
+    /* Custom styles for dropdown */
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .dropdown-menu {
+        display: none;
+        position: absolute;
+        background-color: white;
+        border: 1px solid #ccc;
+        z-index: 1000;
+        min-width: 160px; /* Adjust width as needed */
+    }
+    
+    .dropdown:hover .dropdown-menu {
+        display: block;
+    }
+  
+    .dropdown-item {
+        display: block;
+        padding: 10px 15px; /* Adjust padding for row height */
+        color: #000; /* Text color */
+        text-decoration: none; /* Remove underline */
+    }
+  
+    .dropdown-item:hover {
+        background-color: #f1f1f1; /* Hover effect */
+    }
+  </style>
+  
+</head>
+
+<body data-spy="scroll" data-target=".site-navbar-target" data-offset="300">
+
+  <div class="site-wrap">
+
+    <!-- Mobile Menu -->
+    <div class="site-mobile-menu site-navbar-target">
+      <div class="site-mobile-menu-header">
+        <div class="site-mobile-menu-close mt-3">
+          <span class="icon-close2 js-menu-toggle"></span>
+        </div>
+      </div>
+      <div class="site-mobile-menu-body"></div>
+    </div>
+
+    <!-- Top Bar -->
+    <div class="py-2 bg-light">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-lg-9 d-none d-lg-block">
+            <a href="{% url 'contact' %}" class="small mr-3"><span class="icon-question-circle-o mr-2"></span> Have a question?</a>
+            
+          </div>
+          <div class="col-lg-3 text-right">
+            <a href="{% url 'login' %}" class="small mr-3"><span class="icon-unlock-alt"></span> Log In</a>
+            <div class="dropdown">
+              <a href="#" class="small btn btn-primary px-4 py-2 rounded-0" id="registerDropdown"> 
+                  <span class="icon-users"></span> Register
+              </a>
+              <div class="dropdown-menu" aria-labelledby="registerDropdown">
+                  <a class="dropdown-item" href="{% url 'register_teacher' %}">Teacher</a>
+                  <a class="dropdown-item" href="{% url 'register' %}">Student</a>
+              </div>
+          </div>          
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navbar -->
+    <header class="site-navbar py-4 js-sticky-header site-navbar-target" role="banner">
+      <div class="container">
+        <div class="d-flex align-items-center">
+          <div class="site-logo">
+            <a href="{% url 'index' %}" class="d-block">
+              <img src="{% static 'images/logo.png' %}" alt="Image" class="img-fluid">
+            </a>
+          </div>
+          <div class="mr-auto">
+            <nav class="site-navigation position-relative text-right" role="navigation">
+              <ul class="site-menu main-menu js-clone-nav mr-auto d-none d-lg-block">
+                <li>
+                  <a href="{% url 'index' %}" class="nav-link text-left">Home</a>
+                </li>
+                <li class="has-children">
+                  <a href="{% url 'about' %}" class="nav-link text-left">About Us</a>
+                  <ul class="dropdown">
+                    <li><a href="{% url 'teachers' %}">Our Teachers</a></li>
+                    <li><a href="{% url 'about' %}">Our School</a></li>
+                  </ul>
+                </li>
+                <li class="active">
+                  <a href="{% url 'admissions' %}" class="nav-link text-left">Admissions</a>
+                </li>
+                <li>
+                  <a href="{% url 'courses' %}" class="nav-link text-left">Courses</a>
+                </li>
+                <li>
+                  <a href="{% url 'contact' %}" class="nav-link text-left">Contact</a>
+                </li>
+              </ul>
+            </nav>
+          </div>
+         
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <div class="site-section ftco-subscribe-1 site-blocks-cover pb-4" style="background-image: url('{% static 'images/bg_1.jpg' %}')">
+      <div class="container">
+        <div class="row align-items-end">
+          <div class="col-lg-7">
+            <h2 class="mb-0">Features</h2>
+            <p>Explore the key features of our virtual classroom designed to enhance learning and engagement.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Breadcrumbs -->
+    <div class="custom-breadcrumbs border-bottom">
+      <div class="container">
+        <a href="{% url 'index' %}">Home</a>
+        <span class="mx-3 icon-keyboard_arrow_right"></span>
+        <span class="current">Features</span>
+      </div>
+    </div>
+    <div class="site-section">
+      <div class="container">
+        <div class="row">
+
+           <!-- Live Video Classes -->
+<div class="col-lg-4 col-md-6 mb-4">
+  <div class="feature-1 border">
+    <div class="icon-wrapper bg-primary">
+      <i class="fas fa-video text-white"></i>
+    </div>
+    <div class="feature-1-content">
+      <h2>Live Video Classes</h2>
+      <p>Participate in real-time video classes with your teachers and classmates. Our platform integrates seamlessly with Google Meet to offer interactive and engaging live sessions.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Assignment Submissions -->
+<div class="col-lg-4 col-md-6 mb-4">
+  <div class="feature-1 border">
+    <div class="icon-wrapper bg-primary">
+      <i class="fas fa-file-alt text-white"></i>
+    </div>
+    <div class="feature-1-content">
+      <h2>Assignment Submissions</h2>
+      <p>Submit assignments directly through the platform, track submission deadlines, and receive feedback from your teachers. Manage all your academic tasks in one place.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Quizzes -->
+<div class="col-lg-4 col-md-6 mb-4">
+  <div class="feature-1 border">
+    <div class="icon-wrapper bg-primary">
+      <i class="fas fa-question-circle text-white"></i>
+    </div>
+    <div class="feature-1-content">
+      <h2>Quizzes</h2>
+      <p>Engage in quizzes to test your knowledge and track your progress. Quizzes are designed to be interactive and provide instant feedback to enhance learning.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Polls -->
+<div class="col-lg-4 col-md-6 mb-4">
+  <div class="feature-1 border">
+    <div class="icon-wrapper bg-primary">
+      <i class="fas fa-poll text-white"></i>
+    </div>
+    <div class="feature-1-content">
+      <h2>Polls</h2>
+      <p>Participate in polls to provide feedback, vote on classroom decisions, and engage with your peers. Polls offer a quick way to express opinions and gather insights.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Discussion Forums -->
+<div class="col-lg-4 col-md-6 mb-4">
+  <div class="feature-1 border">
+    <div class="icon-wrapper bg-primary">
+      <i class="fas fa-comments text-white"></i>
+    </div>
+    <div class="feature-1-content">
+      <h2>Discussion Forums</h2>
+      <p>Engage in meaningful discussions with your peers and instructors. Our discussion forums facilitate collaborative learning and knowledge sharing.</p>
+    </div>
+  </div>
+</div>
+
+    <!-- Footer Section -->
+    <div class="footer">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-3">
+            <p class="mb-4"><img src="{% static 'images/logo.png' %}" alt="Image" class="img-fluid"></p>
+            <p>The ClassNet is an online platform that enables remote teaching and learning.</p>  
+          </div>
+          <div class="col-lg-3">
+            <h3 class="footer-heading"><span>Our Campus</span></h3>
+            <ul class="list-unstyled">
+              <li><a href="{% url 'about' %}">ClassNet</a></li>
+              <li><a href="{% url 'teachers' %}">Our Teachers</a></li>
+              <li><a href="{% url 'register' %}">Join Our Team</a></li>
+            </ul>
+          </div>
+          <div class="col-lg-3">
+            <h3 class="footer-heading"><span>Our Courses</span></h3>
+            <ul class="list-unstyled">
+              <li><a href="{% url 'course_detail_10' %}">10th Class</a></li>
+              <li><a href="{% url 'course_detail_higher_secondary' %}">Higher Secondary</a></li>
+  
+            </ul>
+          </div>
+          <div class="col-lg-3">
+            <h3 class="footer-heading"><span>Contact</span></h3>
+            <ul class="list-unstyled">
+              <li><a href="{% url 'contact' %}">Help Center</a></li>
+            </ul>
+          </div>
+        </div>
+
+        
+    </div>
+
+  </div>
+  <div id="loader" class="show fullscreen"><svg class="circular" width="48px" height="48px"><circle class="path-bg" cx="24" cy="24" r="22" fill="none" stroke-width="4" stroke="#eeeeee"/><circle class="path" cx="24" cy="24" r="22" fill="none" stroke-width="4" stroke-miterlimit="10" stroke="#51be78"/></svg></div>
+
+  <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+  <script src="{% static 'js/jquery-migrate-3.0.1.min.js' %}"></script>
+  <script src="{% static 'js/jquery-ui.js' %}"></script>
+  <script src="{% static 'js/popper.min.js' %}"></script>
+  <script src="{% static 'js/bootstrap.min.js' %}"></script>
+  <script src="{% static 'js/owl.carousel.min.js' %}"></script>
+  <script src="{% static 'js/jquery.stellar.min.js' %}"></script>
+  <script src="{% static 'js/jquery.countdown.min.js' %}"></script>
+  <script src="{% static 'js/bootstrap-datepicker.min.js' %}"></script>
+  <script src="{% static 'js/jquery.easing.1.3.js' %}"></script>
+  <script src="{% static 'js/aos.js' %}"></script>
+  <script src="{% static 'js/jquery.fancybox.min.js' %}"></script>
+  <script src="{% static 'js/jquery.sticky.js' %}"></script>
+  <script src="{% static 'js/jquery.mb.YTPlayer.min.js' %}"></script>
+  <script src="{% static 'js/main.js' %}"></script>
+</body>
+
+</html>

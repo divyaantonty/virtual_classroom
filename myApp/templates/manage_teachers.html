@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Teachers</title>
+
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+
+<body>
+    <div class="container mt-5">
+        <h3>Approve Teacher</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Email</th>
+                    <th>State</th>
+                    <th>Qualification</th>
+                    <th>Teaching Area</th>
+                    <th>Classes</th>
+                    <th>Subjects</th>
+                    <th>Experience</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for teacher in pending_teachers %}
+                <tr>
+                    <td>{{ teacher.first_name }} {{ teacher.last_name }}</td>
+                    <td>{{ teacher.age }}</td>
+                    <td>{{ teacher.email }}</td>
+                    <td>{{ teacher.state }}</td>
+                    <td>{{ teacher.qualification }}</td>
+                    <td>{{ teacher.teaching_area }}</td>
+                    <td>{{ teacher.classes }}</td>
+                    <td>{{ teacher.subjects }}</td>
+                    <td>{{ teacher.experience }}</td>
+                    <td>
+                        <a href="{% url 'approve_teacher' teacher.id %}" class="btn btn-success">Approve</a>
+                        <a href="{% url 'reject_teacher' teacher.id %}" class="btn btn-danger">Reject</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+
+    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+</body>
+
+</html>

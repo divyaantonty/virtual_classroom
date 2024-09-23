@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Available Courses &mdash; Website by Colorlib</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    {% load static %}
+
+    <link href="https://fonts.googleapis.com/css?family=Muli:300,400,700,900" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'fonts/icomoon/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+    <style>
+        body {
+            font-family: 'Muli', sans-serif;
+            background-color: #f4f4f4;
+        }
+        header {
+            background-color: #007bff; /* Blue color */
+            padding: 20px;
+            display: flex;
+            align-items: center; /* Align items vertically */
+        }
+        header img {
+            max-width: 150px;
+            margin-right: 20px; /* Space between logo and title */
+        }
+        h1 {
+            color: #fff;
+            margin: 0; /* Remove margin for better alignment */
+            text-align: center; /* Center align text */
+            flex-grow: 1; /* Allow heading to take remaining space */
+        }
+        .course-list {
+            width: 100%;
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #007bff; /* Blue color */
+            color: white;
+        }
+        .back-button {
+            display: block;
+            margin: 20px auto;
+            text-align: center;
+        }
+        .back-button a {
+            padding: 10px 20px;
+            background-color: #007bff; /* Blue color */
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+        .back-button a:hover {
+            background-color: #0056b3; /* Darker blue */
+        }
+        footer {
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 15px 0;
+            position: relative;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <img src="{% static 'images/logo.png' %}" alt="Site Logo">
+        <h1>Available Courses</h1>
+    </header>
+
+    <div class="course-list">
+        <table>
+            <thead>
+                <tr>
+                    <th>Course Name</th>
+                    <th>Description</th>
+                    <th>Duration (Weeks)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for course in courses %}
+                <tr>
+                    <td>{{ course.course_name }}</td>
+                    <td>{{ course.description }}</td>
+                    <td>{{ course.duration }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3">No courses available at the moment.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="back-button">
+        <a href="{% url 'admin_dashboard' %}">Back to Admin Dashboard</a>
+    </div>
+
+    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+</body>
+
+</html>

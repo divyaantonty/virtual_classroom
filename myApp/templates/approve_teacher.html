@@ -1,0 +1,9 @@
+<h2>Approve Teacher: {{ teacher.first_name }} {{ teacher.last_name }}</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Approve Teacher</button>
+</form>
+
+<!-- Add a check to see if the form is submitting -->
+<p>{% if teacher.status == 'approved' %} Teacher Approved! {% endif %}</p>

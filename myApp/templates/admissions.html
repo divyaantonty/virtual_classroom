@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Admissions</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  {% load static %}
+
+  <link href="https://fonts.googleapis.com/css?family=Muli:300,400,700,900" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'fonts/icomoon/style.css' %}">
+  <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/jquery-ui.css' %}">
+  <link rel="stylesheet" href="{% static 'css/owl.carousel.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/owl.theme.default.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/jquery.fancybox.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/bootstrap-datepicker.css' %}">
+  <link rel="stylesheet" href="{% static 'fonts/flaticon/font/flaticon.css' %}">
+  <link rel="stylesheet" href="{% static 'css/aos.css' %}">
+  <link href="{% static 'css/jquery.mb.YTPlayer.min.css' %}" media="all" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <style>
+    /* Custom styles for dropdown */
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .dropdown-menu {
+        display: none;
+        position: absolute;
+        background-color: white;
+        border: 1px solid #ccc;
+        z-index: 1000;
+        min-width: 160px; /* Adjust width as needed */
+    }
+    
+    .dropdown:hover .dropdown-menu {
+        display: block;
+    }
+  
+    .dropdown-item {
+        display: block;
+        padding: 10px 15px; /* Adjust padding for row height */
+        color: #000; /* Text color */
+        text-decoration: none; /* Remove underline */
+    }
+  
+    .dropdown-item:hover {
+        background-color: #f1f1f1; /* Hover effect */
+    }
+  </style>
+  
+</head>
+
+<body data-spy="scroll" data-target=".site-navbar-target" data-offset="300">
+
+  <div class="site-wrap">
+
+    <!-- Mobile Menu -->
+    <div class="site-mobile-menu site-navbar-target">
+      <div class="site-mobile-menu-header">
+        <div class="site-mobile-menu-close mt-3">
+          <span class="icon-close2 js-menu-toggle"></span>
+        </div>
+      </div>
+      <div class="site-mobile-menu-body"></div>
+    </div>
+
+    <!-- Top Bar -->
+    <div class="py-2 bg-light">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-lg-9 d-none d-lg-block">
+            <a href="{% url 'contact' %}" class="small mr-3"><span class="icon-question-circle-o mr-2"></span> Have a question?</a>
+          </div>
+          <div class="col-lg-3 text-right">
+            <a href="{% url 'login' %}" class="small mr-3"><span class="icon-unlock-alt"></span> Log In</a>
+            <div class="dropdown">
+              <a href="#" class="small btn btn-primary px-4 py-2 rounded-0" id="registerDropdown"> 
+                  <span class="icon-users"></span> Register
+              </a>
+              <div class="dropdown-menu" aria-labelledby="registerDropdown">
+                  <a class="dropdown-item" href="{% url 'register_teacher' %}">Teacher</a>
+                  <a class="dropdown-item" href="{% url 'register' %}">Student</a>
+              </div>
+          </div>
+          
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navbar -->
+    <header class="site-navbar py-4 js-sticky-header site-navbar-target" role="banner">
+      <div class="container">
+        <div class="d-flex align-items-center">
+          <div class="site-logo">
+            <a href="{% url 'index' %}" class="d-block">
+              <img src="{% static 'images/logo.png' %}" alt="Image" class="img-fluid">
+            </a>
+          </div>
+          <div class="mr-auto">
+            <nav class="site-navigation position-relative text-right" role="navigation">
+              <ul class="site-menu main-menu js-clone-nav mr-auto d-none d-lg-block">
+                <li>
+                  <a href="{% url 'index' %}" class="nav-link text-left">Home</a>
+                </li>
+                <li class="has-children">
+                  <a href="{% url 'about' %}" class="nav-link text-left">About Us</a>
+                  <ul class="dropdown">
+                    <li><a href="{% url 'teachers' %}">Our Teachers</a></li>
+                    <li><a href="{% url 'about' %}">Our School</a></li>
+                  </ul>
+                </li>
+                <li class="active">
+                  <a href="{% url 'admissions' %}" class="nav-link text-left">Admissions</a>
+                </li>
+                <li>
+                  <a href="{% url 'courses' %}" class="nav-link text-left">Courses</a>
+                </li>
+                <li>
+                  <a href="{% url 'contact' %}" class="nav-link text-left">Contact</a>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <div class="site-section ftco-subscribe-1 site-blocks-cover pb-4" style="background-image: url('{% static 'images/bg_1.jpg' %}')">
+      <div class="container">
+        <div class="row align-items-end">
+          <div class="col-lg-7">
+            <h2 class="mb-0">Admissions</h2>
+            <p>Join us in your educational journey.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Breadcrumbs -->
+    <div class="custom-breadcrumbs border-bottom">
+      <div class="container">
+        <a href="{% url 'index' %}">Home</a>
+        <span class="mx-3 icon-keyboard_arrow_right"></span>
+        <span class="current">Admission</span>
+      </div>
+    </div>
+
+    <!-- Admission Information -->
+    <div class="site-section">
+      <div class="container">
+        <!-- General Admission Requirements -->
+        <div class="row mb-5">
+          <div class="col-lg-6 mb-lg-0 mb-4">
+            <img src="{% static 'images/course_6.jpg' %}" alt="Image" class="img-fluid">
+          </div>
+          <div class="col-lg-5 ml-auto align-self-center">
+            <h2 class="section-title-underline mb-5">
+              <span>General Admission Requirements</span>
+            </h2>
+            <p>To apply for admission, please ensure that you meet the following requirements:</p>
+            <ol class="ul-check primary list-unstyled">
+              <li>Completed Online Application Form</li>
+              <li>Scanned Copies of Academic Records</li>
+              <li>Personal Statement</li>
+              <li>Recommendation Letters</li>
+              <li>Proof of Identity (Passport, ID Card)</li>
+              <li>Recent Passport-sized Photograph</li>
+            </ol>
+            
+          </div>
+        </div>
+
+        <!-- Specific Admission Requirements for Various Programs -->
+        <div class="row">
+          <div class="col-lg-6 order-1 order-lg-2 mb-4 mb-lg-0">
+            <img src="{% static 'images/course_3.jpg' %}" alt="Image" class="img-fluid">
+          </div>
+          <div class="col-lg-5 mr-auto align-self-center order-2 order-lg-1">
+            <h2 class="section-title-underline mb-5">
+              <span>Program-Specific Requirements</span>
+            </h2>
+            <p>Depending on the program you are applying for, additional requirements may include:</p>
+            <ol class="ul-check primary list-unstyled">
+              <li>Previous Coursework in Related Subjects</li>
+              <li>Portfolio (for Creative Programs)</li>
+              <li>Interview with Faculty Members</li>
+              <li>Standardized Test Scores (e.g., SAT, ACT)</li>
+            </ol>
+            <p>For more detailed information on specific programs, please visit the <a href="{% url 'courses' %}">Courses</a> page.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Why Choose Us Section -->
+    <div class="section-bg style-1" style="background-image: url('{% static 'images/hero_1.jpg' %}');">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-4 col-md-6 mb-4">
+            <h2 class="section-title-underline style-2">
+              <span>Why Choose Us</span>
+            </h2>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-lg-4 col-md-6 mb-5 mb-lg-0">
+            <span class="icon flaticon-school-material"></span>
+            <h3>Academics Principle</h3>
+            <p>Our philosophy at Academics centers on fostering an inclusive and dynamic learning environment where technology and personalized education converge, empowering every student to reach their fullest potential through tailored experiences and collaborative engagement.</p>
+          </div>
+          <div class="col-lg-4 col-md-6 mb-5 mb-lg-0">
+            <span class="icon flaticon-mortarboard"></span>
+            <h3>Our Philosphy</h3>
+            <p>Our philosophy is to create a learning environment that nurtures curiosity, encourages critical thinking, and empowers students to thrive through personalized and innovative educational experiences.</p>
+          </div>
+          <div class="col-lg-4 col-md-6 mb-5 mb-lg-0">
+            <span class="icon flaticon-library"></span>
+            <h3>Key of Success</h3>
+            <p>The key to success at Academics lies in our commitment to personalized education, where adaptive learning tools, supportive mentorship, and a vibrant community come together to inspire excellence and lifelong learning.</p>         
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Additional Links -->
+    <div class="site-section">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-6">
+            <h2 class="section-title-underline mb-5">
+              <span>Additional Information</span>
+            </h2>
+            <p>We encourage prospective students to explore our various programs, and to contact us for any specific queries related to the admissions process.</p>
+            <p><a href="{% url 'contact' %}" class="btn btn-primary px-4 py-2 rounded-0">Contact Us</a></p>
+          </div>
+          <div class="col-lg-6">
+            <h2 class="section-title-underline mb-5">
+              <span>Related Links</span>
+            </h2>
+            <ul class="list-unstyled">
+              <li><a href="{% url 'about' %}">About Our School</a></li>
+              <li><a href="{% url 'courses' %}">View All Courses</a></li>
+              <li><a href="{% url 'contact' %}">Contact Admissions</a></li>
+              <li><a href="{% url 'register' %}">Student Registration</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-3">
+            <h3>About Us</h3>
+            <p>Your success is our priority. We provide a range of resources to support your learning journey.</p>
+          </div>
+          <div class="col-md-3 ml-auto">
+            <h3>Quick Links</h3>
+            <ul class="list-unstyled footer-links">
+              <li><a href="{% url 'index' %}">Home</a></li>
+              <li><a href="{% url 'about' %}">About</a></li>
+              <li><a href="{% url 'admissions' %}">Admissions</a></li>
+              <li><a href="{% url 'courses' %}">Courses</a></li>
+              <li><a href="{% url 'contact' %}">Contact</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+  <script src="{% static 'js/jquery-migrate-3.0.1.min.js' %}"></script>
+  <script src="{% static 'js/jquery-ui.js' %}"></script>
+  <script src="{% static 'js/popper.min.js' %}"></script>
+  <script src="{% static 'js/bootstrap.min.js' %}"></script>
+  <script src="{% static 'js/owl.carousel.min.js' %}"></script>
+  <script src="{% static 'js/jquery.stellar.min.js' %}"></script>
+  <script src="{% static 'js/jquery.countdown.min.js' %}"></script>
+  <script src="{% static 'js/bootstrap-datepicker.min.js' %}"></script>
+  <script src="{% static 'js/jquery.easing.1.3.js' %}"></script>
+  <script src="{% static 'js/aos.js' %}"></script>
+  <script src="{% static 'js/jquery.fancybox.min.js' %}"></script>
+  <script src="{% static 'js/jquery.sticky.js' %}"></script>
+  <script src="{% static 'js/jquery.mb.YTPlayer.min.js' %}"></script>
+  <script src="{% static 'js/main.js' %}"></script>
+
+</body>
+
+</html>
