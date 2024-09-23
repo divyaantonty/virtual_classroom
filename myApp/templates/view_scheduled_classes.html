@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scheduled Classes</title>
+    <style>
+        /* General Styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0 auto;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f8f8f8;
+            font-weight: bold;
+            color: #555;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        /* Styling for Empty Classes Message */
+        p {
+            text-align: center;
+            color: #666;
+            font-size: 1.2em;
+        }
+        
+        /* Table Header */
+        thead {
+            background-color: #007bff;
+            color: white;
+        }
+
+        /* Hover effect */
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+    </style>
+</head>
+<body>
+    {% if scheduled_classes %}
+        <h2>Scheduled Classes for {{ student.course.name }}</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Class Name</th>
+                    <th>Date</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Meeting Link</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for class_schedule in scheduled_classes %}
+                    <tr>
+                        <td>{{ class_schedule.class_name }}</td>
+                        <td>{{ class_schedule.date }}</td>
+                        <td>{{ class_schedule.start_time }}</td>
+                        <td>{{ class_schedule.end_time }}</td>
+                        <td><a href="{{ class_schedule.meeting_link }}" target="_blank">Join</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No scheduled classes available for your course.</p>
+    {% endif %}
+</body>
+</html>

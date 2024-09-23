@@ -32,8 +32,8 @@ urlpatterns = [
     path('approve-teacher/<int:teacher_id>/', views.approve_teacher, name='approve_teacher'),
 
     path('student_dashboard/', views.student_dashboard, name='student_dashboard'),
-    path('view-classes/', views.student_view_classes, name='view_classes'),
-
+    path('scheduled-classes/', views.view_scheduled_classes, name='view_scheduled_classes'),
+    
     path('teacher_dashboard/', views.teacher_dashboard, name='teacher_dashboard'),
     path('schedule-class/', views.schedule_class, name='schedule_class'),
 

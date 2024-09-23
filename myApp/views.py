@@ -507,22 +507,35 @@ def schedule_class(request):
 
     return render(request, 'schedule_class.html', {'courses': courses})
 
-from django.shortcuts import render, redirect
-from .models import ClassSchedule
+from django.contrib import messages
+from .models import ClassSchedule, CustomUser
 
-def student_view_classes(request):
-    if not request.user.is_authenticated:
-        return redirect('login')  # Redirect to login if the user is not authenticated
+def view_scheduled_classes(request):
+    # Get the custom_user_id from the session
+    custom_user_id = request.session.get('custom_user_id')
+    
+    if not custom_user_id:
+        messages.error(request, "You are not logged in.")
+        return redirect('login')
 
-    student = request.user  # Get the logged-in user (instance of CustomUser)
+    # Fetch the student (CustomUser) using the custom_user_id
+    try:
+        student = CustomUser.objects.get(id=custom_user_id)
+    except CustomUser.DoesNotExist:
+        messages.error(request, "Student not found.")
+        return redirect('login')
 
-    # Store additional data in the session if needed
-    request.session['student_username'] = student.username
+    # Fetch the course the student is registered for
+    registered_course = student.course
+    if not registered_course:
+        messages.error(request, "You are not registered for any course.")
+        return redirect('student_dashboard')  # Redirect if the student is not registered for a course
 
-    # Fetch scheduled classes for the student's course
-    scheduled_classes = ClassSchedule.objects.filter(course_name=student.course).order_by('date')
+    # Fetch only the scheduled classes for the student's registered course
+    scheduled_classes = ClassSchedule.objects.filter(course_name=registered_course)
+    
+    if not scheduled_classes.exists():
+        messages.info(request, "No scheduled classes for your registered course.")
 
-    return render(request, 'student/view_classes.html', {
-        'scheduled_classes': scheduled_classes,
-        'student': student
-    })
+    # Pass the filtered scheduled classes to the template
+    return render(request, 'view_scheduled_classes.html', {'scheduled_classes': scheduled_classes})

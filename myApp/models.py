@@ -1,30 +1,37 @@
-from django.conf import settings
-from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.db import models
+from django.utils import timezone
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, username, email, password=None):
         if not email:
-            raise ValueError('The Email field is required')
+            raise ValueError('Users must have an email address')
         if not username:
-            raise ValueError('The Username field is required')
+            raise ValueError('Users must have a username')
 
-        email = self.normalize_email(email)
-        user = self.model(username=username, email=email)
+        user = self.model(
+            email=self.normalize_email(email),
+            username=username,
+        )
         user.set_password(password)  # Hash the password
         user.save(using=self._db)
         return user
 
     def create_superuser(self, username, email, password=None):
-        user = self.create_user(username=username, email=email, password=password)
+        user = self.create_user(
+            username,
+            email,
+            password
+        )
         user.is_admin = True
-        user.is_staff = True  # Add this if you want the superuser to access the admin panel
+        user.is_staff = True
         user.save(using=self._db)
         return user
 
 class CustomUser(AbstractBaseUser):
     username = models.CharField(max_length=255, unique=True)
     email = models.EmailField(unique=True)
+    last_login = models.DateTimeField(null=True, blank=True)  # Add this line
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)  # Add if you want users to access the admin site
@@ -33,10 +40,8 @@ class CustomUser(AbstractBaseUser):
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['email']  # Fields that are required in addition to the username
+    REQUIRED_FIELDS = ['email']
 
-    def __str__(self):
-        return self.username
 
 class Parent(models.Model):
     # Other fields...
