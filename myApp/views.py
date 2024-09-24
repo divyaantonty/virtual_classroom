@@ -207,10 +207,6 @@ def about_view(request):
 def admissions_view(request):
     return render(request, 'admissions.html')
 
-# views.py
-from django.shortcuts import render, redirect
-from .forms import ContactMessageForm
-from .models import ContactMessage
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -222,13 +218,15 @@ def contact_view(request):
         if form.is_valid():
             form.save()  # Save the form data to the database
             messages.success(request, 'Your message has been sent successfully!')
-            return redirect('index') # Redirect to the index page after submitting
+            return redirect('index')  # Redirect to the index page after submitting
         else:
-            form = ContactMessageForm()
+            # This line ensures that the form with error messages is re-rendered
+            messages.error(request, 'Please correct the errors below.')
     else:
         form = ContactMessageForm()
 
-    return render(request, 'contact.html', {'form': form})
+    return render(request, 'contact.html', {'form': form})  # Replace 'your_template.html' with your actual template name
+
 
 from django.contrib.admin.views.decorators import staff_member_required
 from .models import ContactMessage

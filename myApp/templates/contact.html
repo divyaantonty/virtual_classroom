@@ -20,39 +20,45 @@
   <link rel="stylesheet" href="{% static 'css/aos.css' %}">
   <link href="{% static 'css/jquery.mb.YTPlayer.min.css' %}" media="all" rel="stylesheet" type="text/css">
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
-  
+
   <style>
     /* Custom styles for dropdown */
     .dropdown {
-        position: relative;
-        display: inline-block;
+      position: relative;
+      display: inline-block;
     }
-    
+
     .dropdown-menu {
-        display: none;
-        position: absolute;
-        background-color: white;
-        border: 1px solid #ccc;
-        z-index: 1000;
-        min-width: 160px; /* Adjust width as needed */
+      display: none;
+      position: absolute;
+      background-color: white;
+      border: 1px solid #ccc;
+      z-index: 1000;
+      min-width: 160px; /* Adjust width as needed */
     }
-    
+
     .dropdown:hover .dropdown-menu {
-        display: block;
+      display: block;
     }
-  
+
     .dropdown-item {
-        display: block;
-        padding: 10px 15px; /* Adjust padding for row height */
-        color: #000; /* Text color */
-        text-decoration: none; /* Remove underline */
+      display: block;
+      padding: 10px 15px; /* Adjust padding for row height */
+      color: #000; /* Text color */
+      text-decoration: none; /* Remove underline */
     }
-  
+
     .dropdown-item:hover {
-        background-color: #f1f1f1; /* Hover effect */
+      background-color: #f1f1f1; /* Hover effect */
+    }
+
+    .error-message {
+      color: red;
+      font-size: 0.875rem;
+      margin-top: 5px;
     }
   </style>
-  
+
 </head>
 
 <body data-spy="scroll" data-target=".site-navbar-target" data-offset="300">
@@ -91,17 +97,17 @@
     </header>
 
     <div class="site-section ftco-subscribe-1 site-blocks-cover pb-4" style="background-image: url('{% static 'images/bg_1.jpg' %}')">
-        <div class="container">
-          <div class="row align-items-end">
-            <div class="col-lg-7">
-              <h2 class="mb-0">Contact</h2>
-              <p>Fill in the form and we will get back to you as soon as possible.</p>
-            </div>
+      <div class="container">
+        <div class="row align-items-end">
+          <div class="col-lg-7">
+            <h2 class="mb-0">Contact</h2>
+            <p>Fill in the form and we will get back to you as soon as possible.</p>
           </div>
         </div>
-    </div> 
+      </div>
+    </div>
 
-    <div class="custom-breadcrumns border-bottom">
+    <div class="custom-breadcrumbs border-bottom">
       <div class="container">
         <a href="{% url 'index' %}">Home</a>
         <span class="mx-3 icon-keyboard_arrow_right"></span>
@@ -110,42 +116,47 @@
     </div>
 
     <div class="site-section">
-        <div class="container">
-            <form method="post" action="{% url 'contact' %}">
-                {% csrf_token %}
-                <div class="row">
-                    <div class="col-md-6 form-group">
-                      <label for="fname">First Name</label>
-                      <input type="text" name="first_name" id="fname" class="form-control form-control-lg" required>
-                    </div>
-                    <div class="col-md-6 form-group">
-                        <label for="lname">Last Name</label>
-                        <input type="text" name="last_name" id="lname" class="form-control form-control-lg" required>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 form-group">
-                        <label for="eaddress">Email Address</label>
-                        <input type="email" name="email" id="eaddress" class="form-control form-control-lg" required>
-                    </div>
-                    <div class="col-md-6 form-group">
-                        <label for="tel">Tel. Number</label>
-                        <input type="tel" name="tel" id="tel" class="form-control form-control-lg" required>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-12 form-group">
-                        <label for="message">Message</label>
-                        <textarea name="message" id="message" cols="30" rows="10" class="form-control" required></textarea>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-12">
-                        <input type="submit" value="Send Message" class="btn btn-primary btn-lg px-5">
-                    </div>
-                </div>
-            </form>
-        </div>
+      <div class="container">
+        <form id="contactForm" method="post" action="{% url 'contact' %}">
+          {% csrf_token %}
+          <div class="row">
+            <div class="col-md-6 form-group">
+              <label for="fname">First Name</label>
+              <input type="text" name="first_name" id="fname" class="form-control form-control-lg" required>
+              <div id="fnameError" class="error-message"></div>
+            </div>
+            <div class="col-md-6 form-group">
+              <label for="lname">Last Name</label>
+              <input type="text" name="last_name" id="lname" class="form-control form-control-lg" required>
+              <div id="lnameError" class="error-message"></div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 form-group">
+              <label for="eaddress">Email Address</label>
+              <input type="email" name="email" id="eaddress" class="form-control form-control-lg" required>
+              <div id="emailError" class="error-message"></div>
+            </div>
+            <div class="col-md-6 form-group">
+              <label for="tel">Tel. Number</label>
+              <input type="tel" name="tel" id="tel" class="form-control form-control-lg" required>
+              <div id="telError" class="error-message"></div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12 form-group">
+              <label for="message">Message</label>
+              <textarea name="message" id="message" cols="30" rows="10" class="form-control" required></textarea>
+              <div id="messageError" class="error-message"></div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-12">
+              <input type="submit" value="Send Message" class="btn btn-primary btn-lg px-5">
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
 
     <!-- Footer -->
@@ -168,6 +179,59 @@
   <script src="{% static 'js/jquery.sticky.js' %}"></script>
   <script src="{% static 'js/jquery.mb.YTPlayer.min.js' %}"></script>
   <script src="{% static 'js/main.js' %}"></script>
+
+  <script>
+    document.getElementById('contactForm').addEventListener('submit', function (event) {
+      let isValid = true;
+
+      // Clear previous error messages
+      document.getElementById('fnameError').textContent = '';
+      document.getElementById('lnameError').textContent = '';
+      document.getElementById('emailError').textContent = '';
+      document.getElementById('telError').textContent = '';
+      document.getElementById('messageError').textContent = '';
+
+     // Validate first name
+     if (firstName.length < 3 || !/^[A-Z][a-z]+$/.test(firstName)) {
+     document.getElementById('fnameError').textContent = 'First Name must be at least 3 characters long, start with a capital letter, and contain only letters.';
+     isValid = false;
+     }
+
+    // Validate last name
+    if (lastName.length < 3 || !/^[A-Z][a-z]+$/.test(lastName)) {
+    document.getElementById('lnameError').textContent = 'Last Name must be at least 3 characters long, start with a capital letter, and contain only letters.';
+    isValid = false;
+    }
+
+
+      // Validate email
+      const email = document.getElementById('eaddress').value.trim();
+      const emailPattern = /^[^ ]+@[^ ]+\.[a-z]{2,3}$/;
+      if (!emailPattern.test(email)) {
+        document.getElementById('emailError').textContent = 'Please enter a valid email address.';
+        isValid = false;
+      }
+
+      // Validate telephone
+      const tel = document.getElementById('tel').value.trim();
+      const telPattern = /^[0-9]{10}$/; // Adjust as needed for your requirements
+      if (!telPattern.test(tel)) {
+        document.getElementById('telError').textContent = 'Please enter a valid telephone number.';
+        isValid = false;
+      }
+
+      // Validate message
+      const message = document.getElementById('message').value.trim();
+      if (message.length === 0) {
+        document.getElementById('messageError').textContent = 'Message is required.';
+        isValid = false;
+      }
+
+      if (!isValid) {
+        event.preventDefault(); // Prevent form submission if validation fails
+      }
+    });
+  </script>
 
 </body>
 
