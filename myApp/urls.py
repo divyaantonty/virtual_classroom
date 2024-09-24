@@ -49,6 +49,8 @@ urlpatterns = [
     path('approve_teacher/<int:teacher_id>/', views.approve_teacher, name='approve_teacher'),
     path('reject_teacher/<int:teacher_id>/', views.reject_teacher, name='reject_teacher'),
     path('remove_teacher/<int:teacher_id>/', views.remove_teacher, name='remove_teacher'),
+
+
     path('password_reset/', views.PasswordResetView.as_view(template_name='password_reset.html'), name='password_reset'),
     path('password_reset/done/', views.PasswordResetDoneView.as_view(template_name='password_reset_done.html'), name='password_reset_done'),
     path('reset/<uidb64>/<token>/', views.PasswordResetConfirmView.as_view(template_name='password_reset_confirm.html'), name='password_reset_confirm'),
