@@ -34,7 +34,7 @@
       background-color: white;
       border: 1px solid #ccc;
       z-index: 1000;
-      min-width: 160px; /* Adjust width as needed */
+      min-width: 160px;
     }
 
     .dropdown:hover .dropdown-menu {
@@ -43,13 +43,13 @@
 
     .dropdown-item {
       display: block;
-      padding: 10px 15px; /* Adjust padding for row height */
-      color: #000; /* Text color */
-      text-decoration: none; /* Remove underline */
+      padding: 10px 15px;
+      color: #000;
+      text-decoration: none;
     }
 
     .dropdown-item:hover {
-      background-color: #f1f1f1; /* Hover effect */
+      background-color: #f1f1f1;
     }
 
     .error-message {
@@ -65,6 +65,29 @@
 
   <div class="site-wrap">
 
+    <div class="py-2 bg-light">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-lg-9 d-none d-lg-block">
+            <a href="#" class="small mr-3"><span class="icon-question-circle-o mr-2"></span> Have a question?</a>
+          </div>
+          <div class="col-lg-3 text-right">
+            <a href="login.html" class="small mr-3"><span class="icon-unlock-alt"></span> Log In</a>
+            <div class="dropdown">
+              <a href="#" class="small btn btn-primary px-4 py-2 rounded-0" id="registerDropdown"> 
+                  <span class="icon-users"></span> Register
+              </a>
+              <div class="dropdown-menu" aria-labelledby="registerDropdown">
+                  <a class="dropdown-item" href="{% url 'register_teacher' %}">Teacher</a>
+                  <a class="dropdown-item" href="{% url 'register' %}">Student</a>
+              </div>
+          </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  
     <!-- Mobile menu and header -->
 
     <header class="site-navbar py-4 js-sticky-header site-navbar-target" role="banner">
@@ -159,7 +182,45 @@
       </div>
     </div>
 
-    <!-- Footer -->
+    <div style="height: 50px;"></div> 
+   
+    <div class="footer">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-3">
+            <p class="mb-4"><img src="{% static 'images/logo.png' %}" alt="Image" class="img-fluid"></p>
+            <p>The Academic is an online platform that enables remote teaching and learning.</p>
+            <p><a href="{% url 'about' %}">Learn More</a></p>
+          </div>
+          <div class="col-lg-3">
+            <h3 class="footer-heading"><span>Our Campus</span></h3>
+            <ul class="list-unstyled">
+              <li><a href="{% url 'about' %}">Academic</a></li>
+              <li><a href="{% url 'teachers' %}">Our Teachers</a></li>
+              <li><a href="{% url 'register_teacher' %}">Join Our Team</a></li>
+            </ul>
+          </div>
+          <div class="col-lg-3">
+            <h3 class="footer-heading"><span>Our Courses</span></h3>
+            <ul class="list-unstyled">
+              <li><a href="{% url 'course_detail_10' %}">10th Class</a></li>
+              <li><a href="{% url 'course_detail_higher_secondary' %}">Higher Secondary</a></li>
+          
+            </ul>
+          </div>
+          <div class="col-lg-3">
+            <h3 class="footer-heading"><span>Contact</span></h3>
+            <ul class="list-unstyled">
+              <li><a href="{% url 'contact' %}">Help Center</a></li>
+            </ul>
+          </div>
+        </div>
+
+        
+    </div>
+
+  </div>
+  <div id="loader" class="show fullscreen"><svg class="circular" width="48px" height="48px"><circle class="path-bg" cx="24" cy="24" r="22" fill="none" stroke-width="4" stroke="#eeeeee"/><circle class="path" cx="24" cy="24" r="22" fill="none" stroke-width="4" stroke-miterlimit="10" stroke="#51be78"/></svg></di
 
   </div>
   <!-- .site-wrap -->
@@ -191,39 +252,44 @@
       document.getElementById('telError').textContent = '';
       document.getElementById('messageError').textContent = '';
 
-     // Validate first name
-     if (firstName.length < 3 || !/^[A-Z][a-z]+$/.test(firstName)) {
-     document.getElementById('fnameError').textContent = 'First Name must be at least 3 characters long, start with a capital letter, and contain only letters.';
-     isValid = false;
-     }
+      // Validate first name
+      const firstName = document.getElementById('fname').value.trim();
+      if (firstName.length < 3 || !/^[A-Z][a-z]+$/.test(firstName)) {
+        document.getElementById('fnameError').textContent = 'First Name must be at least 3 characters long, start with a capital letter, and contain only letters.';
+        isValid = false;
+      }
 
-    // Validate last name
-    if (lastName.length < 3 || !/^[A-Z][a-z]+$/.test(lastName)) {
-    document.getElementById('lnameError').textContent = 'Last Name must be at least 3 characters long, start with a capital letter, and contain only letters.';
-    isValid = false;
-    }
+      // Validate last name
+      const lastName = document.getElementById('lname').value.trim();
+      if (lastName.length < 3 || !/^[A-Z][a-z]+$/.test(lastName)) {
+        document.getElementById('lnameError').textContent = 'Last Name must be at least 3 characters long, start with a capital letter, and contain only letters.';
+        isValid = false;
+      }
 
-
-      // Validate email
+      // Validate email (must be a Gmail address)
       const email = document.getElementById('eaddress').value.trim();
-      const emailPattern = /^[^ ]+@[^ ]+\.[a-z]{2,3}$/;
+      const emailPattern = /^[^ ]+@gmail\.com$/;
       if (!emailPattern.test(email)) {
-        document.getElementById('emailError').textContent = 'Please enter a valid email address.';
+        document.getElementById('emailError').textContent = 'Please enter a valid Gmail address.';
         isValid = false;
       }
 
-      // Validate telephone
+      // Validate telephone number (must start with 6-9 and be 10 digits long)
       const tel = document.getElementById('tel').value.trim();
-      const telPattern = /^[0-9]{10}$/; // Adjust as needed for your requirements
+      const telPattern = /^[6-9][0-9]{9}$/; // Starts with 6-9 and is 10 digits long
       if (!telPattern.test(tel)) {
-        document.getElementById('telError').textContent = 'Please enter a valid telephone number.';
+        if (tel.length < 6) {
+          document.getElementById('telError').textContent = 'Telephone number must be at least 6 digits long.';
+        } else {
+          document.getElementById('telError').textContent = 'Please enter a valid telephone number starting with 6-9 and containing 10 digits.';
+        }
         isValid = false;
       }
 
-      // Validate message
+      // Validate message (must be 10 characters or less)
       const message = document.getElementById('message').value.trim();
-      if (message.length === 0) {
-        document.getElementById('messageError').textContent = 'Message is required.';
+      if (message.length === 0 || message.length < 10) {
+        document.getElementById('messageError').textContent = 'Message is required and must not exceed 10 characters.';
         isValid = false;
       }
 
