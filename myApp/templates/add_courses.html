@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="{% static 'fonts/icomoon/style.css' %}">
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    
+
     <style>
         footer {
             background-color: #333;
@@ -36,7 +36,7 @@
                 <div class="d-flex align-items-center">
                     <div class="site-logo">
                         <a href="{% url 'index' %}" class="d-block">
-                            <img src="{% static 'images/logo.png' %}" alt="Image" class="img-fluid">
+                            <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid" style="height: 50px;">
                         </a>
                     </div>
                     <div class="mr-auto">
@@ -58,22 +58,25 @@
             <div class="container">
                 <h2 class="mb-5 text-center">Add New Course</h2>
 
-                <form method="post" action="{% url 'add_courses' %}" class="form">
+                <form method="post" action="{% url 'add_courses' %}" class="form" onsubmit="return validateForm()">
                     {% csrf_token %}
                     <div class="row">
                         <div class="col-md-6 form-group">
                             <label for="course_name">Course Name:</label>
-                            <input type="text" name="course_name" id="course_name" class="form-control form-control-lg" required>
+                            <input type="text" name="course_name" id="course_name" class="form-control form-control-lg" 
+                                pattern="^[A-Z][a-z]*$" title="Course name should start with an uppercase letter and be followed by lowercase letters." required>
                         </div>
                         <div class="col-md-6 form-group">
                             <label for="duration">Duration (in weeks):</label>
-                            <input type="number" name="duration" id="duration" class="form-control form-control-lg" required>
+                            <input type="number" name="duration" id="duration" class="form-control form-control-lg" 
+                                min="1" max="99" title="Duration must be a positive number and can be at most 2 digits." required>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-12 form-group">
                             <label for="description">Course Description:</label>
-                            <textarea name="description" id="description" cols="30" rows="5" class="form-control" required></textarea>
+                            <textarea name="description" id="description" cols="30" rows="5" class="form-control" 
+                                pattern="^[A-Za-z\s]+$" minlength="10" title="Description must be at least 10 characters long and can only contain alphabetic characters." required></textarea>
                         </div>
                     </div>
                     <div class="row">
@@ -82,10 +85,42 @@
                         </div>
                     </div>
                 </form>
+                
+                <script>
+                function validateForm() {
+                    // Additional client-side validation if needed
+                    const courseName = document.getElementById('course_name').value;
+                    const duration = document.getElementById('duration').value;
+                    const description = document.getElementById('description').value;
+
+                    // Validate course name
+                    const namePattern = /^[A-Z][a-z]*$/;
+                    if (!namePattern.test(courseName)) {
+                        alert("Course name must start with an uppercase letter followed by lowercase letters.");
+                        return false;
+                    }
+
+                    // Validate duration
+                    if (duration <= 0 || duration > 99) {
+                        alert("Duration must be a positive number and can be at most 2 digits.");
+                        return false;
+                    }
+
+                    // Validate description only contains characters
+                    const descriptionPattern = /^[A-Za-z\s]+$/;
+                    if (!descriptionPattern.test(description) || description.length < 10) {
+                        alert("Description must be at least 10 characters long and can only contain alphabetic characters.");
+                        return false;
+                    }
+
+                    return true; // Form is valid
+                }
+                </script>
+                
             </div>
         </div>
 
-    <!-- .site-wrap -->
+    </div><!-- .site-wrap -->
 
     <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.min.js' %}"></script>
