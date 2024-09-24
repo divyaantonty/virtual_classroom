@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Schedule</title>
+    
+    <!-- Load static tag library -->
+    {% load static %}
+    
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #2c3e50;
+            padding: 10px 20px;
+            color: white;
+            text-align: center;
+            position: sticky;
+            top: 0;
+        }
+
+        footer {
+            background-color: #2c3e50;
+            padding: 10px;
+            color: white;
+            text-align: center;
+            margin-top: 20px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 80%;
+            margin: 0 auto;
+            border-collapse: collapse;
+            background-color: #fff;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .no-schedule {
+            text-align: center;
+            padding: 20px;
+            font-size: 18px;
+        }
+
+        a {
+            display: block;
+            width: fit-content;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+
+        a:hover {
+            background-color: #2980b9;
+        }
+
+        main {
+            padding: 20px;
+            margin-bottom: 60px; /* Adds space above the footer */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <h1>Welcome to the Parent Portal</h1>
+        <p>View your child's academic schedule and progress.</p>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <h2>{{ child.username }}'s Class Schedule</h2>
+        
+        {% if child_schedule %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Subject</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for schedule in child_schedule %}
+                    <tr>
+                        <td>{{ schedule.date }}</td>
+                        <td>{{ schedule.class_name }}</td>
+                        <td>{{ schedule.start_time }}</td>
+                        <td>{{ schedule.end_time }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="no-schedule">
+                <p>No classes scheduled</p>
+            </div>
+        {% endif %}
+        
+        <a href="{% url 'parent_dashboard' %}">Back to Dashboard</a>
+    </main>
+
+</body>
+</html>

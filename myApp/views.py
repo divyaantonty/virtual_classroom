@@ -539,3 +539,30 @@ def view_scheduled_classes(request):
 
     # Pass the filtered scheduled classes to the template
     return render(request, 'view_scheduled_classes.html', {'scheduled_classes': scheduled_classes})
+
+
+# views.py
+from django.shortcuts import render
+from .models import CustomUser, ClassSchedule, Parent
+
+def view_class_schedule(request):
+    parent_id = request.session.get('parent_id')
+    
+    # Fetch the parent and their associated child's username
+    parent = Parent.objects.get(id=parent_id)
+    child_username = parent.student_username
+    
+    # Fetch the child (CustomUser) based on the child's username
+    child = CustomUser.objects.get(username=child_username)
+
+    # Fetch the class schedule for the child based on their course
+    # Assuming 'course_name' is the correct field in Schedule model
+    child_schedule = ClassSchedule.objects.filter(course_name=child.course)
+
+    context = {
+        'child': child,
+        'child_schedule': child_schedule,
+    }
+    
+    return render(request, 'view_class_schedule.html', context)
+
