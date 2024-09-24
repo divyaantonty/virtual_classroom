@@ -148,6 +148,9 @@
     <!-- Form to schedule the class -->
     <form method="POST">
         {% csrf_token %}
+        {% if error_message %}
+            <p style="color: red;">{{ error_message }}</p>
+        {% endif %}
         <table>
             <tr>
                 <th>Field</th>
@@ -169,7 +172,9 @@
             </tr>
             <tr>
                 <td><label for="date">Date:</label></td>
-                <td><input type="date" id="date" name="date" required></td>
+                <td>
+                    <input type="date" id="date" name="date" required min="{{ today }}">
+                </td>
             </tr>
             <tr>
                 <td><label for="start_time">Start Time:</label></td>

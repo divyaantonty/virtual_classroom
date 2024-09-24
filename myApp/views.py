@@ -470,6 +470,7 @@ def course_list(request):
 
 from django.shortcuts import render, redirect
 from .models import Course, ClassSchedule, Teacher
+from datetime import date
 
 def schedule_class(request):
     teacher_id = request.session.get('teacher_id')  # Fetch the teacher_id from session
@@ -483,20 +484,30 @@ def schedule_class(request):
         return redirect('login')  # Redirect if the teacher doesn't exist
 
     courses = Course.objects.all()  # Fetch all courses
-
+    today = date.today()  # Get today's date
+    error_message = None  # Initialize error_message
+    
     if request.method == 'POST':
         class_name = request.POST.get('class_name')
         course_id = request.POST.get('course')
-        date = request.POST.get('date')
+        selected_date = request.POST.get('date')
         start_time = request.POST.get('start_time')
         end_time = request.POST.get('end_time')
         meeting_link = request.POST.get('meeting_link')
+
+        # Validate that the date is today or in the future
+        if selected_date < today.isoformat():
+            return render(request, 'schedule_class.html', {
+                'courses': courses,
+                'today': today,
+                'error_message': "The selected date cannot be in the past."
+            })
 
         course = Course.objects.get(id=course_id)  # Get the selected course
         class_schedule = ClassSchedule.objects.create(
             class_name=class_name,
             course_name=course,
-            date=date,
+            date=selected_date,
             start_time=start_time,
             end_time=end_time,
             meeting_link=meeting_link,
@@ -548,15 +559,10 @@ from .models import CustomUser, ClassSchedule, Parent
 def view_class_schedule(request):
     parent_id = request.session.get('parent_id')
     
-    # Fetch the parent and their associated child's username
+ 
     parent = Parent.objects.get(id=parent_id)
     child_username = parent.student_username
-    
-    # Fetch the child (CustomUser) based on the child's username
     child = CustomUser.objects.get(username=child_username)
-
-    # Fetch the class schedule for the child based on their course
-    # Assuming 'course_name' is the correct field in Schedule model
     child_schedule = ClassSchedule.objects.filter(course_name=child.course)
 
     context = {
@@ -566,3 +572,65 @@ def view_class_schedule(request):
     
     return render(request, 'view_class_schedule.html', context)
 
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth import update_session_auth_hash
+from .models import CustomUser, Parent, Teacher
+
+def change_password(request):
+    username = request.user  # Currently logged-in user
+
+    if request.method == 'POST':
+        old_password = request.POST.get('old_password')
+        new_password1 = request.POST.get('new_password1')
+        new_password2 = request.POST.get('new_password2')
+
+        # Validate that new passwords match
+        if new_password1 != new_password2:
+            messages.error(request, 'New passwords do not match.')
+            return redirect('change_password')
+
+        # Handle CustomUser (Student)
+        if isinstance(username, CustomUser):
+            if not username.check_password(old_password):
+                messages.error(request, 'Old password is incorrect.')
+                return redirect('change_password')
+
+            # Set new password and keep user logged in
+            username.set_password(new_password1)
+            username.save()
+            update_session_auth_hash(request, username)  # Keep the user logged in after password change
+            messages.success(request, 'Your password has been successfully updated.')
+            return redirect('student_dashboard')
+
+        # Handle Parent
+        elif Parent.objects.filter(auto_generated_username=username.username).exists():
+            parent = Parent.objects.get(auto_generated_username=username.username)
+
+            # Compare plain text old password with stored plain text password
+            if old_password != parent.auto_generated_password:
+                messages.error(request, 'Old password is incorrect.')
+                return redirect('change_password')
+
+            # Set new password (as plain text)
+            parent.auto_generated_password = new_password1
+            parent.save()
+            messages.success(request, 'Your password has been successfully updated.')
+            return redirect('parent_dashboard')
+
+        # Handle Teacher
+        elif Teacher.objects.filter(auto_generated_username=username.username).exists():
+            teacher = Teacher.objects.get(auto_generated_username=username.username)
+
+            # Compare plain text old password with stored plain text password
+            if old_password != teacher.auto_generated_password:
+                messages.error(request, 'Old password is incorrect.')
+                return redirect('change_password')
+
+            # Set new password (as plain text)
+            teacher.auto_generated_password = new_password1
+            teacher.save()
+            messages.success(request, 'Your password has been successfully updated.')
+            return redirect('teacher_dashboard')
+
+    return render(request, 'change_password.html')

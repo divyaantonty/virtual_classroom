@@ -15,13 +15,18 @@ urlpatterns = [
     path('admissions/', views.admissions_view, name='admissions'),
     path('contact/', views.contact_view, name='contact'),
     path('view-messages/', views.view_message, name='view_messages'),
+
     path('courses/', views.courses_view, name='courses'),
-    path('add_courses/', views.add_course, name='add_courses'),  # Admin view to add courses
+    path('add_courses/', views.add_course, name='add_courses'), 
     path('course_list/', views.course_list, name='course_list'), 
+
     path('course/10/', views.course_detail_10, name='course_detail_10'),
     path('course/higher-secondary/', views.course_detail_higher_secondary, name='course_detail_higher_secondary'),
+
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout, name='logout'),
+    path('change_password/', views.change_password, name='change_password'),
+    
     path('register/', views.register, name='register'),
     path('teachers/', views.teachers_view, name='teachers'),
     path('recover/', views.recover_view, name='recover'),
@@ -55,4 +60,6 @@ urlpatterns = [
     path('password_reset/done/', views.PasswordResetDoneView.as_view(template_name='password_reset_done.html'), name='password_reset_done'),
     path('reset/<uidb64>/<token>/', views.PasswordResetConfirmView.as_view(template_name='password_reset_confirm.html'), name='password_reset_confirm'),
     path('reset/done/',views.PasswordResetCompleteView.as_view(template_name='password_reset_complete.html'), name='password_reset_complete'),
+
+
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
