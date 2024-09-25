@@ -479,11 +479,33 @@ def reject_teacher(request, teacher_id):
 
     return render(request, 'reject_teacher.html', {'teacher': teacher})
 
-
-def remove_teacher(request, teacher_id):
+def approving_teacher(request, teacher_id):
     teacher = get_object_or_404(Teacher, id=teacher_id)
-    teacher.delete()
-    return redirect('manage_teachers')
+
+    if request.method == 'POST':
+        # Update the teacher's status to 'approved'
+        teacher.status = 'approved'
+        teacher.save()
+        messages.success(request, f'Teacher {teacher.first_name} {teacher.last_name} has been approved.')
+
+        return redirect('manage_teachers')  # Redirect to the management page after approval
+
+    # If GET request, render the approve form
+    form = None  # You can add additional form processing logic if required
+    return render(request, 'approve_teacher.html', {'teacher': teacher, 'form': form})
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import Teacher
+
+# View to handle deleting a teacher
+def delete_teacher(request, teacher_id):
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+    if request.method == 'GET':
+        teacher.delete()
+        messages.success(request, f'Teacher {teacher.first_name} {teacher.last_name} has been deleted.')
+        return redirect('manage_teachers')
+
 
 from django.shortcuts import render
 from .models import Teacher

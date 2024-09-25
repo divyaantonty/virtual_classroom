@@ -1,9 +1,33 @@
-<h2>Approve Teacher: {{ teacher.first_name }} {{ teacher.last_name }}</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Approve Teacher</button>
-</form>
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Approve Teacher</title>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+</head>
+<body>
+    <div class="container mt-5">
+        <h3>Approve Teacher</h3>
+        <p>Are you sure you want to approve the teacher <strong>{{ teacher.first_name }} {{ teacher.last_name }}</strong>?</p>
 
-<!-- Add a check to see if the form is submitting -->
-<p>{% if teacher.status == 'approved' %} Teacher Approved! {% endif %}</p>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-success">Yes, Approve</button>
+            <a href="{% url 'manage_teachers' %}" class="btn btn-secondary">Cancel</a>
+        </form>
+
+        <!-- Add a check to see if the teacher is approved and display a message -->
+        {% if teacher.status == 'approved' %}
+        <div class="alert alert-success mt-3">
+            Teacher Approved!
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+</body>
+</html>

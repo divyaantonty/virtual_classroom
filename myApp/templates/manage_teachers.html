@@ -1,5 +1,3 @@
-<!-- templates/manage_teachers.html -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,6 +11,7 @@
     <div class="container mt-5">
         <h3>Manage Teachers</h3>
 
+        <!-- Pending Teachers Section -->
         <h4>Pending Teachers</h4>
         <table class="table">
             <thead>
@@ -44,12 +43,14 @@
                     <td>
                         <a href="{% url 'approve_teacher' teacher.id %}" class="btn btn-success">Approve</a>
                         <a href="{% url 'reject_teacher' teacher.id %}" class="btn btn-danger">Reject</a>
+                        <button class="btn btn-warning" onclick="confirmDelete({{ teacher.id }})">Delete</button>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
 
+        <!-- Approved Teachers Section -->
         <h4>Approved Teachers</h4>
         <table class="table">
             <thead>
@@ -63,6 +64,7 @@
                     <th>Classes</th>
                     <th>Subjects</th>
                     <th>Experience</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -77,12 +79,24 @@
                     <td>{{ teacher.classes }}</td>
                     <td>{{ teacher.subjects }}</td>
                     <td>{{ teacher.experience }}</td>
+                    <td>
+                        <button class="btn btn-warning" onclick="confirmDelete({{ teacher.id }})">Delete</button>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-
     </div>
+
+    <!-- JavaScript for confirmation popup -->
+    <script>
+        function confirmDelete(teacherId) {
+            if (confirm("Are you sure you want to delete this teacher?")) {
+                // Redirect to the delete view if confirmed
+                window.location.href = "{% url 'delete_teacher' 0 %}".replace('0', teacherId);
+            }
+        }
+    </script>
 
     <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.min.js' %}"></script>
