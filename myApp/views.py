@@ -305,20 +305,24 @@ from django.shortcuts import render
 from .models import CustomUser
 
 def manage_students(request):
-    students = CustomUser.objects.all()
-    students = CustomUser.objects.select_related('course').all()
-    return render(request, 'manage_students.html', {'students': students})
+    students = CustomUser.objects.select_related('course').filter(is_active=1)
 
-from django.shortcuts import render, redirect, get_object_or_404
+    past_students = CustomUser.objects.filter(is_active=0)
+    return render(request, 'manage_students.html', {'students': students, 'past_students':past_students})
+
+
+from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from .models import CustomUser
 
 def delete_student(request, student_id):
     student = get_object_or_404(CustomUser, id=student_id)
     if request.method == 'POST':
-        student.delete()
-        messages.success(request, 'Student deleted successfully.')
+        student.is_active = 0  
+        student.save()  
+        messages.success(request, 'Student marked as active successfully.')
         return redirect('manage_students')
+
 
 
 

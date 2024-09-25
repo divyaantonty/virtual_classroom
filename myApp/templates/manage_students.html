@@ -88,18 +88,18 @@
     <table class="student-table">
         <thead>
             <tr>
-                <th>ID</th>
                 <th>Username</th>
                 <th>Email</th>
+                <th>Course</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for student in students %}
             <tr>
-                <td>{{ student.id }}</td>
                 <td>{{ student.username }}</td>
                 <td>{{ student.email }}</td>
+                <td>{{ student.course.course_name }}</td> <!-- Display the course name -->
                 <td class="actions">
                     <form action="{% url 'delete_student' student.id %}" method="POST">
                         {% csrf_token %}
@@ -109,6 +109,31 @@
             </tr>
             {% endfor %}
         </tbody>
+        
+    </table>
+
+    <h1>Past Students</h1>
+
+    <table class="student-table">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Course</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in past_students %}
+            <tr>
+                <td>{{ student.username }}</td>
+                <td>{{ student.email }}</td>
+                <td>{{ student.course.course_name }}</td> <!-- Display the course name -->
+                <td class="actions">
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        
     </table>
 
     <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>

@@ -108,5 +108,5 @@ EMAIL_HOST = 'smtp.gmail.com'  # Or your provider's SMTP server
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'divyaantony2025@mca.ajce.in'
-EMAIL_HOST_PASSWORD = 'Ajce2023'  # Your email account's password
+EMAIL_HOST_PASSWORD = '####'  # Your email account's password
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
