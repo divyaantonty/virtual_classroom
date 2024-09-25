@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Update Profile</title>
+    <script type="text/javascript">
+        function preventBack() {
+            window.history.forward(); 
+        }
+          
+        setTimeout("preventBack()", 0);
+          
+        window.onunload = function () { null };
+    </script>
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
@@ -93,5 +102,86 @@
             <button type="submit" class="btn btn-primary">Update Profile</button>
         </form>
     </div>
+
+    <!-- Validation Script -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.querySelector("form");
+
+            form.addEventListener("submit", function (event) {
+                let valid = true;
+                const errorMessages = document.querySelectorAll(".error-message");
+                errorMessages.forEach(msg => msg.remove());
+
+                // Validation functions
+                function showError(fieldId, message) {
+                    const field = document.getElementById(fieldId);
+                    const errorMessage = document.createElement("div");
+                    errorMessage.className = "error-message text-danger";
+                    errorMessage.textContent = message;
+                    field.parentElement.appendChild(errorMessage);
+                }
+
+                function validateText(fieldId, pattern, message) {
+                    const field = document.getElementById(fieldId).value;
+                    if (!pattern.test(field)) {
+                        showError(fieldId, message);
+                        return false;
+                    }
+                    return true;
+                }
+
+                // First Name and Last Name Validation
+                const namePattern = /^[A-Z][a-z]{2,}$/;
+                valid = valid && validateText("first_name", namePattern, "First name must start with a capital letter and have at least 3 characters.");
+                valid = valid && validateText("last_name", namePattern, "Last name must start with a capital letter and have at least 3 characters.");
+
+                // Gender Validation
+                const gender = document.getElementById("gender").value;
+                if (gender === "") {
+                    showError("gender", "Gender must be selected.");
+                    valid = false;
+                }
+
+                // Age Validation
+                const age = parseInt(document.getElementById("age").value);
+                if (age <= 0) {
+                    showError("age", "Age must be a positive number.");
+                    valid = false;
+                } else if (age < 23 || age > 56) {
+                    showError("age", "Age must be between 23 and 56.");
+                    valid = false;
+                }
+
+                // Contact Validation
+                const contact = document.getElementById("contact").value;
+                const contactPattern = /^[6-9]\d{9}$/;
+                if (!contactPattern.test(contact)) {
+                    showError("contact", "Mobile number must start with 6-9 and be 10 digits long.");
+                    valid = false;
+                }
+
+                // Email Validation
+                const email = document.getElementById("email").value;
+                const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+                if (!emailPattern.test(email)) {
+                    showError("email", "Email must be in Gmail format (e.g., example@gmail.com).");
+                    valid = false;
+                }
+
+                // Address Validation
+                const addressPattern = /^[a-zA-Z0-9\s,'-]{3,}$/;
+                valid = valid && validateText("address_line1", addressPattern, "Address must be at least 3 characters long.");
+                valid = valid && validateText("city", /^[A-Za-z\s]{3,}$/, "City must be at least 3 characters long.");
+                valid = valid && validateText("state", /^[A-Za-z\s]{3,}$/, "State must be at least 3 characters long.");
+                valid = valid && validateText("zip_code", /^\d{6}$/, "Zip Code must be exactly 6 digits.");
+
+                // Prevent form submission if not valid
+                if (!valid) {
+                    event.preventDefault();
+                }
+            });
+        });
+    </script>
 </body>
 </html>

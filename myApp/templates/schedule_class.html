@@ -20,6 +20,15 @@
     <link rel="stylesheet" href="{% static 'css/aos.css' %}">
     <link rel="stylesheet" href="{% static 'css/jquery.mb.YTPlayer.min.css' %}" media="all">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script type="text/javascript">
+        function preventBack() {
+            window.history.forward(); 
+        }
+          
+        setTimeout("preventBack()", 0);
+          
+        window.onunload = function () { null };
+    </script>
 
     <style>
         .header-container {
@@ -168,9 +177,6 @@
                         <p>Welcome</p> <!-- Display teacher's name here -->
                     </a>
                 </div>
-                <div class="logout-container">
-                    <a href="{% url 'logout' %}" class="nav-link text-right">Logout</a>
-                </div>
             </div>
         </header>
 
@@ -196,7 +202,7 @@
                         <a href="#">Conduct in Polls and Quizzes</a>
                     </div>
                     <div class="feature-box">
-                        <a href="#">Change Password</a>
+                        <a href="{% url 'change_password' %}">Change Password</a>
                     </div>
                 </div>
             </div>
@@ -262,6 +268,12 @@
             const endTime = document.getElementById('end_time').value;
             const meetingLink = document.getElementById('meeting_link').value;
             const today = new Date().toISOString().split('T')[0];
+
+            const classNameRegex = /^[a-zA-Z\s]{3,}$/;
+            if (!classNameRegex.test(className)) {
+                alert("Class Name must contain only letters and be at least 3 characters long.");
+                return false;
+            }
 
             // Validate date (should be today or later)
             if (date < today) {

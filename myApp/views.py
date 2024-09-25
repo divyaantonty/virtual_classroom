@@ -645,15 +645,22 @@ def view_scheduled_classes(request):
     return render(request, 'view_scheduled_classes.html', {'scheduled_classes': scheduled_classes})
 
 
-# views.py
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from .models import CustomUser, ClassSchedule, Parent
 
 def view_class_schedule(request):
     parent_id = request.session.get('parent_id')
     
- 
-    parent = Parent.objects.get(id=parent_id)
+    if not parent_id:
+        # Handle the case where the parent_id is not in the session, e.g., redirect to login page
+        return redirect('login')
+    
+    try:
+        parent = Parent.objects.get(id=parent_id)
+    except Parent.DoesNotExist:
+        # Handle the case where the parent record doesn't exist
+        return redirect('error_page')  # Or handle in another way
+
     child_username = parent.student_username
     child = CustomUser.objects.get(username=child_username)
     child_schedule = ClassSchedule.objects.filter(course_name=child.course)
@@ -665,9 +672,9 @@ def view_class_schedule(request):
     
     return render(request, 'view_class_schedule.html', context)
 
+
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.contrib.auth import update_session_auth_hash
 from .models import CustomUser, Parent, Teacher
 from django.contrib import messages
 from django.shortcuts import render, redirect
