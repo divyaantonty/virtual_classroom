@@ -13,10 +13,13 @@ urlpatterns = [
     path('', views.index_view, name='index'),
     path('about/', views.about_view, name='about'),
     path('admissions/', views.admissions_view, name='admissions'),
+    
     path('contact/', views.contact_view, name='contact'),
-    path('view-messages/', views.view_message, name='view_messages'),
+    path('view-messages/', views.view_messages, name='view_messages'),
+    path('reply-message/<int:message_id>/', views.reply_message, name='reply_message'),
 
     path('courses/', views.courses_view, name='courses'),
+
     path('add_courses/', views.add_course, name='add_courses'), 
     path('course_list/', views.course_list, name='course_list'), 
 

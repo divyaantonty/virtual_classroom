@@ -228,11 +228,35 @@ def contact_view(request):
     return render(request, 'contact.html', {'form': form})  # Replace 'your_template.html' with your actual template name
 
 
-from django.contrib.admin.views.decorators import staff_member_required
+from django.shortcuts import render, redirect
 from .models import ContactMessage
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib import messages
 
-def view_message(request):
-    return render(request, 'view_messages.html')
+# View to display all contact messages
+def view_messages(request):
+    messages_list = ContactMessage.objects.all()
+    return render(request, 'view_messages.html', {'messages_list': messages_list})
+
+def reply_message(request, message_id):
+    message_obj = ContactMessage.objects.get(id=message_id)
+    if request.method == 'POST':
+        subject = 'Thank you for contacting us'
+        body = 'We will contact you for more clarification regarding your query.'
+        from_email = settings.DEFAULT_FROM_EMAIL
+        recipient_list = [message_obj.email]
+
+        send_mail(subject, body, from_email, recipient_list)
+
+        # Update the replied status
+        message_obj.replied = True
+        message_obj.save()
+
+        messages.success(request, 'Reply sent successfully!')
+        return redirect('view_messages')
+    return redirect('view_messages')
+
 
 
 def courses_view(request):

@@ -1,15 +1,51 @@
-<!-- view_message.html -->
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Messages</title>
-    {% load static %}
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
 </head>
 <body>
-    <div class="container">
-        <h1>Messages</h1>
-        
+    <div class="container mt-5">
+        <h2>Messages</h2>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Message</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for message in messages_list %}
+                <tr>
+                    <td>{{ message.first_name }}</td>
+                    <td>{{ message.last_name }}</td>
+                    <td>{{ message.email }}</td>
+                    <td>{{ message.tel }}</td>
+                    <td>{{ message.message }}</td>
+                    <td>
+                        {% if not message.replied %}
+                        <form action="{% url 'reply_message' message.id %}" method="POST">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary">Reply</button>
+                        </form>
+                        {% else %}
+                        <span class="text-success">Replied</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
+
+    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
 </body>
 </html>

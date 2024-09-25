@@ -93,15 +93,19 @@ class Teacher(models.Model):
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
+
+
 class ContactMessage(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     email = models.EmailField()
     tel = models.CharField(max_length=15, blank=True, null=True)
     message = models.TextField()
-    
+    replied = models.BooleanField(default=False)  # New field to track if a reply has been sent
+
     def __str__(self):
         return f'Message from {self.first_name} {self.last_name}'
+
 
 class Course(models.Model):
     course_name = models.CharField(max_length=255, default='Default Course Name')
