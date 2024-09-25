@@ -20,6 +20,15 @@
     <link rel="stylesheet" href="{% static 'css/aos.css' %}">
     <link rel="stylesheet" href="{% static 'css/jquery.mb.YTPlayer.min.css' %}" media="all">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script type="text/javascript">
+        function preventBack() {
+            window.history.forward(); 
+        }
+          
+        setTimeout("preventBack()", 0);
+          
+        window.onunload = function () { null };
+    </script>
 
     <style>
         .header-container {
@@ -123,7 +132,7 @@
                         <a href="#">Conduct in Polls and Quizzes</a>
                     </div>
                     <div class="feature-box">
-                        <a href="{% url 'change_password' %}">Change password</a>
+                        <a href="{% url 'view_profile' %}">View Profile</a>
                     </div>
                 </div>
             </div>

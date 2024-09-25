@@ -29,6 +29,10 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout, name='logout'),
     path('change_password/', views.change_password, name='change_password'),
+    path('teacher_changepassword/', views.teacher_changepassword, name='teacher_changepassword'),
+    path('teacher_updateprofile/', views.teacher_updateprofile, name='teacher_updateprofile'),
+
+
     
     path('register/', views.register, name='register'),
     path('teachers/', views.teachers_view, name='teachers'),
@@ -44,6 +48,7 @@ urlpatterns = [
     
     path('teacher_dashboard/', views.teacher_dashboard, name='teacher_dashboard'),
     path('schedule-class/', views.schedule_class, name='schedule_class'),
+    path('view_profile/', views.view_profile, name='view_profile'),
 
     path('parent_dashboard/', views.parent_dashboard, name='parent_dashboard'),
     path('view-class-schedule/', views.view_class_schedule, name='view_class_schedule'),
@@ -55,7 +60,6 @@ urlpatterns = [
     path('manage-teachers/', views.manage_teachers, name='manage_teachers'),
     path('teachers/', views.teacher_list, name='teacher_list'),
     path('approve_teachers/', views.approve_teacher, name='approve_teachers'),
-    path('approve_teacher/<int:teacher_id>/', views.approving_teacher, name='approve_teacher'),
     path('reject_teacher/<int:teacher_id>/', views.reject_teacher, name='reject_teacher'),
     path('delete_teacher/<int:teacher_id>/', views.delete_teacher, name='delete_teacher'),
 

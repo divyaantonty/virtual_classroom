@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Profile</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Update Profile</h2>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="first_name">First Name</label>
+                <input type="text" class="form-control" id="first_name" name="first_name" value="{{ teacher.first_name }}" required>
+            </div>
+            <div class="form-group">
+                <label for="last_name">Last Name</label>
+                <input type="text" class="form-control" id="last_name" name="last_name" value="{{ teacher.last_name }}" required>
+            </div>
+            <div class="form-group">
+                <label for="gender">Gender</label>
+                <select class="form-control" id="gender" name="gender" required>
+                    <option value="male" {% if teacher.gender == "male" %}selected{% endif %}>Male</option>
+                    <option value="female" {% if teacher.gender == "female" %}selected{% endif %}>Female</option>
+                    <option value="other" {% if teacher.gender == "other" %}selected{% endif %}>Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="age">Age</label>
+                <input type="number" class="form-control" id="age" name="age" value="{{ teacher.age }}" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" class="form-control" id="email" name="email" value="{{ teacher.email }}" required>
+            </div>
+            <div class="form-group">
+                <label for="contact">Contact</label>
+                <input type="text" class="form-control" id="contact" name="contact" value="{{ teacher.contact }}" required>
+            </div>
+            <div class="form-group">
+                <label for="address_line1">Address Line 1</label>
+                <input type="text" class="form-control" id="address_line1" name="address_line1" value="{{ teacher.address_line1 }}" required>
+            </div>
+            <div class="form-group">
+                <label for="address_line2">Address Line 2</label>
+                <input type="text" class="form-control" id="address_line2" name="address_line2" value="{{ teacher.address_line2 }}">
+            </div>
+            <div class="form-group">
+                <label for="city">City</label>
+                <input type="text" class="form-control" id="city" name="city" value="{{ teacher.city }}" required>
+            </div>
+            <div class="form-group">
+                <label for="state">State</label>
+                <input type="text" class="form-control" id="state" name="state" value="{{ teacher.state }}" required>
+            </div>
+            <div class="form-group">
+                <label for="zip_code">Zip Code</label>
+                <input type="text" class="form-control" id="zip_code" name="zip_code" value="{{ teacher.zip_code }}" required>
+            </div>
+            <div class="form-group">
+                <label for="qualification">Qualification</label>
+                <input type="text" class="form-control" id="qualification" name="qualification" value="{{ teacher.qualification }}">
+            </div>
+            <div class="form-group">
+                <label for="teaching_area">Teaching Area</label>
+                <input type="text" class="form-control" id="teaching_area" name="teaching_area" value="{{ teacher.teaching_area }}">
+            </div>
+            <div class="form-group">
+                <label for="classes">Classes</label>
+                <input type="text" class="form-control" id="classes" name="classes" value="{{ teacher.classes }}">
+            </div>
+            <div class="form-group">
+                <label for="subjects">Subjects</label>
+                <input type="text" class="form-control" id="subjects" name="subjects" value="{{ teacher.subjects }}">
+            </div>
+            <div class="form-group">
+                <label for="experience">Experience</label>
+                <textarea class="form-control" id="experience" name="experience">{{ teacher.experience }}</textarea>
+            </div>
+            <div class="form-group">
+                <label for="referral">Referral</label>
+                <input type="text" class="form-control" id="referral" name="referral" value="{{ teacher.referral }}">
+            </div>
+            <button type="submit" class="btn btn-primary">Update Profile</button>
+        </form>
+    </div>
+</body>
+</html>

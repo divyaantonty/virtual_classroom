@@ -232,16 +232,43 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const form = document.querySelector("form");
-            
-            form.addEventListener("submit", function (event) {
-                // Initialize a flag for validation
-                let valid = true;
     
-                // Clear previous error messages
+            form.addEventListener("submit", function (event) {
+                let valid = true;
                 const errorMessages = document.querySelectorAll(".error-message");
                 errorMessages.forEach(msg => msg.remove());
     
-                // Validate age
+                // Validation functions
+                function showError(fieldId, message) {
+                    const field = document.getElementById(fieldId);
+                    const errorMessage = document.createElement("div");
+                    errorMessage.className = "error-message text-danger";
+                    errorMessage.textContent = message;
+                    field.parentElement.appendChild(errorMessage);
+                }
+    
+                function validateText(fieldId, pattern, message) {
+                    const field = document.getElementById(fieldId).value;
+                    if (!pattern.test(field)) {
+                        showError(fieldId, message);
+                        return false;
+                    }
+                    return true;
+                }
+    
+                // First Name and Last Name Validation
+                const namePattern = /^[A-Z][a-z]{2,}$/;
+                valid &= validateText("first-name", namePattern, "First name must start with a capital letter and have at least 3 characters.");
+                valid &= validateText("last-name", namePattern, "Last name must start with a capital letter and have at least 3 characters.");
+    
+                // Gender Validation
+                const gender = document.getElementById("gender").value;
+                if (gender === "") {
+                    showError("gender", "Gender must be selected.");
+                    valid = false;
+                }
+    
+                // Age Validation
                 const age = parseInt(document.getElementById("age").value);
                 if (age <= 0) {
                     showError("age", "Age must be a positive number.");
@@ -251,7 +278,7 @@
                     valid = false;
                 }
     
-                // Validate contact number
+                // Contact Validation
                 const contact = document.getElementById("contact").value;
                 const contactPattern = /^[6-9]\d{9}$/;
                 if (!contactPattern.test(contact)) {
@@ -259,29 +286,44 @@
                     valid = false;
                 }
     
-                // Validate email
+                // Email Validation
                 const email = document.getElementById("email").value;
-                const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/; // Gmail validation
+                const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
                 if (!emailPattern.test(email)) {
                     showError("email", "Email must be in Gmail format (e.g., example@gmail.com).");
                     valid = false;
                 }
     
-                // Prevent form submission if not valid
+                // Address Validation
+                const addressPattern = /^[a-zA-Z0-9\s,'-]{3,}$/;
+                valid &= validateText("address", addressPattern, "Street address must be at least 3 characters long.");
+                valid &= validateText("city", /^[A-Za-z\s]{3,}$/, "City must be at least 3 characters long.");
+                valid &= validateText("state", /^[A-Za-z\s]{3,}$/, "State must contain only characters.");
+                valid &= validateText("zip", /^\d{6}$/, "Zip code must be exactly 6 digits.");
+    
+                // Qualification and Teaching Area Validation
+                const textPattern = /^[A-Za-z\s\.,'-]{3,}$/;
+                valid &= validateText("qualification", textPattern, "Qualification must contain only letters and be at least 3 characters long.");
+                valid &= validateText("teaching-area", textPattern, "Teaching area must contain only letters and be at least 3 characters long.");
+    
+                // Classes, Subjects, and Experience Validation
+                const mixedPattern = /^[A-Za-z0-9\s\.,'-]+$/;
+                valid &= validateText("classes", mixedPattern, "Classes should contain only letters, numbers, and special characters.");
+                valid &= validateText("subjects", mixedPattern, "Subjects should contain only letters, numbers, and special characters.");
+                valid &= validateText("experience", /^[A-Za-z0-9\s\.,'-]+$/, "Experience should be in the format like '5 days', '5 months', etc.");
+    
+                // Referral Validation
+                const referralPattern = /^[A-Za-z\s\.,'-]{3,}$/;
+                valid &= validateText("referral", referralPattern, "Referral should contain only letters and be at least 3 characters long.");
+    
                 if (!valid) {
                     event.preventDefault();
                 }
             });
-    
-            function showError(fieldId, message) {
-                const field = document.getElementById(fieldId);
-                const errorMessage = document.createElement("div");
-                errorMessage.className = "error-message text-danger"; // Add a class for styling
-                errorMessage.textContent = message;
-                field.parentElement.appendChild(errorMessage);
-            }
         });
     </script>
+    
+    
     
 
 </body>

@@ -379,7 +379,25 @@ def register_teacher(request):
     
     return render(request, 'register_teacher.html', {'form': form})
 
+from django.shortcuts import render, redirect
+from .models import Teacher  # Adjust the import based on your app structure
 
+def view_profile(request):
+    teacher_id = request.session.get('teacher_id')
+    
+    if not teacher_id:
+        print("No teacher ID found in session.")  # Debugging line
+        return render(request, 'view_profile.html', {'error': 'Profile not found.'})
+    
+    try:
+        teacher = Teacher.objects.get(id=teacher_id)
+        print(f"Logged in teacher's username: {teacher.auto_generated_username}")  # Debugging line
+        context = {'teacher': teacher}
+    except Teacher.DoesNotExist:
+        print("No matching Teacher found.")  # Debugging line
+        context = {'error': 'Profile not found.'}
+    
+    return render(request, 'view_profile.html', context)
 
 from django.core.mail import send_mail
 from django.contrib.auth.models import User
@@ -647,61 +665,120 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from .models import CustomUser, Parent, Teacher
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from .models import Parent
 
 def change_password(request):
-    username = request.user  # Currently logged-in user
+    parent_id = request.session.get('parent_id')
+    
+    if not parent_id:
+        messages.error(request, 'You are not logged in as a parent.')
+        return redirect('login')
 
+    parent = Parent.objects.get(id=parent_id)
+    
     if request.method == 'POST':
         old_password = request.POST.get('old_password')
-        new_password1 = request.POST.get('new_password1')
-        new_password2 = request.POST.get('new_password2')
+        new_password1 = request.POST.get('new_password')
+        new_password2 = request.POST.get('confirm_password')
 
         # Validate that new passwords match
         if new_password1 != new_password2:
             messages.error(request, 'New passwords do not match.')
             return redirect('change_password')
 
-        # Handle CustomUser (Student)
-        if isinstance(username, CustomUser):
-            if not username.check_password(old_password):
-                messages.error(request, 'Old password is incorrect.')
-                return redirect('change_password')
+        # Compare plain text old password with stored plain text password
+        if old_password != parent.auto_generated_password:
+            messages.error(request, 'Old password is incorrect.')
+            return redirect('change_password')
 
-            # Set new password and keep user logged in
-            username.set_password(new_password1)
-            username.save()
-            update_session_auth_hash(request, username)  # Keep the user logged in after password change
-            messages.success(request, 'Your password has been successfully updated.')
-            return redirect('student_dashboard')
-
-        # Handle Parent
-        elif Parent.objects.filter(auto_generated_username=username.username).exists():
-            parent = Parent.objects.get(auto_generated_username=username.username)
-
-            # Compare plain text old password with stored plain text password
-            if old_password != parent.auto_generated_password:
-                messages.error(request, 'Old password is incorrect.')
-                return redirect('change_password')
-
-            # Set new password (as plain text)
-            parent.auto_generated_password = new_password1
-            parent.save()
-            messages.success(request, 'Your password has been successfully updated.')
-            return redirect('parent_dashboard')
-
-        # Handle Teacher
-        elif Teacher.objects.filter(auto_generated_username=username.username).exists():
-            teacher = Teacher.objects.get(auto_generated_username=username.username)
-
-            # Compare plain text old password with stored plain text password
-            if old_password != teacher.auto_generated_password:
-                messages.error(request, 'Old password is incorrect.')
-                return redirect('change_password')
-
-            # Set new password (as plain text)
-            teacher.auto_generated_password = new_password1
-            teacher.save()
-            messages.success(request, 'Your password has been successfully updated.')
-            return redirect('teacher_dashboard')
+        # Set new password (as plain text)
+        parent.auto_generated_password = new_password1
+        parent.save()
+        messages.success(request, 'Your password has been successfully updated.')
+        return redirect('parent_dashboard')
 
     return render(request, 'change_password.html')
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth import update_session_auth_hash
+from .models import CustomUser, Parent, Teacher
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from .models import Teacher
+
+def teacher_changepassword(request):
+    teacher_id = request.session.get('teacher_id')
+    
+    if not teacher_id:
+        messages.error(request, 'You are not logged in as a parent.')
+        return redirect('login')
+
+    teacher = Teacher.objects.get(id=teacher_id)
+    
+    if request.method == 'POST':
+        old_password = request.POST.get('old_password')
+        new_password1 = request.POST.get('new_password')
+        new_password2 = request.POST.get('confirm_password')
+
+        # Validate that new passwords match
+        if new_password1 != new_password2:
+            messages.error(request, 'New passwords do not match.')
+            return redirect('change_password')
+
+        # Compare plain text old password with stored plain text password
+        if old_password != teacher.auto_generated_password:
+            messages.error(request, 'Old password is incorrect.')
+            return redirect('change_password')
+
+        # Set new password (as plain text)
+        teacher.auto_generated_password = new_password1
+        teacher.save()
+        messages.success(request, 'Your password has been successfully updated.')
+        return redirect('parent_dashboard')
+
+    return render(request, 'teacher_changepassword.html')
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Teacher
+from django.contrib import messages
+
+def teacher_updateprofile(request):
+    teacher_id = request.session.get('teacher_id')
+    
+    if not teacher_id:
+        messages.error(request, 'No teacher ID found in session.')
+        return redirect('login')
+
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+
+    if request.method == 'POST':
+        # Fetch the form data
+        teacher.first_name = request.POST.get('first_name')
+        teacher.last_name = request.POST.get('last_name')
+        teacher.gender = request.POST.get('gender')
+        teacher.age = request.POST.get('age')
+        teacher.email = request.POST.get('email')
+        teacher.contact = request.POST.get('contact')
+        teacher.address_line1 = request.POST.get('address_line1')
+        teacher.address_line2 = request.POST.get('address_line2')
+        teacher.city = request.POST.get('city')
+        teacher.state = request.POST.get('state')
+        teacher.zip_code = request.POST.get('zip_code')
+        teacher.qualification = request.POST.get('qualification')
+        teacher.teaching_area = request.POST.get('teaching_area')
+        teacher.classes = request.POST.get('classes')
+        teacher.subjects = request.POST.get('subjects')
+        teacher.experience = request.POST.get('experience')
+        teacher.referral = request.POST.get('referral')
+
+        # Save the updated teacher details
+        teacher.save()
+        messages.success(request, 'Profile updated successfully.')
+        return redirect('view_profile')  
+
+    context = {'teacher': teacher}
+    return render(request, 'teacher_updateprofile.html', context)
