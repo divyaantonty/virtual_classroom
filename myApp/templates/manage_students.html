@@ -1,9 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Students</title>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -18,7 +20,7 @@
         .student-table {
             width: 100%;
             max-width: 900px;
-            margin: 0 auto;
+            margin: 20px auto;
             border-collapse: collapse;
         }
         .student-table th, .student-table td {
@@ -33,31 +35,54 @@
         .actions {
             text-align: center;
         }
-        .actions a {
+        .actions form {
+            display: inline;
+        }
+        .actions button {
             padding: 8px 12px;
             color: white;
-            background-color: #28a745;
-            text-decoration: none;
-            border-radius: 5px;
-            margin-right: 5px;
-        }
-        .actions a.delete {
             background-color: #dc3545;
+            border: none;
+            border-radius: 5px;
         }
-        .add-student {
-            margin: 20px 0;
-            text-align: center;
-        }
-        .add-student a {
-            padding: 10px 20px;
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
             background-color: #007bff;
             color: white;
-            text-decoration: none;
+        }
+        header img {
+            height: 50px;
+        }
+        .back-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
             border-radius: 5px;
+            text-decoration: none;
+        }
+        .back-btn:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
 <body>
+
+    <!-- Header with logo -->
+    <header>
+        <div>
+            <a href="{% url 'admin_dashboard' %}">
+                <img src="{% static 'images/logo.png' %}" alt="Logo">
+            </a>
+        </div>
+        <div>
+            <a href="{% url 'admin_dashboard' %}" class="back-btn">Back to Admin Dashboard</a>
+        </div>
+    </header>
+
+    <!-- Main content -->
     <h1>Manage Students</h1>
 
     <table class="student-table">
@@ -65,15 +90,28 @@
             <tr>
                 <th>ID</th>
                 <th>Username</th>
-                <th>Name</th>
                 <th>Email</th>
-                <th>Grade Level</th>
-                <th>Guardian Name</th>
                 <th>Actions</th>
             </tr>
         </thead>
-        
+        <tbody>
+            {% for student in students %}
+            <tr>
+                <td>{{ student.id }}</td>
+                <td>{{ student.username }}</td>
+                <td>{{ student.email }}</td>
+                <td class="actions">
+                    <form action="{% url 'delete_student' student.id %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
     </table>
-    
+
+    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
 </body>
 </html>

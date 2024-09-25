@@ -1,19 +1,19 @@
+<!-- templates/manage_teachers.html -->
+
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Teachers</title>
-
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
-
 <body>
     <div class="container mt-5">
-        <h3>Approve Teacher</h3>
+        <h3>Manage Teachers</h3>
+
+        <h4>Pending Teachers</h4>
         <table class="table">
             <thead>
                 <tr>
@@ -50,10 +50,41 @@
             </tbody>
         </table>
 
+        <h4>Approved Teachers</h4>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Email</th>
+                    <th>State</th>
+                    <th>Qualification</th>
+                    <th>Teaching Area</th>
+                    <th>Classes</th>
+                    <th>Subjects</th>
+                    <th>Experience</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for teacher in approved_teachers %}
+                <tr>
+                    <td>{{ teacher.first_name }} {{ teacher.last_name }}</td>
+                    <td>{{ teacher.age }}</td>
+                    <td>{{ teacher.email }}</td>
+                    <td>{{ teacher.state }}</td>
+                    <td>{{ teacher.qualification }}</td>
+                    <td>{{ teacher.teaching_area }}</td>
+                    <td>{{ teacher.classes }}</td>
+                    <td>{{ teacher.subjects }}</td>
+                    <td>{{ teacher.experience }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
     </div>
 
     <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.min.js' %}"></script>
 </body>
-
 </html>

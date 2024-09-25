@@ -301,8 +301,26 @@ def admin_login(request):
 def admin_dashboard(request):   
     return render(request, 'admin_dashboard.html')
 
+from django.shortcuts import render
+from .models import CustomUser
+
 def manage_students(request):
-    return render(request, 'manage_students.html')
+    students = CustomUser.objects.all()
+    students = CustomUser.objects.select_related('course').all()
+    return render(request, 'manage_students.html', {'students': students})
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import CustomUser
+
+def delete_student(request, student_id):
+    student = get_object_or_404(CustomUser, id=student_id)
+    if request.method == 'POST':
+        student.delete()
+        messages.success(request, 'Student deleted successfully.')
+        return redirect('manage_students')
+
+
 
 from django.contrib.auth import logout as auth_logout
 from django.shortcuts import redirect
@@ -373,11 +391,13 @@ import string
 
 def manage_teachers(request):
     pending_teachers = Teacher.objects.filter(status='pending')
-    all_teachers = Teacher.objects.all()
-    return render(request, 'manage_teachers.html', {
+    approved_teachers = Teacher.objects.filter(status='approved')
+    
+    context = {
         'pending_teachers': pending_teachers,
-        'all_teachers': all_teachers,
-    })
+        'approved_teachers': approved_teachers,
+    }
+    return render(request, 'manage_teachers.html', context)
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.mail import send_mail
@@ -447,11 +467,18 @@ def approve_teacher(request, teacher_id):
     return render(request, 'approve_teacher.html', {'form': form, 'teacher': teacher})
 
 
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Teacher
+
 def reject_teacher(request, teacher_id):
     teacher = get_object_or_404(Teacher, id=teacher_id)
-    teacher.status = 'rejected'
-    teacher.save()
-    return redirect('approve_teacher')
+
+    if request.method == 'POST':
+        teacher.delete()  # Or you can set the status to 'pending'
+        return redirect('manage_teachers')  # Redirect after rejection
+
+    return render(request, 'reject_teacher.html', {'teacher': teacher})
+
 
 def remove_teacher(request, teacher_id):
     teacher = get_object_or_404(Teacher, id=teacher_id)

@@ -50,6 +50,7 @@ urlpatterns = [
 
     path('admin_dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('manage-students/', views.manage_students, name='manage_students'),
+    path('delete_student/<int:student_id>/', views.delete_student, name='delete_student'),
 
     path('manage-teachers/', views.manage_teachers, name='manage_teachers'),
     path('teachers/', views.teacher_list, name='teacher_list'),
