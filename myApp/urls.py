@@ -49,6 +49,7 @@ urlpatterns = [
     path('teacher_dashboard/', views.teacher_dashboard, name='teacher_dashboard'),
     path('schedule-class/', views.schedule_class, name='schedule_class'),
     path('view_profile/', views.view_profile, name='view_profile'),
+    path('upload_material/', views.upload_material, name='upload_material'),
 
     path('parent_dashboard/', views.parent_dashboard, name='parent_dashboard'),
     path('view-class-schedule/', views.view_class_schedule, name='view_class_schedule'),

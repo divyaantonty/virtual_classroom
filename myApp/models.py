@@ -127,3 +127,14 @@ class ClassSchedule(models.Model):
 
     def __str__(self):
         return f"{self.class_name} ({self.course}) by {self.teacher.username} on {self.date}"
+    
+
+class Material(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    file = models.FileField(upload_to='materials/')
+    description = models.CharField(max_length=255)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.description

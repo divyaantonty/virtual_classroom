@@ -793,3 +793,46 @@ def teacher_updateprofile(request):
 
     context = {'teacher': teacher}
     return render(request, 'teacher_updateprofile.html', context)
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Material, Course, Teacher
+
+def upload_material(request):
+    if request.method == 'POST':
+        course_id = request.POST.get('course')  # Get course from POST data
+        description = request.POST.get('description')  # Get description from POST data
+        file = request.FILES.get('file')  # Get the uploaded file
+
+        # Ensure a course and file are provided
+        if course_id and file:
+            course = Course.objects.get(id=course_id)
+            
+            # Retrieve the teacher from the session
+            teacher_id = request.session.get('teacher_id')
+            if teacher_id:
+                teacher = get_object_or_404(Teacher, id=teacher_id)  # Fetch teacher using session ID
+
+                # Create a new Material instance
+                Material.objects.create(
+                    teacher=teacher,  # Use the logged-in teacher from session
+                    course=course,
+                    file=file,
+                    description=description
+                )
+                return redirect('teacher_dashboard')  # Redirect to dashboard after upload
+
+    # Fetch the list of courses to display in the form
+    courses = Course.objects.all()
+    
+    return render(request, 'upload_material.html', {'courses': courses})
+
+
+
+
+from django.shortcuts import render
+from .models import Material
+
+def view_materials(request):
+    user_course = request.user.course  # Assuming the user model has a course field
+    materials = Material.objects.filter(course=user_course)
+    return render(request, 'view_materials.html', {'materials': materials})
