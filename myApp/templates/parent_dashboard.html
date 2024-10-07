@@ -114,7 +114,7 @@
                     <a href="{% url 'index' %}" class="d-block">
                         <img src="{% static 'images/logo.png' %}" alt="Image" class="img-fluid">
                         <h2 class="mb-0">Parent Dashboard</h2>
-                        <p class="welcome-text">Welcome, {{ student.username }}, Parent</p>
+                        <p class="welcome-text">Welcome {{ student.username }}  Parent</p>
                     </a>
                 </div>
                 <div class="logout-container">
@@ -143,13 +143,13 @@
                         <a href="{% url 'view_class_schedule' %}">View Child,s Class schedule</a>
                     </div>
                     <div class="feature-box">
-                        <a href="#">View Child,s Assignment</a>
-                    </div>
-                    <div class="feature-box">
-                        <a href="#">View Study Materials</a>
+                        <a href="#">Attendence Details</a>
                     </div>
                     <div class="feature-box">
                         <a href="{% url 'change_password' %}">Change password</a>
+                    </div>
+                    <div class="feature-box">
+                        <a href="{% url 'parent_update_profile' %}">Update Profile</a>
                     </div>
                 </div>
             </div>

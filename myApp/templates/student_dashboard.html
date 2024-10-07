@@ -124,7 +124,7 @@
                     <a href="{% url 'index' %}" class="d-block">
                         <img src="{% static 'images/logo.png' %}" alt="Image" class="img-fluid">
                         <h2 class="mb-0">Student Dashboard</h2>
-                        <p>Welcome, {{ custom_user.username }}</p>
+                        <p>Welcome {{ custom_user.username }}</p>
                     </a>
                 </div>
                 <div class="profile-dropdown">
@@ -157,16 +157,13 @@
                         <a href="#">Submit Assignments</a>
                     </div>
                     <div class="feature-box">
-                        <a href="#">Access Study Materials</a>
+                        <a href="{% url 'view_materials' %}">Access Study Materials</a>
                     </div>
                     <div class="feature-box">
                         <a href="#">Discussion Forum</a>
                     </div>
                     <div class="feature-box">
                         <a href="#">Participate in Polls and Quizzes</a>
-                    </div>
-                    <div class="feature-box">
-                        <a href="#">Change password</a>
                     </div>
                 </div>
             </div>

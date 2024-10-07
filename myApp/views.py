@@ -23,6 +23,10 @@ def register(request):
         if not all([username, email, password, confirm_password, course_id]):
             messages.error(request, 'Please fill out all fields.')
             return render(request, 'register.html')
+        
+        if not (username.isalpha() or username.isdigit()):
+            messages.error(request, "Username should contain only alphabets or only digits, not both.")
+            return redirect('register')
 
         if password != confirm_password:
             messages.error(request, 'Passwords do not match.')
@@ -540,15 +544,14 @@ def teacher_list(request):
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import Course
-from .forms import CourseForm  # Assuming you are using a form to handle input
-
+from .forms import CourseForm
 def add_course(request):
     if request.method == 'POST':
         form = CourseForm(request.POST)
         if form.is_valid():
-            form.save()  # Save the new course to the database
+            form.save()  
             messages.success(request, 'Course added successfully!')
-            return redirect('course_list')  # Redirect to the same page or another page
+            return redirect('course_list')  
         else:
             messages.error(request, 'Failed to add the course. Please correct the errors.')
     else:
@@ -558,28 +561,26 @@ def add_course(request):
 
 
 def course_list(request):
-    courses = Course.objects.all()  # Fetch all courses
+    courses = Course.objects.all()  
     return render(request, 'course_list.html', {'courses': courses})
 
 from django.shortcuts import render, redirect
 from .models import Course, ClassSchedule, Teacher
-from datetime import date
+from datetime import date, datetime, timezone
 
 def schedule_class(request):
-    teacher_id = request.session.get('teacher_id')  # Fetch the teacher_id from session
+    teacher_id = request.session.get('teacher_id')  
     if not teacher_id:
-        return redirect('login')  # Redirect to login if teacher not authenticated
-
-    # Fetch the Teacher object using teacher_id from session
+        return redirect('login')  
+    
     try:
         teacher = Teacher.objects.get(id=teacher_id)
     except Teacher.DoesNotExist:
-        return redirect('login')  # Redirect if the teacher doesn't exist
+        return redirect('login')  
 
-    courses = Course.objects.all()  # Fetch all courses
-    today = date.today()  # Get today's date
-    error_message = None  # Initialize error_message
-    
+    courses = Course.objects.all()  
+    today = date.today() 
+    error_message = None  
     if request.method == 'POST':
         class_name = request.POST.get('class_name')
         course_id = request.POST.get('course')
@@ -588,7 +589,7 @@ def schedule_class(request):
         end_time = request.POST.get('end_time')
         meeting_link = request.POST.get('meeting_link')
 
-        # Validate that the date is today or in the future
+        
         if selected_date < today.isoformat():
             return render(request, 'schedule_class.html', {
                 'courses': courses,
@@ -596,7 +597,7 @@ def schedule_class(request):
                 'error_message': "The selected date cannot be in the past."
             })
 
-        course = Course.objects.get(id=course_id)  # Get the selected course
+        course = Course.objects.get(id=course_id)  
         class_schedule = ClassSchedule.objects.create(
             class_name=class_name,
             course_name=course,
@@ -604,45 +605,88 @@ def schedule_class(request):
             start_time=start_time,
             end_time=end_time,
             meeting_link=meeting_link,
-            teacher=teacher  # Assign the teacher using the teacher object from session
+            teacher=teacher  
         )
 
-        return redirect('schedule_class')  # Redirect to class list view or appropriate page
+        return redirect('schedule_class')  
+    current_datetime = datetime.now()
+    scheduled_classes = ClassSchedule.objects.filter(teacher=teacher, end_time__gt=current_datetime)
 
-    return render(request, 'schedule_class.html', {'courses': courses})
+    return render(request, 'schedule_class.html', {
+        'courses': courses,
+        'today': today,
+        'scheduled_classes': scheduled_classes,
+        'error_message': error_message
+    })
 
+    
+
+from django.shortcuts import render
+from django.utils import timezone
+from .models import ClassSchedule
+
+def view_teacher_schedule_class(request):
+    # Get the current date and time
+    current_time = timezone.now()
+
+    # Filter classes where the date is today or later, and the end time is after the current time
+    future_classes = ClassSchedule.objects.filter(date__gte=current_time.date(), end_time__gte=current_time.time())
+
+    context = {
+        'future_classes': future_classes,
+    }
+
+    return render(request, 'view_teacher_schedule_class.html', context)
+
+
+
+from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import ClassSchedule, CustomUser
+from django.utils import timezone
+from django.db.models import Q
 
 def view_scheduled_classes(request):
-    # Get the custom_user_id from the session
+    # Retrieve the custom user ID from the session
     custom_user_id = request.session.get('custom_user_id')
-    
+
     if not custom_user_id:
         messages.error(request, "You are not logged in.")
         return redirect('login')
 
-    # Fetch the student (CustomUser) using the custom_user_id
     try:
+        # Fetch the student (CustomUser) based on the custom user ID
         student = CustomUser.objects.get(id=custom_user_id)
     except CustomUser.DoesNotExist:
         messages.error(request, "Student not found.")
         return redirect('login')
 
-    # Fetch the course the student is registered for
+    # Check if the student is registered for a course
     registered_course = student.course
     if not registered_course:
         messages.error(request, "You are not registered for any course.")
-        return redirect('student_dashboard')  # Redirect if the student is not registered for a course
+        return redirect('student_dashboard')
 
-    # Fetch only the scheduled classes for the student's registered course
-    scheduled_classes = ClassSchedule.objects.filter(course_name=registered_course)
-    
+    # Get the current date and time
+    current_datetime = timezone.now()
+
+    # Fetch scheduled classes for the registered course that are ongoing or in the future
+    scheduled_classes = ClassSchedule.objects.filter(
+        course_name=registered_course,
+    ).filter(
+        # Include classes that are ongoing or scheduled for future dates
+        Q(date=current_datetime.date(), start_time__lte=current_datetime.time(), end_time__gte=current_datetime.time()) |  # Classes that are ongoing
+        Q(date__gt=current_datetime.date())  # Classes scheduled for future dates
+    ).order_by('date', 'start_time')  # Sort classes by date and start time
+
+    # Check if there are any scheduled classes
     if not scheduled_classes.exists():
-        messages.info(request, "No scheduled classes for your registered course.")
+        messages.info(request, "No upcoming scheduled classes for your registered course.")
+        return render(request, 'view_scheduled_classes.html', {'scheduled_classes': scheduled_classes})
 
-    # Pass the filtered scheduled classes to the template
+    # Pass the scheduled classes to the template
     return render(request, 'view_scheduled_classes.html', {'scheduled_classes': scheduled_classes})
+
 
 
 from django.shortcuts import render, redirect
@@ -652,14 +696,14 @@ def view_class_schedule(request):
     parent_id = request.session.get('parent_id')
     
     if not parent_id:
-        # Handle the case where the parent_id is not in the session, e.g., redirect to login page
+        
         return redirect('login')
     
     try:
         parent = Parent.objects.get(id=parent_id)
     except Parent.DoesNotExist:
-        # Handle the case where the parent record doesn't exist
-        return redirect('error_page')  # Or handle in another way
+       
+        return redirect('error_page')
 
     child_username = parent.student_username
     child = CustomUser.objects.get(username=child_username)
@@ -680,37 +724,45 @@ from django.contrib import messages
 from django.shortcuts import render, redirect
 from .models import Parent
 
+
 def change_password(request):
     parent_id = request.session.get('parent_id')
     
+    # Check if parent is logged in
     if not parent_id:
         messages.error(request, 'You are not logged in as a parent.')
         return redirect('login')
 
-    parent = Parent.objects.get(id=parent_id)
-    
+    try:
+        # Fetch the parent instance
+        parent = Parent.objects.get(id=parent_id)
+    except Parent.DoesNotExist:
+        messages.error(request, 'Parent not found.')
+        return redirect('login')
+
     if request.method == 'POST':
         old_password = request.POST.get('old_password')
         new_password1 = request.POST.get('new_password')
         new_password2 = request.POST.get('confirm_password')
 
-        # Validate that new passwords match
+        # Check if new passwords match
         if new_password1 != new_password2:
             messages.error(request, 'New passwords do not match.')
             return redirect('change_password')
 
-        # Compare plain text old password with stored plain text password
+        # Check if the old password is correct
         if old_password != parent.auto_generated_password:
             messages.error(request, 'Old password is incorrect.')
             return redirect('change_password')
 
-        # Set new password (as plain text)
+        # Update the password in the database
         parent.auto_generated_password = new_password1
         parent.save()
         messages.success(request, 'Your password has been successfully updated.')
-        return redirect('parent_dashboard')
+        return redirect('login')
 
     return render(request, 'change_password.html')
+
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -723,34 +775,41 @@ from .models import Teacher
 def teacher_changepassword(request):
     teacher_id = request.session.get('teacher_id')
     
+    # Check if teacher is logged in
     if not teacher_id:
-        messages.error(request, 'You are not logged in as a parent.')
+        messages.error(request, 'You are not logged in as a teacher.')
         return redirect('login')
 
-    teacher = Teacher.objects.get(id=teacher_id)
-    
+    try:
+        # Fetch the teacher instance
+        teacher = Teacher.objects.get(id=teacher_id)
+    except Teacher.DoesNotExist:
+        messages.error(request, 'Teacher not found.')
+        return redirect('login')
+
     if request.method == 'POST':
         old_password = request.POST.get('old_password')
         new_password1 = request.POST.get('new_password')
         new_password2 = request.POST.get('confirm_password')
 
-        # Validate that new passwords match
+        # Check if new passwords match
         if new_password1 != new_password2:
             messages.error(request, 'New passwords do not match.')
-            return redirect('change_password')
+            return redirect('teacher_changepassword')
 
-        # Compare plain text old password with stored plain text password
+        # Check if the old password is correct
         if old_password != teacher.auto_generated_password:
             messages.error(request, 'Old password is incorrect.')
-            return redirect('change_password')
+            return redirect('teacher_changepassword')
 
-        # Set new password (as plain text)
+        # Update the password in the database
         teacher.auto_generated_password = new_password1
         teacher.save()
         messages.success(request, 'Your password has been successfully updated.')
-        return redirect('parent_dashboard')
+        return redirect('login')
 
     return render(request, 'teacher_changepassword.html')
+
 
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -772,6 +831,7 @@ def teacher_updateprofile(request):
         teacher.last_name = request.POST.get('last_name')
         teacher.gender = request.POST.get('gender')
         teacher.age = request.POST.get('age')
+        teacher.auto_generated_username = request.POST.get('auto_generated_username')
         teacher.email = request.POST.get('email')
         teacher.contact = request.POST.get('contact')
         teacher.address_line1 = request.POST.get('address_line1')
@@ -795,24 +855,47 @@ def teacher_updateprofile(request):
     return render(request, 'teacher_updateprofile.html', context)
 
 from django.shortcuts import render, redirect, get_object_or_404
+from .models import Parent
+from django.contrib import messages
+def parent_update_profile(request):
+    parent_id = request.session.get('parent_id')
+    
+    if not parent_id:
+        messages.error(request, 'No parent ID found in session.')
+        return redirect('login')
+
+    parent = get_object_or_404(Parent, id=parent_id)
+
+    if request.method == 'POST':
+        # Fetch the form data
+        parent.auto_generated_username = request.POST.get('auto_generated_username')
+        
+
+        # Save the updated teacher details
+        parent.save()
+        messages.success(request, 'Profile updated successfully.')
+        return redirect('parent_dashboard')  
+
+    context = {'parent': parent}
+    return render(request, 'parent_update_profile.html', context)
+
+from django.shortcuts import render, redirect, get_object_or_404
 from .models import Material, Course, Teacher
 
 def upload_material(request):
     if request.method == 'POST':
-        course_id = request.POST.get('course')  # Get course from POST data
-        description = request.POST.get('description')  # Get description from POST data
-        file = request.FILES.get('file')  # Get the uploaded file
+        course_id = request.POST.get('course') 
+        description = request.POST.get('description')  
+        file = request.FILES.get('file') 
 
-        # Ensure a course and file are provided
+       
         if course_id and file:
             course = Course.objects.get(id=course_id)
             
-            # Retrieve the teacher from the session
             teacher_id = request.session.get('teacher_id')
             if teacher_id:
-                teacher = get_object_or_404(Teacher, id=teacher_id)  # Fetch teacher using session ID
+                teacher = get_object_or_404(Teacher, id=teacher_id)  
 
-                # Create a new Material instance
                 Material.objects.create(
                     teacher=teacher,  # Use the logged-in teacher from session
                     course=course,
@@ -827,12 +910,44 @@ def upload_material(request):
     return render(request, 'upload_material.html', {'courses': courses})
 
 
-
-
-from django.shortcuts import render
-from .models import Material
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import Material, CustomUser
 
 def view_materials(request):
-    user_course = request.user.course  # Assuming the user model has a course field
-    materials = Material.objects.filter(course=user_course)
+    # Check if a CustomUser (student) is logged in by checking session
+    custom_user_id = request.session.get('custom_user_id')
+    
+    if not custom_user_id:
+        messages.error(request, 'You must be logged in as a student to view materials.')
+        return redirect('login')  # Redirect to login page if no session
+
+    # Fetch the CustomUser (student) object using the session ID
+    custom_user = get_object_or_404(CustomUser, id=custom_user_id)
+
+    # Ensure the student is registered for a course
+    course = custom_user.course
+    if not course:
+        messages.error(request, 'You are not registered for any course.')
+        return redirect('student_dashboard')  # Redirect if no course is associated
+
+    # Get materials related to the student's course
+    materials = Material.objects.filter(course=course)
+
     return render(request, 'view_materials.html', {'materials': materials})
+
+
+# views.py
+from django.shortcuts import render, get_object_or_404
+from .models import Material, Parent, CustomUser
+
+def view_study_materials(request):
+
+    parent = get_object_or_404(Parent, auto_generated_username=request.user.username)
+    
+    student = get_object_or_404(CustomUser, username=parent.student_username)
+
+    materials = Material.objects.filter(course=student.course)
+    
+    return render(request, 'view_study_materials.html', {'materials': materials, 'student': student})
+

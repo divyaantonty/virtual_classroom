@@ -82,33 +82,28 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Internationalization
+
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-# Ensure static files are correctly served from the 'static' directory of each app
-# You can remove STATICFILES_DIRS if your static files are placed in 'static' directories inside each app.
+
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'myApp', 'static')]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 AUTH_USER_MODEL = 'myApp.CustomUser' 
-LOGIN_URL = '/login/'  # Redirect to login page if not authenticated
+LOGIN_URL = '/login/' 
 
-# settings.py
-
-# settings.py
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'  # Or your provider's SMTP server
+EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'divyaantony2025@mca.ajce.in'
-EMAIL_HOST_PASSWORD = '####'  # Your email account's password
+EMAIL_HOST_PASSWORD = 'Ajce2025' 
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

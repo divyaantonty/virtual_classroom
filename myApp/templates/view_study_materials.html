@@ -1,0 +1,23 @@
+<!-- view_study_materials.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Materials</title>
+</head>
+<body>
+    <h2>Study Materials for {{ student.course.name }}</h2>
+    <ul>
+        {% for material in materials %}
+            <li>
+                <strong>{{ material.description }}</strong> - Uploaded on: {{ material.uploaded_at|date:"F j, Y" }}
+                <br>
+                <a href="{{ material.file.url }}">Download</a>
+            </li>
+        {% empty %}
+            <li>No materials available for this course.</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

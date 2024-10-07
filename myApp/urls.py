@@ -31,8 +31,6 @@ urlpatterns = [
     path('change_password/', views.change_password, name='change_password'),
     path('teacher_changepassword/', views.teacher_changepassword, name='teacher_changepassword'),
     path('teacher_updateprofile/', views.teacher_updateprofile, name='teacher_updateprofile'),
-
-
     
     path('register/', views.register, name='register'),
     path('teachers/', views.teachers_view, name='teachers'),
@@ -44,15 +42,20 @@ urlpatterns = [
     path('approve-teacher/<int:teacher_id>/', views.approve_teacher, name='approve_teacher'),
 
     path('student_dashboard/', views.student_dashboard, name='student_dashboard'),
-    path('scheduled-classes/', views.view_scheduled_classes, name='view_scheduled_classes'),
+    path('view-scheduled-classes/', views.view_scheduled_classes, name='view_scheduled_classes'),
+    path('view-materials/', views.view_materials, name='view_materials'),
     
     path('teacher_dashboard/', views.teacher_dashboard, name='teacher_dashboard'),
     path('schedule-class/', views.schedule_class, name='schedule_class'),
+    path('view_teacher_schedule_class/', views.view_teacher_schedule_class, name='view_teacher_schedule_class'),
     path('view_profile/', views.view_profile, name='view_profile'),
     path('upload_material/', views.upload_material, name='upload_material'),
 
     path('parent_dashboard/', views.parent_dashboard, name='parent_dashboard'),
     path('view-class-schedule/', views.view_class_schedule, name='view_class_schedule'),
+    path('parent_update_profile/', views.parent_update_profile, name='parent_update_profile'),
+    path('view_study_materials/', views.view_study_materials, name='view_study_materials'),
+
 
     path('admin_dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('manage-students/', views.manage_students, name='manage_students'),
@@ -71,4 +74,6 @@ urlpatterns = [
     path('reset/done/',views.PasswordResetCompleteView.as_view(template_name='password_reset_complete.html'), name='password_reset_complete'),
 
 
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

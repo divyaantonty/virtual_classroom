@@ -48,6 +48,10 @@
                 <input type="number" class="form-control" id="age" name="age" value="{{ teacher.age }}" required>
             </div>
             <div class="form-group">
+                <label for="auto_generated_username">Username</label>
+                <input type="text" class="form-control" id="auto_generated_username" name="auto_generated_username" value="{{ teacher.auto_generated_username }}" required>
+            </div>
+            <div class="form-group">
                 <label for="email">Email</label>
                 <input type="email" class="form-control" id="email" name="email" value="{{ teacher.email }}" required>
             </div>
@@ -169,14 +173,24 @@
                     valid = false;
                 }
 
-                // Address Validation
-                const addressPattern = /^[a-zA-Z0-9\s,'-]{3,}$/;
-                valid = valid && validateText("address_line1", addressPattern, "Address must be at least 3 characters long.");
-                valid = valid && validateText("city", /^[A-Za-z\s]{3,}$/, "City must be at least 3 characters long.");
-                valid = valid && validateText("state", /^[A-Za-z\s]{3,}$/, "State must be at least 3 characters long.");
-                valid = valid && validateText("zip_code", /^\d{6}$/, "Zip Code must be exactly 6 digits.");
+                // Address, City, State, Qualification, Teaching Area, and Referral Validation
+                const addressPattern = /^[a-zA-Z\s,'-]{3,}$/; // Minimum 3 characters, allows letters, spaces, commas, and special characters
+                valid = valid && validateText("address_line1", addressPattern, "Address Line 1 must be at least 3 characters long and cannot contain numbers.");
+                valid = valid && validateText("address_line2", addressPattern, "Address Line 2 must be at least 3 characters long and cannot contain numbers.");
+                valid = valid && validateText("city", addressPattern, "City must be at least 3 characters long and cannot contain numbers.");
+                valid = valid && validateText("state", addressPattern, "State must be at least 3 characters long and cannot contain numbers.");
+                valid = valid && validateText("qualification", addressPattern, "Qualification must be at least 3 characters long and cannot contain numbers.");
+                valid = valid && validateText("teaching_area", addressPattern, "Teaching Area must be at least 3 characters long and cannot contain numbers.");
+                valid = valid && validateText("referral", addressPattern, "Referral must be at least 3 characters long and cannot contain numbers.");
 
-                // Prevent form submission if not valid
+                // Zip Code Validation (5-digit)
+                const zipCodePattern = /^\d{6}$/;
+                valid = valid && validateText("zip_code", zipCodePattern, "Zip Code must be exactly 5 digits.");
+
+                // Experience Validation (letters and up to 2 digits)
+                const experiencePattern = /^[a-zA-Z ]*(\d{1,2})?$/; // Allows letters and a number up to 2 digits
+                valid = valid && validateText("experience", experiencePattern, "Experience can contain letters and a number up to 2 digits.");
+
                 if (!valid) {
                     event.preventDefault();
                 }

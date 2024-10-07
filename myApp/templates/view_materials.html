@@ -1,0 +1,126 @@
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Materials</title>
+    <script type="text/javascript">
+        function preventBack() {
+            window.history.forward(); 
+        }
+          
+        setTimeout("preventBack()", 0);
+          
+        window.onunload = function () { null };
+    </script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: #007bff;
+            margin-bottom: 20px;
+        }
+
+        .materials-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .materials-table th,
+        .materials-table td {
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            text-align: left;
+        }
+
+        .materials-table th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .materials-table td {
+            background-color: #f8f9fa;
+        }
+
+        .btn-download {
+            padding: 8px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+        .btn-download:hover {
+            background-color: #218838;
+        }
+
+        .back-to-dashboard {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+
+        .back-to-dashboard a {
+            text-decoration: none;
+            color: white;
+            background-color: #6c757d;
+            padding: 10px 20px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .back-to-dashboard a:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Available Study Materials</h2>
+        
+        <div class="back-to-dashboard">
+            <a href="{% url 'student_dashboard' %}">Back to Dashboard</a>
+        </div>
+
+        {% if materials %}
+        <table class="materials-table">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Uploaded At</th>
+                    <th>Download</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for material in materials %}
+                <tr>
+                    <td>{{ material.description }}</td>
+                    <td>{{ material.uploaded_at|date:"F d, Y H:i" }}</td>
+                    <td><a href="{{ material.file.url }}" class="btn-download" download>Download PDF</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p style="text-align: center;">No materials available for your selected course.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
+{% endblock %}

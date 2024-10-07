@@ -117,12 +117,12 @@ class Course(models.Model):
 
 
 class ClassSchedule(models.Model):
-    class_name = models.CharField(max_length=100)  # Optionally, you can give a custom name for the class.
-    course_name = models.ForeignKey(Course, on_delete=models.CASCADE)  # Link to the selected course
+    class_name = models.CharField(max_length=100)  
+    course_name = models.ForeignKey(Course, on_delete=models.CASCADE)  
     date = models.DateField()
     start_time = models.TimeField()
     end_time = models.TimeField()
-    meeting_link = models.URLField()  # URL for the meeting (e.g., Zoom link)
+    meeting_link = models.URLField()
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
 
     def __str__(self):
