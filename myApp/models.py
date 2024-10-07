@@ -126,7 +126,7 @@ class ClassSchedule(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f"{self.class_name} ({self.course}) by {self.teacher.username} on {self.date}"
+        return f"{self.class_name} ({self.course_name}) by {self.teacher} on {self.date}"
     
 
 class Material(models.Model):

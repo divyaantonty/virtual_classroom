@@ -621,22 +621,48 @@ def schedule_class(request):
 
     
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib import messages
 from django.utils import timezone
-from .models import ClassSchedule
+from django.db.models import Q
+from .models import ClassSchedule, Teacher  # Make sure to import the Teacher model
 
 def view_teacher_schedule_class(request):
+    # Retrieve the teacher's ID from the session
+    teacher_id = request.session.get('teacher_id')
+
+    # Check if the teacher ID exists in the session
+    if not teacher_id:
+        return redirect('login')  # Redirect to login if the teacher ID is not set
+
+    try:
+        # Retrieve the teacher object using the ID from the session
+        teacher = Teacher.objects.get(id=teacher_id)
+    except Teacher.DoesNotExist:
+        return redirect('login')  # Redirect to login if the teacher does not exist
+
     # Get the current date and time
     current_time = timezone.now()
 
-    # Filter classes where the date is today or later, and the end time is after the current time
-    future_classes = ClassSchedule.objects.filter(date__gte=current_time.date(), end_time__gte=current_time.time())
+    # Filter classes that are ongoing or scheduled for the future for the logged-in teacher
+    future_classes = ClassSchedule.objects.filter(
+        Q(date__gt=current_time.date()) |  # Future dates
+        (Q(date=current_time.date()) & Q(end_time__gt=current_time.time()))  # Today with end time in the future
+    ).filter(teacher_id=teacher_id)  # Filter by teacher ID
+
+    # Log filtered future classes for debugging
+    print(f"Future Classes for teacher ID {teacher_id}: {future_classes}")
+
+    # Store some custom session data if needed (optional)
+    request.session['last_viewed'] = str(current_time)
 
     context = {
         'future_classes': future_classes,
+        'last_viewed': request.session.get('last_viewed')  # Accessing session data (optional)
     }
 
     return render(request, 'view_teacher_schedule_class.html', context)
+
 
 
 

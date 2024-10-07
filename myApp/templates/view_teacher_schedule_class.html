@@ -6,32 +6,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Scheduled Classes</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <style>
+        /* CSS Styles */
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
             background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
         }
 
         h1 {
             text-align: center;
-            margin-bottom: 20px;
             color: #333;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
-            background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
         }
 
-        th, td {
-            padding: 15px;
+        th,
+        td {
+            border: 1px solid #dddddd;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            padding: 12px;
         }
 
         th {
@@ -39,17 +38,20 @@
             color: white;
         }
 
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
         tr:hover {
             background-color: #f1f1f1;
         }
 
-        td a {
+        a {
             color: #4CAF50;
             text-decoration: none;
-            font-weight: bold;
         }
 
-        td a:hover {
+        a:hover {
             text-decoration: underline;
         }
 
@@ -57,35 +59,21 @@
             background-color: #4CAF50;
             color: white;
             border: none;
-            padding: 10px 15px;
+            padding: 8px 12px;
             cursor: pointer;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
+            border-radius: 4px;
         }
 
         button:hover {
             background-color: #45a049;
         }
 
-        .no-classes {
+        .back-link {
+            display: block;
+            margin: 20px auto;
             text-align: center;
-            font-size: 1.1em;
-            color: #888;
-        }
-
-        a {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
+            color: #4CAF50;
             text-decoration: none;
-            border-radius: 5px;
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        a:hover {
-            background-color: #45a049;
         }
     </style>
 </head>
@@ -97,7 +85,6 @@
         <thead>
             <tr>
                 <th>Class Name</th>
-                <th>Course</th>
                 <th>Date</th>
                 <th>Start Time</th>
                 <th>End Time</th>
@@ -110,7 +97,6 @@
                 {% for scheduled_class in future_classes %}
                     <tr>
                         <td>{{ scheduled_class.class_name }}</td>
-                        <td>{{ scheduled_class.course.course_name }}</td>
                         <td>{{ scheduled_class.date }}</td>
                         <td>{{ scheduled_class.start_time }}</td>
                         <td>{{ scheduled_class.end_time }}</td>
@@ -120,15 +106,13 @@
                 {% endfor %}
             {% else %}
                 <tr>
-                    <td colspan="7" class="no-classes">No future classes scheduled.</td>
+                    <td colspan="7">No future classes scheduled.</td>
                 </tr>
             {% endif %}
         </tbody>
     </table>
 
-    <div style="text-align: center;">
-        <a href="{% url 'teacher_dashboard' %}">Back to Teacher Dashboard</a>
-    </div>
+    <a class="back-link" href="{% url 'teacher_dashboard' %}">Back to Teacher Dashboard</a>
 </body>
 
 </html>
