@@ -648,8 +648,8 @@ def view_teacher_schedule_class(request):
     future_classes = ClassSchedule.objects.filter(
         Q(date__gt=current_time.date()) |  # Future dates
         (Q(date=current_time.date()) & Q(end_time__gt=current_time.time()))  # Today with end time in the future
-    ).filter(teacher_id=teacher_id)  # Filter by teacher ID
-
+    ).filter(teacher_id=teacher_id)  
+    courses = Course.objects.all()
     # Log filtered future classes for debugging
     print(f"Future Classes for teacher ID {teacher_id}: {future_classes}")
 
@@ -658,12 +658,42 @@ def view_teacher_schedule_class(request):
 
     context = {
         'future_classes': future_classes,
-        'last_viewed': request.session.get('last_viewed')  # Accessing session data (optional)
+        'last_viewed': request.session.get('last_viewed'),  # Accessing session data (optional)
+        'courses': courses
     }
 
     return render(request, 'view_teacher_schedule_class.html', context)
 
 
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import ClassSchedule
+
+def edit_class(request):
+    if request.method == 'POST':
+        class_id = request.POST.get('class_id')
+        course_id = request.POST.get('course_name')
+        class_name = request.POST.get('class_name')
+        date = request.POST.get('date')
+        start_time = request.POST.get('start_time')
+        end_time = request.POST.get('end_time')
+        meeting_link = request.POST.get('meeting_link')
+
+        try:
+            scheduled_class = ClassSchedule.objects.get(id=class_id)
+            scheduled_class.course_id = course_id
+            scheduled_class.class_name = class_name
+            scheduled_class.date = date
+            scheduled_class.start_time = start_time
+            scheduled_class.end_time = end_time
+            scheduled_class.meeting_link = meeting_link
+            scheduled_class.save()
+
+            messages.success(request, "Class details updated successfully.")
+        except ClassSchedule.DoesNotExist:
+            messages.error(request, "Class not found.")
+
+        return redirect('view_teacher_schedule_class')  # Redirect to the view scheduled classes page
 
 
 from django.shortcuts import render, redirect

@@ -75,6 +75,43 @@
             color: #4CAF50;
             text-decoration: none;
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0, 0, 0); /* Fallback color */
+            background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
+            padding-top: 60px; /* Location of the box */
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto; /* 15% from the top and centered */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; /* Could be more or less, depending on screen size */
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 
@@ -85,11 +122,13 @@
         <thead>
             <tr>
                 <th>Class Name</th>
+                <th>Course Name</th>
                 <th>Date</th>
                 <th>Start Time</th>
                 <th>End Time</th>
                 <th>Meeting Link</th>
                 <th>Actions</th>
+                <th>Delete Class</th>
             </tr>
         </thead>
         <tbody>
@@ -97,11 +136,13 @@
                 {% for scheduled_class in future_classes %}
                     <tr>
                         <td>{{ scheduled_class.class_name }}</td>
+                        <td>{{ scheduled_class.course_name }}</td>
                         <td>{{ scheduled_class.date }}</td>
                         <td>{{ scheduled_class.start_time }}</td>
                         <td>{{ scheduled_class.end_time }}</td>
                         <td><a href="{{ scheduled_class.meeting_link }}" target="_blank">Join Meeting</a></td>
-                        <td><button>Edit</button></td>
+                        <td><button onclick="openEditModal('{{ scheduled_class.id }}', '{{ scheduled_class.class_name }}', '{{ scheduled_class.course_name }}', '{{ scheduled_class.date }}', '{{ scheduled_class.start_time }}', '{{ scheduled_class.end_time }}', '{{ scheduled_class.meeting_link }}')">Edit</button></td>
+                        <td><button>Delete</button></td>
                     </tr>
                 {% endfor %}
             {% else %}
@@ -113,6 +154,61 @@
     </table>
 
     <a class="back-link" href="{% url 'teacher_dashboard' %}">Back to Teacher Dashboard</a>
+
+    <!-- The Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+            <h2>Edit Class</h2>
+            <form id="editClassForm" method="POST" action="{% url 'edit_class' %}">
+                {% csrf_token %}
+                <input type="hidden" id="classId" name="class_id">
+                <label for="className">Class Name:</label>
+                <input type="text" id="className" name="class_name" required><br><br>
+                <label for="courseName">Course Name:</label>
+                <select id="courseName" name="course_name" required>
+                    <option value="">Select a Course</option>
+                    {% for course in courses %}
+                    <option value="{{ course.id }}">{{ course.course_name }}</option> <!-- Adjust the field as per your Course model -->
+                    {% endfor %}
+                </select><br><br>
+                <label for="classDate">Date:</label>
+                <input type="date" id="classDate" name="date" required><br><br>
+                <label for="startTime">Start Time:</label>
+                <input type="time" id="startTime" name="start_time" required><br><br>
+                <label for="endTime">End Time:</label>
+                <input type="time" id="endTime" name="end_time" required><br><br>
+                <label for="meetingLink">Meeting Link:</label>
+                <input type="url" id="meetingLink" name="meeting_link" required><br><br>
+                <button type="submit">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openEditModal(id, className, date, startTime, endTime, meetingLink) {
+            document.getElementById('classId').value = id;
+            document.getElementById('className').value = className;
+            document.getElementById('courseName').value = courseName; 
+            document.getElementById('classDate').value = date;
+            document.getElementById('startTime').value = startTime;
+            document.getElementById('endTime').value = endTime;
+            document.getElementById('meetingLink').value = meetingLink;
+            document.getElementById('editModal').style.display = "block";
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = "none";
+        }
+
+        // Close the modal if the user clicks anywhere outside of the modal
+        window.onclick = function(event) {
+            const modal = document.getElementById('editModal');
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    </script>
 </body>
 
 </html>
