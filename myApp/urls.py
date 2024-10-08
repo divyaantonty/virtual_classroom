@@ -65,6 +65,7 @@ urlpatterns = [
     path('manage-teachers/', views.manage_teachers, name='manage_teachers'),
     path('teachers/', views.teacher_list, name='teacher_list'),
     path('approve_teachers/', views.approve_teacher, name='approve_teachers'),
+    path('interview-teacher/', views.interview_teacher, name='interview_teacher'),
     path('reject_teacher/<int:teacher_id>/', views.reject_teacher, name='reject_teacher'),
     path('delete_teacher/<int:teacher_id>/', views.delete_teacher, name='delete_teacher'),
 

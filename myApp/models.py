@@ -138,3 +138,21 @@ class Material(models.Model):
 
     def __str__(self):
         return self.description
+    
+
+from django.db import models
+from django.utils import timezone
+from .models import Teacher
+
+class TeacherInterview(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='interviews')
+    interview_date = models.DateField()
+    starting_time = models.TimeField()
+    ending_time = models.TimeField()
+    meeting_link = models.URLField(max_length=200)
+    interviewer_name = models.CharField(max_length=150)
+    notes = models.TextField(blank=True, null=True)
+
+
+    def __str__(self):
+        return f"Interview for {self.teacher.first_name} {self.teacher.last_name} on {self.interview_date}"

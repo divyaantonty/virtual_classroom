@@ -542,6 +542,85 @@ def teacher_list(request):
 
 
 from django.shortcuts import render, redirect
+from django.core.mail import send_mail
+from django.contrib import messages
+from .models import Teacher, TeacherInterview  # Import the Interview model
+
+def interview_teacher(request):
+    # Fetch only teachers with status "pending"
+    teachers = Teacher.objects.filter(status='pending')
+
+    if request.method == 'POST':
+        # Get form data
+        teacher_id = request.POST.get('teacher_id')
+        interview_date = request.POST.get('interview_date')
+        starting_time = request.POST.get('starting_time')
+        ending_time = request.POST.get('ending_time')
+        meeting_link = request.POST.get('meeting_link')
+        interviewer_name = request.POST.get('interviewer_name')
+        notes = request.POST.get('notes')
+
+        # Fetch the teacher based on teacher_id
+        try:
+            teacher = Teacher.objects.get(id=teacher_id)
+            first_name = teacher.first_name
+            last_name = teacher.last_name
+            teacher_email = teacher.email  # Retrieve teacher's email
+        except Teacher.DoesNotExist:
+            messages.error(request, 'Teacher not found!')
+            return redirect('interview_teacher')
+
+        # Store interview details in the database
+        interview = TeacherInterview.objects.create(
+            teacher=teacher,
+            interview_date=interview_date,
+            starting_time=starting_time,
+            ending_time=ending_time,
+            meeting_link=meeting_link,
+            interviewer_name=interviewer_name,
+            notes=notes
+        )
+
+        # Email content
+        subject = "Interview Scheduled for Teacher"
+        message = f"""
+        Dear {first_name} {last_name},
+
+        You are scheduled for an interview.
+
+        Interview Details:
+        Date: {interview_date}
+        Starting Time: {starting_time}
+        Ending Time: {ending_time}
+        Meeting Link: {meeting_link}
+
+        Interviewer: {interviewer_name}
+        Notes: {notes}
+
+        Please make sure to attend the meeting on time.
+
+        Best regards,
+        {interviewer_name}
+        """
+
+        # Sending the email
+        send_mail(
+            subject,
+            message,
+            'divyaantony2025@mca.ajce.in',  # From email (replace with your configuration)
+            [teacher_email],  # Recipient email
+            fail_silently=False,
+        )
+
+        messages.success(request, f'Interview scheduled successfully, and email sent to {teacher_email}!')
+        return redirect('interview_teacher')
+
+    return render(request, 'interview_teacher.html', {'teachers': teachers})
+
+
+
+
+from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import Course
 from .forms import CourseForm

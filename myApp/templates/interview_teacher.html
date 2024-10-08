@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interview Teacher</title>
+
+    {% load static %}
+    <link href="https://fonts.googleapis.com/css?family=Muli:300,400,700,900" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'fonts/icomoon/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-control {
+            height: calc(2.25rem + 2px);
+            border-radius: 5px;
+        }
+
+        .submit-btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .submit-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Interview Teacher</h2>
+            <p>Fill in the details below to conduct an interview.</p>
+        </div>
+        <form method="POST" action="{% url 'interview_teacher' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="teacher_id">Select Teacher</label>
+                <select class="form-control" id="teacher_id" name="teacher_id" required onchange="updateEmail()">
+                    <option value="">-- Select Teacher --</option>
+                    {% for teacher in teachers %}
+                        <option value="{{ teacher.id }}" data-email="{{ teacher.email }}">{{ teacher.first_name }} {{ teacher.last_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="teacher_email">Email</label>
+                <input type="email" class="form-control" id="teacher_email" name="teacher_email" readonly>
+            </div>
+            <div class="form-group">
+                <label for="interview_date">Interview Date</label>
+                <input type="date" class="form-control" id="interview_date" name="interview_date" required>
+            </div>
+            <div class="form-group">
+                <label for="starting_time">Starting Time</label>
+                <input type="time" class="form-control" id="starting_time" name="starting_time" required>
+            </div>
+            <div class="form-group">
+                <label for="ending_time">Ending Time</label>
+                <input type="time" class="form-control" id="ending_time" name="ending_time" required>
+            </div>
+            <div class="form-group">
+                <label for="meeting_link">Meeting Link</label>
+                <input type="url" class="form-control" id="meeting_link" name="meeting_link" required>
+            </div>
+            <div class="form-group">
+                <label for="interviewer_name">Interviewer’s Name</label>
+                <input type="text" class="form-control" id="interviewer_name" name="interviewer_name" required>
+            </div>
+            <div class="form-group">
+                <label for="notes">Notes</label>
+                <textarea class="form-control" id="notes" name="notes" rows="4"></textarea>
+            </div>
+            <button type="submit" class="submit-btn">Schedule Interview</button>
+        </form>
+        <div style="margin-top: 20px;">
+            <a href="{% url 'manage_teachers' %}" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+        
+        <script>
+            function updateEmail() {
+                var selectElement = document.getElementById('teacher_id');
+                var selectedOption = selectElement.options[selectElement.selectedIndex];
+                var email = selectedOption.getAttribute('data-email');
+                document.getElementById('teacher_email').value = email;
+            }
+        </script>
+        
+        
+    
+    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+</body>
+
+</html>
