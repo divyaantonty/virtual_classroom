@@ -221,7 +221,7 @@
         </header>
 
         <h1 style="text-align:center; margin: 20px 0;">Schedule a Class</h1>
-
+    
         <div class="container clearfix">
             <!-- Left side navigation -->
             <div class="sidebar">
@@ -292,7 +292,12 @@
                     </tr>
                 </table>
 
+                <div style="text-align: center; margin: 20px 0;">
                 <button type="submit">Schedule Class</button>
+                </div>
+                
+                    <a href="{% url 'teacher_dashboard' %}" class="btn btn-primary" style="text-decoration: none; padding: 10px 20px; background-color: #007bff; color: white; border-radius: 5px;">Back to Teacher Dashboard</a>
+                </div>
             </form>
         </div>
     </div>

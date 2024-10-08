@@ -62,12 +62,16 @@ urlpatterns = [
     path('manage-students/', views.manage_students, name='manage_students'),
     path('delete_student/<int:student_id>/', views.delete_student, name='delete_student'),
 
+
     path('manage-teachers/', views.manage_teachers, name='manage_teachers'),
     path('teachers/', views.teacher_list, name='teacher_list'),
     path('approve_teachers/', views.approve_teacher, name='approve_teachers'),
     path('interview-teacher/', views.interview_teacher, name='interview_teacher'),
     path('reject_teacher/<int:teacher_id>/', views.reject_teacher, name='reject_teacher'),
     path('delete_teacher/<int:teacher_id>/', views.delete_teacher, name='delete_teacher'),
+
+    path('feedback/teacher/', views.feedback_to_teacher, name='feedback_teacher'),
+    path('feedback/student/', views.feedback_to_student, name='feedback_student'),
 
 
     path('password_reset/', views.PasswordResetView.as_view(template_name='password_reset.html'), name='password_reset'),

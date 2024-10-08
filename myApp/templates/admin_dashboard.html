@@ -116,6 +116,61 @@
         .profile-dropdown:hover .profile-dropdown-content {
             display: block;
         }
+        
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .dropdown-btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 20px;
+            width: 100%;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dropdown-btn:hover {
+            background-color: #0056b3;
+        }
+        
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 100%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+            border-radius: 10px;
+        }
+        
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            text-align: left;
+            border-radius: 10px;
+        }
+        
+        .dropdown-content a:hover {
+            background-color: #ddd;
+        }
+        
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        
+        
+
+        
     </style>
 </head>
 
@@ -153,6 +208,13 @@
                     <a href="{% url 'manage_teachers' %}" class="dashboard-box">Manage Teachers</a>
                     <a href="{% url 'add_courses' %}" class="dashboard-box">Add Courses</a>
                     <a href="{% url 'view_messages' %}" class="dashboard-box">View Messages</a>
+                    <div class="dropdown dashboard-box">
+                        <button class="dropdown-btn">Send Feedback</button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'feedback_teacher' %}">Feedback to Teacher</a>
+                            <a href="{% url 'feedback_student' %}">Feedback to Student</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

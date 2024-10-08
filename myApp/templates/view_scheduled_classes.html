@@ -123,7 +123,13 @@
             <p>"Education is the most powerful weapon which you can use to change the world." - Nelson Mandela</p>
         </div>
     </header>
-
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li class="alert alert-danger">{{ message }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
     <!-- Main Content -->
     <main>
         {% if scheduled_classes %}

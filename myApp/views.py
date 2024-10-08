@@ -617,7 +617,15 @@ def interview_teacher(request):
 
     return render(request, 'interview_teacher.html', {'teachers': teachers})
 
+from django.shortcuts import render
 
+def feedback_to_student(request):
+    return render(request, 'feedback_student.html')
+
+from django.shortcuts import render
+
+def feedback_to_teacher(request):
+    return render(request, 'feedback_teacher.html')
 
 
 from django.shortcuts import render, redirect
@@ -645,7 +653,7 @@ def course_list(request):
 
 from django.shortcuts import render, redirect
 from .models import Course, ClassSchedule, Teacher
-from datetime import date, datetime, timezone
+from datetime import date, datetime, time
 
 def schedule_class(request):
     teacher_id = request.session.get('teacher_id')  
@@ -660,24 +668,59 @@ def schedule_class(request):
     courses = Course.objects.all()  
     today = date.today() 
     error_message = None  
+
     if request.method == 'POST':
         class_name = request.POST.get('class_name')
         course_id = request.POST.get('course')
-        selected_date = request.POST.get('date')
-        start_time = request.POST.get('start_time')
-        end_time = request.POST.get('end_time')
+        selected_date_str = request.POST.get('date')
+        start_time_str = request.POST.get('start_time')
+        end_time_str = request.POST.get('end_time')
         meeting_link = request.POST.get('meeting_link')
 
-        
-        if selected_date < today.isoformat():
+        # Convert strings to appropriate date and time objects
+        print("POST data:", request.POST)
+        try:
+            selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+            start_time = datetime.strptime(start_time_str, '%H:%M').time()
+            end_time = datetime.strptime(end_time_str, '%H:%M').time()
+        except ValueError:
+            error_message = "Invalid date or time format. Please use the correct format."
             return render(request, 'schedule_class.html', {
                 'courses': courses,
                 'today': today,
-                'error_message': "The selected date cannot be in the past."
+                'error_message': error_message
             })
 
-        course = Course.objects.get(id=course_id)  
-        class_schedule = ClassSchedule.objects.create(
+        # Validate that the selected date is not in the past
+        if selected_date < today:
+            error_message = "The selected date cannot be in the past."
+            return render(request, 'schedule_class.html', {
+                'courses': courses,
+                'today': today,
+                'error_message': error_message
+            })
+
+        # Check that the end time is after the start time
+        if end_time <= start_time:
+            error_message = "End time must be after the start time."
+            return render(request, 'schedule_class.html', {
+                'courses': courses,
+                'today': today,
+                'error_message': error_message
+            })
+
+        # Get the selected course object
+        try:
+            course = Course.objects.get(id=course_id)
+        except Course.DoesNotExist:
+            error_message = "Selected course does not exist."
+            return render(request, 'schedule_class.html', {
+                'courses': courses,
+                'today': today,
+                'error_message': error_message
+            })
+        # Create the class schedule record in the database
+        schedule = ClassSchedule(
             class_name=class_name,
             course_name=course,
             date=selected_date,
@@ -686,10 +729,12 @@ def schedule_class(request):
             meeting_link=meeting_link,
             teacher=teacher  
         )
+        schedule.save()
+        if schedule:
+            return redirect('schedule_class')  
 
-        return redirect('schedule_class')  
     current_datetime = datetime.now()
-    scheduled_classes = ClassSchedule.objects.filter(teacher=teacher, end_time__gt=current_datetime)
+    scheduled_classes = ClassSchedule.objects.filter(teacher=teacher, date__gte=today, end_time__gt=current_datetime.time())
 
     return render(request, 'schedule_class.html', {
         'courses': courses,
@@ -701,47 +746,52 @@ def schedule_class(request):
     
 
 from django.shortcuts import render, redirect
-from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Q
-from .models import ClassSchedule, Teacher  # Make sure to import the Teacher model
+from .models import ClassSchedule, Teacher, Course
 
 def view_teacher_schedule_class(request):
-    # Retrieve the teacher's ID from the session
     teacher_id = request.session.get('teacher_id')
 
-    # Check if the teacher ID exists in the session
     if not teacher_id:
-        return redirect('login')  # Redirect to login if the teacher ID is not set
+        return redirect('login')
 
     try:
-        # Retrieve the teacher object using the ID from the session
         teacher = Teacher.objects.get(id=teacher_id)
     except Teacher.DoesNotExist:
-        return redirect('login')  # Redirect to login if the teacher does not exist
+        return redirect('login')
 
-    # Get the current date and time
     current_time = timezone.now()
+    today = current_time.date()
 
-    # Filter classes that are ongoing or scheduled for the future for the logged-in teacher
+    # Fetch ongoing classes for today
+    ongoing_classes = ClassSchedule.objects.filter(
+        Q(teacher=teacher) &  # Filter by teacher
+        Q(date=today) &  # Classes scheduled for today
+        Q(start_time__lte=current_time.time()) &  # Start time is in the past or now
+        Q(end_time__gt=current_time.time())  # End time is in the future
+    ).order_by('date', 'start_time')
+
+    # Fetch future classes (scheduled for future dates or today's classes that haven't started yet)
     future_classes = ClassSchedule.objects.filter(
-        Q(date__gt=current_time.date()) |  # Future dates
-        (Q(date=current_time.date()) & Q(end_time__gt=current_time.time()))  # Today with end time in the future
-    ).filter(teacher_id=teacher_id)  
-    courses = Course.objects.all()
-    # Log filtered future classes for debugging
-    print(f"Future Classes for teacher ID {teacher_id}: {future_classes}")
+        Q(teacher=teacher) &  # Filter by teacher
+        (Q(date__gt=today) |  # Classes scheduled for future dates
+        (Q(date=today) & Q(start_time__gt=current_time.time())))  # Today's classes that haven't started yet
+    ).order_by('date', 'start_time')
 
-    # Store some custom session data if needed (optional)
-    request.session['last_viewed'] = str(current_time)
+
+
+    # Fetch all courses (optional, based on your needs)
+    courses = Course.objects.all()
 
     context = {
-        'future_classes': future_classes,
-        'last_viewed': request.session.get('last_viewed'),  # Accessing session data (optional)
-        'courses': courses
+        'ongoing_classes': ongoing_classes.distinct(),  # Ongoing classes for today
+        'future_classes': future_classes.distinct(),      # Future classes
+        'courses': courses,
     }
 
     return render(request, 'view_teacher_schedule_class.html', context)
+
 
 
 from django.shortcuts import render, redirect
@@ -774,9 +824,8 @@ def edit_class(request):
 
         return redirect('view_teacher_schedule_class')  # Redirect to the view scheduled classes page
 
-
-from django.shortcuts import render, redirect
 from django.contrib import messages
+from django.shortcuts import redirect, render
 from .models import ClassSchedule, CustomUser
 from django.utils import timezone
 from django.db.models import Q
@@ -797,7 +846,7 @@ def view_scheduled_classes(request):
         return redirect('login')
 
     # Check if the student is registered for a course
-    registered_course = student.course
+    registered_course = student.course  # Assuming 'course' is a ForeignKey or similar relationship
     if not registered_course:
         messages.error(request, "You are not registered for any course.")
         return redirect('student_dashboard')
@@ -805,23 +854,22 @@ def view_scheduled_classes(request):
     # Get the current date and time
     current_datetime = timezone.now()
 
-    # Fetch scheduled classes for the registered course that are ongoing or in the future
-    scheduled_classes = ClassSchedule.objects.filter(
-        course_name=registered_course,
+    # Fetch ongoing and future classes for the registered course
+    ongoing_future_classes = ClassSchedule.objects.filter(
+        course_name=registered_course  # Filter classes based on the student's registered course
     ).filter(
-        # Include classes that are ongoing or scheduled for future dates
-        Q(date=current_datetime.date(), start_time__lte=current_datetime.time(), end_time__gte=current_datetime.time()) |  # Classes that are ongoing
-        Q(date__gt=current_datetime.date())  # Classes scheduled for future dates
-    ).order_by('date', 'start_time')  # Sort classes by date and start time
+        Q(date__gt=current_datetime.date()) |  # Future classes
+        Q(date=current_datetime.date(), start_time__lte=current_datetime.time(), end_time__gt=current_datetime.time())  # Ongoing classes today
+    ).order_by('date', 'start_time')  # Order by date and then start time
+    
+    ongoing_future_classes = ongoing_future_classes.exclude(end_time__lte=current_datetime.time())
 
-    # Check if there are any scheduled classes
-    if not scheduled_classes.exists():
-        messages.info(request, "No upcoming scheduled classes for your registered course.")
-        return render(request, 'view_scheduled_classes.html', {'scheduled_classes': scheduled_classes})
+    # Check if there are any ongoing or future classes
+    if not ongoing_future_classes.exists():
+        messages.info(request, "No ongoing or upcoming classes found.")
 
-    # Pass the scheduled classes to the template
-    return render(request, 'view_scheduled_classes.html', {'scheduled_classes': scheduled_classes})
-
+    # Pass the classes to the template
+    return render(request, 'view_scheduled_classes.html', {'scheduled_classes': ongoing_future_classes})
 
 
 from django.shortcuts import render, redirect
