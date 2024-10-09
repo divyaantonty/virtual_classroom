@@ -44,13 +44,21 @@ urlpatterns = [
     path('student_dashboard/', views.student_dashboard, name='student_dashboard'),
     path('view-scheduled-classes/', views.view_scheduled_classes, name='view_scheduled_classes'),
     path('view-materials/', views.view_materials, name='view_materials'),
+    path('available_quizzes/', views.available_quizzes, name='available_quizzes'),
+    path('view_quiz/<int:quiz_id>/', views.view_quiz, name='view_quiz'),
     
+
+
     path('teacher_dashboard/', views.teacher_dashboard, name='teacher_dashboard'),
     path('schedule-class/', views.schedule_class, name='schedule_class'),
     path('view_teacher_schedule_class/', views.view_teacher_schedule_class, name='view_teacher_schedule_class'),
     path('edit_class/', views.edit_class, name='edit_class'),
     path('view_profile/', views.view_profile, name='view_profile'),
     path('upload_material/', views.upload_material, name='upload_material'),
+    path('create_quiz/', views.create_quiz, name='create_quiz'),
+    path('add_question/<int:quiz_id>/', views.add_question, name='add_question'),
+   
+    
 
     path('parent_dashboard/', views.parent_dashboard, name='parent_dashboard'),
     path('view-class-schedule/', views.view_class_schedule, name='view_class_schedule'),

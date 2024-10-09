@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Available Quizzes</title>
+</head>
+<body>
+    <h1>Available Quizzes</h1>
+    <ul>
+        {% for quiz in quizzes %}
+            <li>
+                <a href="{% url 'take_quiz' quiz.id %}">{{ quiz.title }} - {{ quiz.course.course_name }}</a>
+                (Start: {{ quiz.start_date }} {{ quiz.start_time }} | End: {{ quiz.end_date }} {{ quiz.end_time }})
+                <form action="{% url 'take_quiz' quiz.id %}" method="get" style="display:inline;">
+                    <button type="submit">Attempt Quiz</button>
+                </form>
+            </li>
+        {% empty %}
+            <li>No quizzes available for this course.</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

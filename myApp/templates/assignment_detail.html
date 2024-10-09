@@ -1,0 +1,14 @@
+<h2>{{ assignment.title }}</h2>
+<p>{{ assignment.description }}</p>
+<p>Start: {{ assignment.start_date }} {{ assignment.start_time }}</p>
+<p>End: {{ assignment.end_date }} {{ assignment.end_time }}</p>
+
+<a href="{{ assignment.file.url }}">Download Assignment File</a>
+
+<h3>Submit Your Answer</h3>
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    <label for="file">Upload Your Answer:</label>
+    <input type="file" name="file" accept=".pdf,.doc,.docx"><br>
+    <button type="submit">Submit Answer</button>
+</form>

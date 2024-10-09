@@ -1,0 +1,10 @@
+<h2>Available Quizzes</h2>
+<ul>
+    {% for quiz in quizzes %}
+    <li>
+        <a href="{% url 'view_quiz' quiz.id %}">{{ quiz.title }}</a> - {{ quiz.start_date }} to {{ quiz.end_date }}
+    </li>
+    {% empty %}
+    <li>No quizzes available at the moment.</li>
+    {% endfor %}
+</ul>

@@ -1,6 +1,7 @@
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-from django.db import models
-from django.utils import timezone
+import datetime
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager # type: ignore
+from django.db import models  # type: ignore
+from django.utils import timezone # type: ignore
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, username, email, password=None):
@@ -54,7 +55,7 @@ class Parent(models.Model):
 
     # Other fields...
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User # type: ignore
 
 class Teacher(models.Model):
     STATUS_CHOICES = [
@@ -124,6 +125,7 @@ class ClassSchedule(models.Model):
     end_time = models.TimeField()
     meeting_link = models.URLField()
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    
 
     def __str__(self):
         return f"{self.class_name} ({self.course_name}) by {self.teacher} on {self.date}"
@@ -140,8 +142,8 @@ class Material(models.Model):
         return self.description
     
 
-from django.db import models
-from django.utils import timezone
+from django.db import models # type: ignore
+from django.utils import timezone # type: ignore
 from .models import Teacher
 
 class TeacherInterview(models.Model):
@@ -156,3 +158,68 @@ class TeacherInterview(models.Model):
 
     def __str__(self):
         return f"Interview for {self.teacher.first_name} {self.teacher.last_name} on {self.interview_date}"
+
+
+
+from .models import Course, Teacher
+
+class Quizs(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+
+    def __str__(self):
+        return f"{self.title} - {self.course.course_name}"
+    
+    def is_active(self):
+        current_date = timezone.now().date()
+        current_time = timezone.now().time()
+
+        # Check if the quiz is active based on the start and end dates and times
+        return (self.start_date <= current_date <= self.end_date) and \
+               (self.start_time <= current_time if current_date == self.start_date else True) and \
+               (current_time <= self.end_time if current_date == self.end_date else True)
+
+
+
+
+
+class Questions(models.Model):
+    quiz = models.ForeignKey('Quizs', on_delete=models.CASCADE)
+    question_text = models.TextField()
+    option1 = models.CharField(max_length=255)
+    option2 = models.CharField(max_length=255)
+    option3 = models.CharField(max_length=255)
+    option4 = models.CharField(max_length=255)
+    correct_option = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"Question for {self.quiz.title}"
+
+
+from django.db import models
+from django.utils import timezone
+
+class Assignment(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    start_date = models.DateField()
+    end_date = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    created_by = models.ForeignKey('Teacher', on_delete=models.CASCADE)
+    file = models.FileField(upload_to='assignments/', null=True, blank=True)
+    course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='assignments')
+
+    def is_active(self):
+        now = timezone.now()
+        start = timezone.make_aware(datetime.combine(self.start_date, self.start_time))
+        end = timezone.make_aware(datetime.combine(self.end_date, self.end_time))
+        return start <= now <= end
+
+    def __str__(self):
+        return self.title

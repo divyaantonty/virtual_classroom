@@ -761,22 +761,22 @@ def view_teacher_schedule_class(request):
     except Teacher.DoesNotExist:
         return redirect('login')
 
-    current_time = timezone.now()
-    today = current_time.date()
+    current_datetime = timezone.localtime()
+    today = current_datetime.date()
 
     # Fetch ongoing classes for today
     ongoing_classes = ClassSchedule.objects.filter(
         Q(teacher=teacher) &  # Filter by teacher
         Q(date=today) &  # Classes scheduled for today
-        Q(start_time__lte=current_time.time()) &  # Start time is in the past or now
-        Q(end_time__gt=current_time.time())  # End time is in the future
+        Q(start_time__lte=current_datetime.time()) &  # Start time is in the past or now
+        Q(end_time__gt=current_datetime.time())  # End time is in the future
     ).order_by('date', 'start_time')
 
     # Fetch future classes (scheduled for future dates or today's classes that haven't started yet)
     future_classes = ClassSchedule.objects.filter(
         Q(teacher=teacher) &  # Filter by teacher
         (Q(date__gt=today) |  # Classes scheduled for future dates
-        (Q(date=today) & Q(start_time__gt=current_time.time())))  # Today's classes that haven't started yet
+        (Q(date=today) & Q(start_time__gt=current_datetime.time())))  # Today's classes that haven't started yet
     ).order_by('date', 'start_time')
 
 
@@ -846,23 +846,24 @@ def view_scheduled_classes(request):
         return redirect('login')
 
     # Check if the student is registered for a course
-    registered_course = student.course  # Assuming 'course' is a ForeignKey or similar relationship
+    registered_course = student.course_id
     if not registered_course:
         messages.error(request, "You are not registered for any course.")
         return redirect('student_dashboard')
 
-    # Get the current date and time
-    current_datetime = timezone.now()
+    # Get the current date and time in IST
+    current_datetime = timezone.localtime()  # This will automatically convert to IST if TIME_ZONE is set to 'Asia/Kolkata'
+
+    # Debug statement to check the current IST date and time
+    print(f"Current date and time (IST): {current_datetime}")
 
     # Fetch ongoing and future classes for the registered course
     ongoing_future_classes = ClassSchedule.objects.filter(
         course_name=registered_course  # Filter classes based on the student's registered course
     ).filter(
-        Q(date__gt=current_datetime.date()) |  # Future classes
-        Q(date=current_datetime.date(), start_time__lte=current_datetime.time(), end_time__gt=current_datetime.time())  # Ongoing classes today
-    ).order_by('date', 'start_time')  # Order by date and then start time
-    
-    ongoing_future_classes = ongoing_future_classes.exclude(end_time__lte=current_datetime.time())
+        Q(date=current_datetime.date(), end_time__gt=current_datetime.time()) |  # Ongoing classes today that haven't ended
+        Q(date__gt=current_datetime.date())  # Future classes (after today)
+    ).order_by('date', 'start_time')  # Order by date and start time
 
     # Check if there are any ongoing or future classes
     if not ongoing_future_classes.exists():
@@ -870,6 +871,7 @@ def view_scheduled_classes(request):
 
     # Pass the classes to the template
     return render(request, 'view_scheduled_classes.html', {'scheduled_classes': ongoing_future_classes})
+
 
 
 from django.shortcuts import render, redirect
@@ -1134,3 +1136,122 @@ def view_study_materials(request):
     
     return render(request, 'view_study_materials.html', {'materials': materials, 'student': student})
 
+from django.shortcuts import render, redirect, get_object_or_404 # type: ignore
+from django.utils import timezone # type: ignore
+from .models import Quizs, Questions, Course, Teacher
+
+
+def create_quiz(request):
+    if request.method == 'POST':
+        course_id = request.POST.get('course')
+        title = request.POST.get('title')
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
+        start_time = request.POST.get('start_time')
+        end_time = request.POST.get('end_time')
+
+        course = get_object_or_404(Course, id=course_id)
+        teacher_id = request.session.get('teacher_id')  # Retrieve the teacher's ID from the session
+
+        if not teacher_id:
+            # Handle the case where the teacher is not logged in
+            return redirect('login')
+
+        quiz = Quizs(course=course, teacher_id=teacher_id, title=title, start_date=start_date,
+                     end_date=end_date, start_time=start_time, end_time=end_time)
+        quiz.save()
+
+        return redirect('add_question', quiz_id=quiz.id)
+    
+    courses = Course.objects.all()
+    return render(request, 'create_quiz.html', {'courses': courses})
+
+def add_question(request, quiz_id):
+    quiz = get_object_or_404(Quizs, id=quiz_id)
+    if request.method == 'POST':
+        question_text = request.POST.get('question_text')
+        option1 = request.POST.get('option1')
+        option2 = request.POST.get('option2')
+        option3 = request.POST.get('option3')
+        option4 = request.POST.get('option4')
+        correct_option = request.POST.get('correct_option')
+
+        question = Questions(quiz=quiz, question_text=question_text, option1=option1, 
+                             option2=option2, option3=option3, option4=option4, 
+                             correct_option=correct_option)
+        question.save()
+        return redirect('add_question', quiz_id=quiz.id)
+    
+    return render(request, 'add_question.html', {'quiz': quiz})
+
+def available_quizzes(request):
+    custome_user_id = request.session.get('custome_user_id')  # Retrieve the student's ID from the session
+
+    if not custome_user_id:
+        print("No user ID found in session")  # Debugging output
+        return redirect('login')  # Ensure the student is logged in
+
+    # Get the current date and time
+    current_date = now().date()
+    current_time = now().time()
+
+    # Filter quizzes that are currently active and within the start and end dates
+    quizzes = Quizs.objects.filter(is_active=True, start_date__lte=current_date, end_date__gte=current_date)
+    
+    return render(request, 'available_quizzes.html', {'quizzes': quizzes})
+
+
+
+def view_quiz(request, quiz_id):
+    quiz = get_object_or_404(Quizs, id=quiz_id)
+    
+    if request.method == 'POST':
+        # Handle quiz submission logic here
+        pass
+
+    questions = quiz.questions_set.all()
+    return render(request, 'view_quiz.html', {'quiz': quiz, 'questions': questions})
+
+
+from django.shortcuts import render, redirect # type: ignore
+from .models import Assignment
+from django.utils import timezone # type: ignore
+
+def create_assignment(request):
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        description = request.POST.get('description')
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
+        start_time = request.POST.get('start_time')
+        end_time = request.POST.get('end_time')
+        file = request.FILES.get('file')  # Handle the uploaded file
+
+        # Create the assignment instance and save it
+        assignment = Assignment(
+            title=title,
+            description=description,
+            start_date=start_date,
+            end_date=end_date,
+            start_time=start_time,
+            end_time=end_time,
+            created_by=request.user.teacher  # Assuming a teacher is logged in
+        )
+
+        # If a file is uploaded, add it to the assignment
+        if file:
+            assignment.file = file
+
+        assignment.save()
+        return redirect('assignment_list')  # Redirect to the assignment list page
+
+    return render(request, 'create_assignment.html')
+
+
+from django.shortcuts import render # type: ignore
+from .models import Assignment
+
+def student_view_assignments(request):
+    assignments = Assignment.objects.filter(end_date__gte=timezone.now().date())
+    active_assignments = [a for a in assignments if a.is_active()]
+    return render(request, 'student_assignments.html', {'assignments': active_assignments})

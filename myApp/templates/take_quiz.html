@@ -1,0 +1,14 @@
+<h2>{{ quiz.name }}</h2>
+<form method="post">
+    {% csrf_token %}
+    {% for question in questions %}
+        <div>
+            <p>{{ question.question_text }}</p>
+            <label><input type="radio" name="option_{{ question.id }}" value="{{ question.option1 }}"> {{ question.option1 }}</label><br>
+            <label><input type="radio" name="option_{{ question.id }}" value="{{ question.option2 }}"> {{ question.option2 }}</label><br>
+            <label><input type="radio" name="option_{{ question.id }}" value="{{ question.option3 }}"> {{ question.option3 }}</label><br>
+            <label><input type="radio" name="option_{{ question.id }}" value="{{ question.option4 }}"> {{ question.option4 }}</label><br>
+        </div>
+    {% endfor %}
+    <button type="submit">Submit Answers</button>
+</form>

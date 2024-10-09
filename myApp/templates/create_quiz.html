@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Quiz</title>
+</head>
+<body>
+    <h1>Create Quiz</h1>
+    <form method="POST">
+        {% csrf_token %}
+        <label for="course">Course:</label>
+        <select name="course" id="course" required>
+            {% for course in courses %}
+                <option value="{{ course.id }}">{{ course.course_name }}</option>
+            {% endfor %}
+        </select><br><br>
+
+        <label for="title">Quiz Title:</label>
+        <input type="text" name="title" id="title" required><br><br>
+
+        <label for="start_date">Start Date:</label>
+        <input type="date" name="start_date" id="start_date" required><br><br>
+
+        <label for="end_date">End Date:</label>
+        <input type="date" name="end_date" id="end_date" required><br><br>
+
+        <label for="start_time">Start Time:</label>
+        <input type="time" name="start_time" id="start_time" required><br><br>
+
+        <label for="end_time">End Time:</label>
+        <input type="time" name="end_time" id="end_time" required><br><br>
+
+        <button type="submit">Create Quiz</button>
+    </form>
+</body>
+</html>
