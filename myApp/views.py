@@ -1212,46 +1212,116 @@ def view_quiz(request, quiz_id):
     questions = quiz.questions_set.all()
     return render(request, 'view_quiz.html', {'quiz': quiz, 'questions': questions})
 
-
-from django.shortcuts import render, redirect # type: ignore
-from .models import Assignment
-from django.utils import timezone # type: ignore
+from django.shortcuts import render, redirect, get_object_or_404 # type: ignore
+from django.http import HttpResponse # type: ignore
+from .models import Assignment, Course, Teacher
+from django.core.exceptions import ValidationError # type: ignore
+from datetime import datetime
 
 def create_assignment(request):
     if request.method == 'POST':
+        # Fetch form data
         title = request.POST.get('title')
         description = request.POST.get('description')
         start_date = request.POST.get('start_date')
         end_date = request.POST.get('end_date')
         start_time = request.POST.get('start_time')
         end_time = request.POST.get('end_time')
-        file = request.FILES.get('file')  # Handle the uploaded file
+        course_name_id = request.POST.get('course')
+        file = request.FILES.get('file')
 
-        # Create the assignment instance and save it
-        assignment = Assignment(
-            title=title,
-            description=description,
-            start_date=start_date,
-            end_date=end_date,
-            start_time=start_time,
-            end_time=end_time,
-            created_by=request.user.teacher  # Assuming a teacher is logged in
-        )
+        # Validate and convert date and time
+        try:
+            # Convert start_date and end_date from string to date
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
 
-        # If a file is uploaded, add it to the assignment
-        if file:
-            assignment.file = file
+            # Convert start_time and end_time from string to time
+            start_time = datetime.strptime(start_time, '%H:%M').time()
+            end_time = datetime.strptime(end_time, '%H:%M').time()
 
-        assignment.save()
-        return redirect('assignment_list')  # Redirect to the assignment list page
+            # Get the teacher from the session
+            teacher_id = request.session.get('teacher_id')
+            teacher_id = request.session.get('teacher_id')
+            if teacher_id:
+                teacher = get_object_or_404(Teacher, id=teacher_id)
 
-    return render(request, 'create_assignment.html')
+            # Create the assignment instance
+            assignment = Assignment(
+                title=title,
+                description=description,
+                start_date=start_date,
+                end_date=end_date,
+                start_time=start_time,
+                end_time=end_time,
+                file=file,
+                course_name_id=course_name_id,
+                teacher=teacher  # Use the logged-in teacher from session
+            )
+
+            # Custom validation checks
+            if assignment.start_date > assignment.end_date:
+                raise ValidationError("Start date cannot be after end date.")
+
+            # Save the assignment to the database
+            assignment.save()
+
+            # Redirect to teacher dashboard on success
+            return redirect('teacher_dashboard')  # Update this to your actual dashboard URL name
+
+        except ValidationError as e:
+            # Render the create assignment page with the error message
+            return render(request, 'create_assignment.html', {
+                'error': str(e),
+                'courses': Course.objects.all(),
+                'assignment': request.POST  # Preserving the submitted data
+            })
+        except Exception as e:
+            # Handle other exceptions and render the same page
+            return render(request, 'create_assignment.html', {
+                'error': "An error occurred. Please try again.",
+                'courses': Course.objects.all(),
+                'assignment': request.POST  # Preserving the submitted data
+            })
+
+    else:
+        # Fetch the list of courses to display in the form
+        courses = Course.objects.all()
+        return render(request, 'create_assignment.html', {'courses': courses})
 
 
-from django.shortcuts import render # type: ignore
-from .models import Assignment
+from django.shortcuts import get_object_or_404, render, redirect # type: ignore
+from .models import Assignment, AssignmentSubmission, CustomUser
 
-def student_view_assignments(request):
-    assignments = Assignment.objects.filter(end_date__gte=timezone.now().date())
-    active_assignments = [a for a in assignments if a.is_active()]
-    return render(request, 'student_assignments.html', {'assignments': active_assignments})
+def assignment_detail(request):
+    # Retrieve the specific assignment using the ID
+    assignment = get_object_or_404(Assignment)
+
+    if request.method == 'POST':
+        submission_file = request.FILES.get('file')
+
+        # Retrieve the custom_user_id from the session
+        custom_user_id = request.session.get('custom_user_id')
+
+        if submission_file and custom_user_id:
+            try:
+                # Get the CustomUser instance using the custom_user_id from the session
+                student = get_object_or_404(CustomUser, id=custom_user_id)
+
+                # Create a new AssignmentSubmission with the student and assignment details
+                AssignmentSubmission.objects.create(
+                    assignment=assignment,
+                    student=student,
+                    file=submission_file,
+                )
+                # Redirect to the student dashboard or another success page after submission
+                return redirect('student_dashboard')
+
+            except CustomUser.DoesNotExist:
+                # Handle the case where the student does not exist in the database
+                return render(request, 'assignment_detail.html', {
+                    'assignment': assignment,
+                    'error': 'Invalid student session. Please log in again.'
+                })
+
+    return render(request, 'assignment_detail.html', {'assignment': assignment})

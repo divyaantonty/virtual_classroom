@@ -46,6 +46,7 @@ urlpatterns = [
     path('view-materials/', views.view_materials, name='view_materials'),
     path('available_quizzes/', views.available_quizzes, name='available_quizzes'),
     path('view_quiz/<int:quiz_id>/', views.view_quiz, name='view_quiz'),
+    path('assignment_detail/', views.assignment_detail, name='assignment_detail'),
     
 
 
@@ -57,7 +58,7 @@ urlpatterns = [
     path('upload_material/', views.upload_material, name='upload_material'),
     path('create_quiz/', views.create_quiz, name='create_quiz'),
     path('add_question/<int:quiz_id>/', views.add_question, name='add_question'),
-   
+    path('create_assignment/', views.create_assignment, name='create_assignment'),
     
 
     path('parent_dashboard/', views.parent_dashboard, name='parent_dashboard'),

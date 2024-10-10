@@ -211,15 +211,19 @@ class Assignment(models.Model):
     end_date = models.DateField()
     start_time = models.TimeField()
     end_time = models.TimeField()
-    created_by = models.ForeignKey('Teacher', on_delete=models.CASCADE)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     file = models.FileField(upload_to='assignments/', null=True, blank=True)
-    course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='assignments')
-
-    def is_active(self):
-        now = timezone.now()
-        start = timezone.make_aware(datetime.combine(self.start_date, self.start_time))
-        end = timezone.make_aware(datetime.combine(self.end_date, self.end_time))
-        return start <= now <= end
-
+    course_name = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='assignments')
+    
     def __str__(self):
         return self.title
+
+
+class AssignmentSubmission(models.Model):
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='submissions')
+    student = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    file = models.FileField(upload_to='submissions/', blank=True, null=True)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Submission by {self.student} for {self.assignment}"
