@@ -751,8 +751,10 @@ from django.db.models import Q
 from .models import ClassSchedule, Teacher, Course
 
 def view_teacher_schedule_class(request):
+    # Get the teacher_id from session
     teacher_id = request.session.get('teacher_id')
 
+    # Redirect to login if teacher_id is not present
     if not teacher_id:
         return redirect('login')
 
@@ -761,33 +763,27 @@ def view_teacher_schedule_class(request):
     except Teacher.DoesNotExist:
         return redirect('login')
 
+    # Get the current local time and date, automatically converted to IST if TIME_ZONE is set to 'Asia/Kolkata'
     current_datetime = timezone.localtime()
-    today = current_datetime.date()
 
-    # Fetch ongoing classes for today
-    ongoing_classes = ClassSchedule.objects.filter(
-        Q(teacher=teacher) &  # Filter by teacher
-        Q(date=today) &  # Classes scheduled for today
-        Q(start_time__lte=current_datetime.time()) &  # Start time is in the past or now
-        Q(end_time__gt=current_datetime.time())  # End time is in the future
-    ).order_by('date', 'start_time')
+    # Debug statement to check the current IST date and time
+    print(f"Current date and time (IST): {current_datetime}")
+    print(f"Current date (IST): {current_datetime.date()}, Current time (IST): {current_datetime.time()}")
 
-    # Fetch future classes (scheduled for future dates or today's classes that haven't started yet)
+    # Fetch ongoing and future classes based on the current IST date and time
     future_classes = ClassSchedule.objects.filter(
-        Q(teacher=teacher) &  # Filter by teacher
-        (Q(date__gt=today) |  # Classes scheduled for future dates
-        (Q(date=today) & Q(start_time__gt=current_datetime.time())))  # Today's classes that haven't started yet
-    ).order_by('date', 'start_time')
+        teacher=teacher  # Filter classes by teacher
+    ).filter(
+        Q(date=current_datetime.date(), end_time__gt=current_datetime.time()) |  # Ongoing classes today that haven't ended
+        Q(date__gt=current_datetime.date())  # Future classes (scheduled after today)
+    ).order_by('date', 'start_time')  # Order by date and start time
 
+    # Debug statement to check the ongoing and future classes query results
+    print(f"Ongoing and future classes: {future_classes}")
 
-
-    # Fetch all courses (optional, based on your needs)
-    courses = Course.objects.all()
-
+    # Prepare the context for rendering
     context = {
-        'ongoing_classes': ongoing_classes.distinct(),  # Ongoing classes for today
-        'future_classes': future_classes.distinct(),      # Future classes
-        'courses': courses,
+        'future_classes': future_classes,  # Ongoing and future classes
     }
 
     return render(request, 'view_teacher_schedule_class.html', context)
@@ -860,7 +856,7 @@ def view_scheduled_classes(request):
     # Fetch ongoing and future classes for the registered course
     ongoing_future_classes = ClassSchedule.objects.filter(
         course_name=registered_course  # Filter classes based on the student's registered course
-    ).filter(
+    ).filter( 
         Q(date=current_datetime.date(), end_time__gt=current_datetime.time()) |  # Ongoing classes today that haven't ended
         Q(date__gt=current_datetime.date())  # Future classes (after today)
     ).order_by('date', 'start_time')  # Order by date and start time
@@ -871,7 +867,6 @@ def view_scheduled_classes(request):
 
     # Pass the classes to the template
     return render(request, 'view_scheduled_classes.html', {'scheduled_classes': ongoing_future_classes})
-
 
 
 from django.shortcuts import render, redirect
@@ -949,9 +944,9 @@ def change_password(request):
     return render(request, 'change_password.html')
 
 
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.contrib.auth import update_session_auth_hash
+from django.shortcuts import render, redirect # type: ignore
+from django.contrib import messages # type: ignore
+from django.contrib.auth import update_session_auth_hash # type: ignore
 from .models import CustomUser, Parent, Teacher
 from django.contrib import messages
 from django.shortcuts import render, redirect
@@ -1325,3 +1320,26 @@ def assignment_detail(request):
                 })
 
     return render(request, 'assignment_detail.html', {'assignment': assignment})
+
+
+from django.shortcuts import render, redirect # type: ignore
+from .models import Assignment  # Import your Assignment model
+
+def view_assignment(request):
+    # Check if the session contains the teacher's ID
+    if 'teacher_id' in request.session:
+        teacher_id = request.session['teacher_id']
+
+        # Fetch assignments created by the logged-in teacher from the database
+        assignments = Assignment.objects.filter(teacher_id=teacher_id)
+
+        # Pass the assignments to the template for rendering
+        return render(request, 'view_assignment.html', {'assignments': assignments})
+    else:
+        # If no teacher is logged in, redirect them to the login page or another appropriate page
+        return redirect('login')
+
+
+def evaluate_assignment(request):
+    # Logic to evaluate assignments submitted by students
+    return render(request, 'evaluate_assignment.html')

@@ -1,0 +1,97 @@
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4">View Assignments</h2>
+
+    <table class="table table-striped table-hover table-bordered">
+        <thead class="thead-dark">
+            <tr>
+                <th>Assignment Title</th>
+                <th>Description</th>
+                <th>Course</th>
+                <th>Start Date & Time</th>
+                <th>End Date & Time</th>
+                <th>File</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for assignment in assignments %}
+            <tr>
+                <td>{{ assignment.title }}</td>
+                <td>{{ assignment.description }}</td>
+                <td>{{ assignment.course_name.course_name }}</td>
+                <td>{{ assignment.start_date }} {{ assignment.start_time }}</td>
+                <td>{{ assignment.end_date }} {{ assignment.end_time }}</td>
+                <td>
+                    {% if assignment.file %}
+                        <a href="{{ assignment.file.url }}" download>Download</a>
+                    {% else %}
+                        No file attached
+                    {% endif %}
+                </td>
+                <td>
+                    {% if assignment.end_date < today %}
+                        <span class="badge badge-danger">Completed</span>
+                    {% else %}
+                        <span class="badge badge-success">Ongoing</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center">No assignments available.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Back button to the Teacher Dashboard -->
+    <div class="text-center mt-4">
+        <a href="{% url 'teacher_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+</div>
+
+<style>
+    /* Custom styles for the table */
+    table {
+        background-color: #f8f9fa; /* Light background color for the table */
+        border-collapse: separate;
+        border-spacing: 0 10px; /* Space between rows */
+    }
+
+    thead th {
+        background-color: #343a40; /* Dark header background */
+        color: white; /* Header text color */
+        text-align: center;
+    }
+
+    tbody tr {
+        transition: background-color 0.3s ease;
+    }
+
+    tbody tr:hover {
+        background-color: #e9ecef; /* Highlight row on hover */
+    }
+
+    tbody td {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    .badge-danger {
+        background-color: #dc3545;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+    }
+
+    .badge-success {
+        background-color: #28a745;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+    }
+</style>
+{% endblock %}

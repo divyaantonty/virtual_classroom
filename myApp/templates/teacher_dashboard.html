@@ -40,6 +40,17 @@
                 dropdown.style.display = "none";
             }
         }
+
+        // Toggle dropdown menu for Create Assignments
+        function toggleAssignmentDropdown() {
+            var dropdown = document.getElementById('assignmentDropdown');
+            if (dropdown.style.display === "none" || dropdown.style.display === "") {
+                dropdown.style.display = "block";
+            } else {
+                dropdown.style.display = "none";
+            }
+        }
+
     </script>
 
     <style>
@@ -158,14 +169,20 @@
                             <a href="{% url 'view_teacher_schedule_class' %}">View Classes</a>
                         </div>
                     </div>
-                    <div class="feature-box">
+                    <div class="feature-box" onclick="toggleAssignmentDropdown()">
                         <a href="#">Create Assignments</a>
+                        
+                        <div class="dropdown-content" id="assignmentDropdown">
+                            <a href="{% url 'create_assignment' %}">Create Assignment</a>
+                            <a href="{% url 'view_assignment' %}">View Assignments</a>
+                            <a href="{% url 'evaluate_assignment' %}">Evaluate Assignments</a>
+                        </div>
                     </div>
                     <div class="feature-box">
                         <a href="{% url 'upload_material' %}">Upload Study Materials</a>
                     </div>
                     <div class="feature-box">
-                        <a href="{% url 'create_assignment' %}">Make Discussion Forum</a>
+                        <a href="#">Make Discussion Forum</a>
                     </div>
                     <div class="feature-box">
                         <a href="{% url 'create_quiz' %}">Conduct Quizzes</a>

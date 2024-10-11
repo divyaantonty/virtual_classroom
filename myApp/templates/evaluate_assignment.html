@@ -1,0 +1,42 @@
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Evaluate Assignments</h2>
+    <div class="mb-3">
+        <a href="{% url 'teacher_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Student Name</th>
+                <th>Assignment Title</th>
+                <th>Submission</th>
+                <th>Grade</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for submission in submissions %}
+            <tr>
+                <td>{{ submission.student_name }}</td>
+                <td>{{ submission.assignment_title }}</td>
+                <td><a href="{{ submission.file_url }}" target="_blank">View Submission</a></td>
+                <td>{{ submission.grade }}</td>
+                <td>
+                    <form action="{% url 'grade_submission' submission.id %}" method="post">
+                        {% csrf_token %}
+                        <input type="number" name="grade" min="0" max="100" placeholder="Enter Grade" required>
+                        <button type="submit" class="btn btn-success">Submit Grade</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No submissions available for evaluation.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

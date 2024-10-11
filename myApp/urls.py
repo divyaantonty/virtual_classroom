@@ -59,6 +59,8 @@ urlpatterns = [
     path('create_quiz/', views.create_quiz, name='create_quiz'),
     path('add_question/<int:quiz_id>/', views.add_question, name='add_question'),
     path('create_assignment/', views.create_assignment, name='create_assignment'),
+    path('view_assignment/', views.view_assignment, name='view_assignment'),
+    path('evaluate_assignment/', views.evaluate_assignment, name='evaluate_assignment'),
     
 
     path('parent_dashboard/', views.parent_dashboard, name='parent_dashboard'),
