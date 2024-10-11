@@ -1,71 +1,250 @@
-<a href="{% url 'student_dashboard' %}" style="display: inline-block; margin: 10px 0; text-decoration: none; padding: 8px 16px; background-color: #007bff; color: white; border-radius: 4px;">Back</a>
-<table border="1" cellspacing="0" cellpadding="10">
-    <thead>
-        <tr>
-            <th>Assignment Title</th>
-            <th>Description</th>
-            <th>Start Date</th>
-            <th>End Date</th>
-            <th>Start Time</th>
-            <th>End Time</th>
-            <th>Course</th>
-            <th>Teacher</th>
-            <th>Status</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for detail in assignment_details %}
-            <tr>
-                <td>{{ detail.assignment.title }}</td>
-                <td>{{ detail.assignment.description }}</td>
-                <td>{{ detail.assignment.start_date }}</td>
-                <td>{{ detail.assignment.end_date }}</td>
-                <td>{{ detail.assignment.start_time }}</td>
-                <td>{{ detail.assignment.end_time }}</td>
-                <td>{{ detail.assignment.course_name }}</td>
-                <td>{{ detail.assignment.teacher }}</td>
-                <td>
-                    {% if detail.submission %}
-                        <span style="color: green;">Submitted</span>
-                    {% else %}
-                        {% if detail.has_reached_deadline %}
-                            <span style="color: red;">Not submitted before the deadline</span>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignment Details</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 80%;
+            margin-left: 220px; /* Adjusted to make space for the sidebar */
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 200px;
+            background-color: #343a40;
+            padding-top: 20px;
+            color: white;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 15px 20px;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        .sidebar a:hover {
+            background-color: #495057;
+        }
+
+        .back-btn {
+            display: inline-block;
+            text-decoration: none;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 4px;
+            float: right;
+            margin-bottom: 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background-color: #0056b3;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        td span {
+            font-weight: bold;
+        }
+
+        td a {
+            color: #007bff;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        td a:hover {
+            color: #0056b3;
+        }
+
+        form {
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        input[type="file"] {
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 8px 12px;
+            background-color: #28a745;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        /* Responsive for smaller devices */
+        @media (max-width: 768px) {
+            .container {
+                width: 100%;
+                margin-left: 0; /* Remove left margin for mobile */
+                padding: 10px;
+            }
+
+            table {
+                font-size: 14px;
+            }
+
+            th, td {
+                padding: 8px;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+
+            .sidebar a {
+                text-align: center;
+                float: none;
+            }
+
+            .back-btn {
+                float: none;
+                display: block;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <a href="{% url 'view_scheduled_classes' %}">View and Join Classes</a>
+        <a href="{% url 'assignment_detail' %}">Submit Assignment</a>
+        <a href="{% url 'view_materials' %}">Access Study Materials</a>
+        <a href="#">Discussion Forum</a>
+        <a href="{% url 'available_quizzes' %}">View Quiz</a>
+    </div>
+
+    <!-- Main content -->
+    <div class="container">
+        <!-- Back button -->
+        <a href="{% url 'student_dashboard' %}" class="back-btn">Back</a>
+
+        <!-- Assignment details heading -->
+        <h1>Assignment Details</h1>
+
+        <!-- Assignment table -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Assignment Title</th>
+                    <th>Description</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Course</th>
+                    <th>Teacher</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for detail in assignment_details %}
+                <tr>
+                    <td>{{ detail.assignment.title }}</td>
+                    <td>{{ detail.assignment.description }}</td>
+                    <td>{{ detail.assignment.start_date }}</td>
+                    <td>{{ detail.assignment.end_date }}</td>
+                    <td>{{ detail.assignment.start_time }}</td>
+                    <td>{{ detail.assignment.end_time }}</td>
+                    <td>{{ detail.assignment.course_name }}</td>
+                    <td>{{ detail.assignment.teacher }}</td>
+                    <td>
+                        {% if detail.submission %}
+                            <span style="color: green;">Submitted</span>
                         {% else %}
-                            <span style="color: orange;">Pending</span>
+                            {% if detail.has_reached_deadline %}
+                                <span style="color: red;">Not submitted before the deadline</span>
+                            {% else %}
+                                <span style="color: orange;">Pending</span>
+                            {% endif %}
                         {% endif %}
-                    {% endif %}
-                </td>
-                <td>
-                    {% if detail.assignment.file %}
-                        <a href="{{ detail.assignment.file.url }}" download>Download Question</a>
-                    {% else %}
-                        <span>No question file available</span>
-                    {% endif %}
-                    <br><br>
-                    {% if detail.submission %}
-                        <a href="{{ detail.submission.file.url }}" download>Download your submission</a>
-                        {% if detail.submission_allowed %}
-                            <p>You can still update your submission before the deadline.</p>
-                            <form method="post" enctype="multipart/form-data" style="margin-top: 5px;">
-                                {% csrf_token %}
-                                <input type="hidden" name="assignment_id" value="{{ detail.assignment.id }}">
-                                <input type="file" name="file" required>
-                                <button type="submit">Update Submission</button>
-                            </form>
+                    </td>
+                    <td>
+                        {% if detail.assignment.file %}
+                            <a href="{{ detail.assignment.file.url }}" download>Download Question</a>
+                        {% else %}
+                            <span>No question file available</span>
                         {% endif %}
-                    {% else %}
-                        {% if not detail.has_reached_deadline %}
-                            <form method="post" enctype="multipart/form-data" style="margin-top: 5px;">
-                                {% csrf_token %}
-                                <input type="hidden" name="assignment_id" value="{{ detail.assignment.id }}">
-                                <input type="file" name="file" required>
-                                <button type="submit">Submit Assignment</button>
-                            </form>
+                        <br><br>
+                        {% if detail.submission %}
+                            <a href="{{ detail.submission.file.url }}" download>Download your submission</a>
+                            {% if detail.submission_allowed %}
+                                <p>You can still update your submission before the deadline.</p>
+                                <form method="post" enctype="multipart/form-data">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="assignment_id" value="{{ detail.assignment.id }}">
+                                    <input type="file" name="file" required>
+                                    <button type="submit">Update Submission</button>
+                                </form>
+                            {% endif %}
+                        {% else %}
+                            {% if not detail.has_reached_deadline %}
+                                <form method="post" enctype="multipart/form-data">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="assignment_id" value="{{ detail.assignment.id }}">
+                                    <input type="file" name="file" required>
+                                    <button type="submit">Submit Assignment</button>
+                                </form>
+                            {% endif %}
                         {% endif %}
-                    {% endif %}
-                </td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
