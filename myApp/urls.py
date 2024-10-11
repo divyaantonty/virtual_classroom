@@ -46,7 +46,7 @@ urlpatterns = [
     path('view-materials/', views.view_materials, name='view_materials'),
     path('available_quizzes/', views.available_quizzes, name='available_quizzes'),
     path('view_quiz/<int:quiz_id>/', views.view_quiz, name='view_quiz'),
-    path('assignment_detail/', views.assignment_detail, name='assignment_detail'),
+    path('assignment_detail/', views.assignment_submission_view, name='assignment_detail'),
     
 
 

@@ -617,12 +617,12 @@ def interview_teacher(request):
 
     return render(request, 'interview_teacher.html', {'teachers': teachers})
 
-from django.shortcuts import render
+from django.shortcuts import render # type: ignore
 
 def feedback_to_student(request):
     return render(request, 'feedback_student.html')
 
-from django.shortcuts import render
+from django.shortcuts import render # type: ignore
 
 def feedback_to_teacher(request):
     return render(request, 'feedback_teacher.html')
@@ -790,8 +790,8 @@ def view_teacher_schedule_class(request):
 
 
 
-from django.shortcuts import render, redirect
-from django.contrib import messages
+from django.shortcuts import render, redirect # type: ignore
+from django.contrib import messages # type: ignore
 from .models import ClassSchedule
 
 def edit_class(request):
@@ -820,11 +820,11 @@ def edit_class(request):
 
         return redirect('view_teacher_schedule_class')  # Redirect to the view scheduled classes page
 
-from django.contrib import messages
-from django.shortcuts import redirect, render
+from django.contrib import messages # type: ignore
+from django.shortcuts import redirect, render # type: ignore
 from .models import ClassSchedule, CustomUser
-from django.utils import timezone
-from django.db.models import Q
+from django.utils import timezone # type: ignore
+from django.db.models import Q # type: ignore
 
 def view_scheduled_classes(request):
     # Retrieve the custom user ID from the session
@@ -869,7 +869,7 @@ def view_scheduled_classes(request):
     return render(request, 'view_scheduled_classes.html', {'scheduled_classes': ongoing_future_classes})
 
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect # type: ignore
 from .models import CustomUser, ClassSchedule, Parent
 
 def view_class_schedule(request):
@@ -897,11 +897,7 @@ def view_class_schedule(request):
     return render(request, 'view_class_schedule.html', context)
 
 
-from django.shortcuts import render, redirect
-from django.contrib import messages
 from .models import CustomUser, Parent, Teacher
-from django.contrib import messages
-from django.shortcuts import render, redirect
 from .models import Parent
 
 
@@ -948,8 +944,6 @@ from django.shortcuts import render, redirect # type: ignore
 from django.contrib import messages # type: ignore
 from django.contrib.auth import update_session_auth_hash # type: ignore
 from .models import CustomUser, Parent, Teacher
-from django.contrib import messages
-from django.shortcuts import render, redirect
 from .models import Teacher
 
 def teacher_changepassword(request):
@@ -992,9 +986,7 @@ def teacher_changepassword(request):
 
 
 
-from django.shortcuts import render, redirect, get_object_or_404
 from .models import Teacher
-from django.contrib import messages
 
 def teacher_updateprofile(request):
     teacher_id = request.session.get('teacher_id')
@@ -1034,9 +1026,9 @@ def teacher_updateprofile(request):
     context = {'teacher': teacher}
     return render(request, 'teacher_updateprofile.html', context)
 
-from django.shortcuts import render, redirect, get_object_or_404
+
 from .models import Parent
-from django.contrib import messages
+
 def parent_update_profile(request):
     parent_id = request.session.get('parent_id')
     
@@ -1059,7 +1051,7 @@ def parent_update_profile(request):
     context = {'parent': parent}
     return render(request, 'parent_update_profile.html', context)
 
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404 # type: ignore
 from .models import Material, Course, Teacher
 
 def upload_material(request):
@@ -1090,8 +1082,6 @@ def upload_material(request):
     return render(request, 'upload_material.html', {'courses': courses})
 
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
 from .models import Material, CustomUser
 
 def view_materials(request):
@@ -1118,7 +1108,6 @@ def view_materials(request):
 
 
 # views.py
-from django.shortcuts import render, get_object_or_404
 from .models import Material, Parent, CustomUser
 
 def view_study_materials(request):
@@ -1285,59 +1274,117 @@ def create_assignment(request):
         return render(request, 'create_assignment.html', {'courses': courses})
 
 
-from django.shortcuts import get_object_or_404, render, redirect # type: ignore
-from .models import Assignment, AssignmentSubmission, CustomUser
+from django.contrib import messages  # type: ignore
+from django.shortcuts import redirect, render  # type: ignore
+from django.utils import timezone
+from .models import Assignment, AssignmentSubmission, CustomUser  # Ensure to import your models
 
-def assignment_detail(request):
-    # Retrieve the specific assignment using the ID
-    assignment = get_object_or_404(Assignment)
+def assignment_submission_view(request):
+    # Retrieve the custom user ID from the session
+    custom_user_id = request.session.get('custom_user_id')
 
+    if not custom_user_id:
+        messages.error(request, "You are not logged in.")
+        return redirect('login')  # Redirect to login page if user ID is not in session
+
+    try:
+        # Fetch the student (CustomUser) based on the custom user ID
+        student = CustomUser.objects.get(id=custom_user_id)
+    except CustomUser.DoesNotExist:
+        messages.error(request, "Student not found.")
+        return redirect('login')
+
+    # Check the registered course for the student
+    registered_course = student.course  # Assuming there's a course_id field on CustomUser
+    if not registered_course:
+        messages.error(request, "You are not registered for any course.")
+        return redirect('student_dashboard')
+
+    # Fetch assignments based on the registered course only
+    assignments = Assignment.objects.filter(course_name=registered_course)
+
+    # Create a list to store assignment details with submission status
+    assignment_details = []
+
+    for assignment in assignments:
+       current_datetime = timezone.now()
+       assignment_end_datetime = datetime.combine(assignment.end_date, assignment.end_time)
+
+       assignment_end_datetime = timezone.make_aware(assignment_end_datetime)
+
+
+       has_reached_deadline = assignment_end_datetime <= current_datetime
+    
+       # Check if the student has submitted the assignment
+       submission = AssignmentSubmission.objects.filter(assignment=assignment, student=student).first()
+        # Build the details for each assignment
+       assignment_detail = {
+            'assignment': assignment,
+            'submission': submission,
+            'has_reached_deadline': has_reached_deadline,
+            'can_submit': not has_reached_deadline and not submission,
+            'submission_allowed': not has_reached_deadline and submission,  # Option to re-submit before the deadline
+        }
+       assignment_details.append(assignment_detail)
+
+    # Handle the file upload if the request method is POST
     if request.method == 'POST':
-        submission_file = request.FILES.get('file')
-
-        # Retrieve the custom_user_id from the session
-        custom_user_id = request.session.get('custom_user_id')
-
-        if submission_file and custom_user_id:
-            try:
-                # Get the CustomUser instance using the custom_user_id from the session
-                student = get_object_or_404(CustomUser, id=custom_user_id)
-
-                # Create a new AssignmentSubmission with the student and assignment details
-                AssignmentSubmission.objects.create(
+        assignment_id = request.POST.get('assignment_id')  # Get the assignment ID from the form
+        file = request.FILES.get('file')
+        if file and assignment_id:
+            # Fetch the specific assignment based on the assignment ID
+            assignment = Assignment.objects.filter(id=assignment_id, course_name=registered_course).first()
+            
+            if assignment and not has_reached_deadline and not submission:
+                # Create a new submission
+                submission = AssignmentSubmission(
                     assignment=assignment,
                     student=student,
-                    file=submission_file,
+                    file=file
                 )
-                # Redirect to the student dashboard or another success page after submission
-                return redirect('student_dashboard')
+                submission.save()
+                messages.success(request, 'Your submission has been uploaded successfully!')
+                return redirect('student_dashboard')  # Redirect to your desired page
+            else:
+                if has_reached_deadline:
+                    messages.error(request, "Assignment deadline has passed, submission not allowed.")
+                else:
+                    messages.error(request, "Assignment already submitted.")
+        else:
+            messages.error(request, 'Please upload a file and select an assignment.')
 
-            except CustomUser.DoesNotExist:
-                # Handle the case where the student does not exist in the database
-                return render(request, 'assignment_detail.html', {
-                    'assignment': assignment,
-                    'error': 'Invalid student session. Please log in again.'
-                })
+    # Render the assignment details template with the list of assignment details
+    return render(request, 'assignment_detail.html', {'assignment_details': assignment_details})
 
-    return render(request, 'assignment_detail.html', {'assignment': assignment})
 
 
 from django.shortcuts import render, redirect # type: ignore
-from .models import Assignment  # Import your Assignment model
+from .models import Assignment, Course
 
 def view_assignment(request):
-    # Check if the session contains the teacher's ID
     if 'teacher_id' in request.session:
         teacher_id = request.session['teacher_id']
 
-        # Fetch assignments created by the logged-in teacher from the database
-        assignments = Assignment.objects.filter(teacher_id=teacher_id)
+        # Fetch all courses from the Course table, regardless of their relation to assignments
+        courses = Course.objects.all()
 
-        # Pass the assignments to the template for rendering
-        return render(request, 'view_assignment.html', {'assignments': assignments})
+        # Get the selected course ID from the GET request
+        selected_course_id = request.GET.get('course_id')
+
+        # Fetch assignments for the selected course or all assignments if no course is selected
+        if selected_course_id:
+            assignments = Assignment.objects.filter(course_name__id=selected_course_id, teacher_id=teacher_id)
+        else:
+            assignments = Assignment.objects.filter(teacher_id=teacher_id)
+
+        return render(request, 'view_assignment.html', {
+            'assignments': assignments,
+            'courses': courses,
+            'selected_course_id': selected_course_id,
+        })
     else:
-        # If no teacher is logged in, redirect them to the login page or another appropriate page
         return redirect('login')
+
 
 
 def evaluate_assignment(request):

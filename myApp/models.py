@@ -201,8 +201,8 @@ class Questions(models.Model):
         return f"Question for {self.quiz.title}"
 
 
-from django.db import models
-from django.utils import timezone
+from django.db import models # type: ignore
+from django.utils import timezone # type: ignore
 
 class Assignment(models.Model):
     title = models.CharField(max_length=255)

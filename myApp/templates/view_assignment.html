@@ -4,14 +4,31 @@
 <div class="container mt-5">
     <h2 class="text-center mb-4">View Assignments</h2>
 
+    <!-- Course filter dropdown -->
+    <div class="mb-4">
+        <form method="get" action="{% url 'view_assignment' %}">
+            <label for="courseSelect">Select Course:</label>
+            <select name="course_id" id="courseSelect" class="form-control" onchange="this.form.submit()">
+                <option value="">All Courses</option>
+                {% for course in courses %}
+                    <option value="{{ course.id }}" {% if course.id|stringformat:"s" == selected_course_id %}selected{% endif %}>
+                        {{ course.course_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+
     <table class="table table-striped table-hover table-bordered">
         <thead class="thead-dark">
             <tr>
                 <th>Assignment Title</th>
                 <th>Description</th>
                 <th>Course</th>
-                <th>Start Date & Time</th>
-                <th>End Date & Time</th>
+                <th>Start Date</th>
+                <th>Start Time</th>
+                <th>End Date</th>
+                <th>End Time</th>
                 <th>File</th>
                 <th>Status</th>
             </tr>
@@ -22,8 +39,10 @@
                 <td>{{ assignment.title }}</td>
                 <td>{{ assignment.description }}</td>
                 <td>{{ assignment.course_name.course_name }}</td>
-                <td>{{ assignment.start_date }} {{ assignment.start_time }}</td>
-                <td>{{ assignment.end_date }} {{ assignment.end_time }}</td>
+                <td>{{ assignment.start_date }}</td>
+                <td>{{ assignment.start_time }}</td>
+                <td>{{ assignment.end_date }}</td>
+                <td>{{ assignment.end_time }}</td>
                 <td>
                     {% if assignment.file %}
                         <a href="{{ assignment.file.url }}" download>Download</a>
@@ -41,7 +60,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="7" class="text-center">No assignments available.</td>
+                <td colspan="9" class="text-center">No assignments available.</td>
             </tr>
             {% endfor %}
         </tbody>
