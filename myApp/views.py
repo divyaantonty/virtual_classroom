@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.utils.crypto import get_random_string
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
-from .models import CustomUser, Course, Parent
+from .models import CustomUser, Course, Parent, UserAnswers
 
 def register(request):
     if request.method == 'POST':
@@ -1122,7 +1122,7 @@ def view_study_materials(request):
 
 from django.shortcuts import render, redirect, get_object_or_404 # type: ignore
 from django.utils import timezone # type: ignore
-from .models import Quizs, Questions, Course, Teacher
+from .models import Quizs, Question, Course, Teacher
 
 
 def create_quiz(request):
@@ -1152,49 +1152,241 @@ def create_quiz(request):
 
 def add_question(request, quiz_id):
     quiz = get_object_or_404(Quizs, id=quiz_id)
-    if request.method == 'POST':
-        question_text = request.POST.get('question_text')
-        option1 = request.POST.get('option1')
-        option2 = request.POST.get('option2')
-        option3 = request.POST.get('option3')
-        option4 = request.POST.get('option4')
-        correct_option = request.POST.get('correct_option')
 
-        question = Questions(quiz=quiz, question_text=question_text, option1=option1, 
-                             option2=option2, option3=option3, option4=option4, 
-                             correct_option=correct_option)
-        question.save()
+    if request.method == 'POST':
+        questions_data = request.POST.getlist('question')
+        options_a = request.POST.getlist('option_a')
+        options_b = request.POST.getlist('option_b')
+        options_c = request.POST.getlist('option_c')
+        options_d = request.POST.getlist('option_d')
+        correct_options = request.POST.getlist('correct_option')
+
+        # Iterate through all submitted questions
+        for i in range(len(questions_data)):
+            question_text = questions_data[i]
+            option_a = options_a[i]
+            option_b = options_b[i]
+            option_c = options_c[i]
+            option_d = options_d[i]
+            correct_option = correct_options[i]
+
+            # Create a new Question object for each set of data
+            question = Question(
+                quiz=quiz, 
+                text=question_text,
+                option_a=option_a,
+                option_b=option_b,
+                option_c=option_c,
+                option_d=option_d,
+                correct_option=correct_option
+            )
+            question.save()
+
         return redirect('add_question', quiz_id=quiz.id)
-    
+
     return render(request, 'add_question.html', {'quiz': quiz})
 
+
+from django.shortcuts import render, get_object_or_404
+from .models import Quizs, Question
+
+def take_quiz(request, quiz_id):
+    quiz = get_object_or_404(Quizs, id=quiz_id)
+    questions = Question.objects.filter(quiz=quiz)
+
+    if request.method == 'POST':
+        user_answers = {}  # Store user's answers
+        correct_count = 0  # Track the number of correct answers
+
+        # Loop through each question in the quiz
+        for question in questions:
+            user_answer = request.POST.get(f'question_{question.id}')  # Get user's answer for the question
+            user_answers[question.id] = user_answer  # Save the user's answer
+
+            # Check if the user's answer matches the correct answer
+            if user_answer == question.correct_option:
+                correct_count += 1  # Increment correct count if answer is correct
+
+        # After submission, show the result
+        return render(request, 'quiz_result.html', {
+            'quiz': quiz,
+            'questions': questions,
+            'user_answers': user_answers,
+            'correct_count': correct_count,
+            'total_questions': questions.count()
+        })
+
+    # Render the quiz page with questions
+    return render(request, 'take_quiz.html', {
+        'quiz': quiz,
+        'questions': questions
+    })
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.utils import timezone
+from django.db.models import Q
+from .models import CustomUser, Quizs  # Adjust based on your app's structure
+
 def available_quizzes(request):
-    custome_user_id = request.session.get('custome_user_id')  # Retrieve the student's ID from the session
+    # Retrieve the custom user ID from the session
+    custom_user_id = request.session.get('custom_user_id')
 
-    if not custome_user_id:
-        print("No user ID found in session")  # Debugging output
-        return redirect('login')  # Ensure the student is logged in
+    if not custom_user_id:
+        messages.error(request, "You are not logged in.")
+        return redirect('login')  # Redirect to login page if user ID is not in session
 
-    # Get the current date and time
-    current_date = now().date()
-    current_time = now().time()
+    try:
+        # Fetch the student (CustomUser) based on the custom user ID
+        student = CustomUser.objects.get(id=custom_user_id)
+    except CustomUser.DoesNotExist:
+        messages.error(request, "Student not found.")
+        return redirect('login')
 
-    # Filter quizzes that are currently active and within the start and end dates
-    quizzes = Quizs.objects.filter(is_active=True, start_date__lte=current_date, end_date__gte=current_date)
-    
+    # Check the registered course for the student
+    registered_course = student.course  # Assuming there's a course field on CustomUser
+
+    if not registered_course:
+        messages.error(request, "You are not registered for any course.")
+        return redirect('student_dashboard')
+
+    # Get current time in IST (based on TIME_ZONE setting in settings.py)
+    current_datetime = timezone.localtime()
+
+    # Debug statement to check the current IST date and time
+    print(f"Current date and time (IST): {current_datetime}")
+
+    # Fetch quizzes related to the registered course that are ongoing or in the future
+    quizzes = Quizs.objects.filter(
+        course=registered_course
+    ).filter(
+        Q(start_date=current_datetime.date(), end_time__gt=current_datetime.time(), end_date=current_datetime.date()) |  # Ongoing quizzes today
+        Q(start_date=current_datetime.date(), end_date__gt=current_datetime.date()) |  # Future quizzes (after today)
+        Q(start_date__gt=current_datetime.date())  # Future quizzes (after today)
+    ).order_by('start_date', 'start_time')  # Optional: order quizzes by start date and time
+
+    # Render the available quizzes template
     return render(request, 'available_quizzes.html', {'quizzes': quizzes})
 
 
-
-def view_quiz(request, quiz_id):
+def submit_quiz(request, quiz_id):
+    # Get the quiz and its associated questions
     quiz = get_object_or_404(Quizs, id=quiz_id)
-    
-    if request.method == 'POST':
-        # Handle quiz submission logic here
-        pass
+    questions = quiz.questions.all()
 
-    questions = quiz.questions_set.all()
-    return render(request, 'view_quiz.html', {'quiz': quiz, 'questions': questions})
+    # Retrieve the `custom_user_id` from the session
+    custom_user_id = request.session.get('custom_user_id')
+    if not custom_user_id:
+        messages.error(request, "You must be logged in to submit the quiz.")
+        return redirect('login')
+
+    # Fetch the CustomUser based on the custom user ID from the session
+    try:
+        custom_user = CustomUser.objects.get(id=custom_user_id)
+    except CustomUser.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect('login')
+
+    # Initialize counters
+    correct_count = 0
+    total_questions = questions.count()
+
+    # Prepare to store user answers with questions
+    question_data = []
+
+    # Loop through the quiz questions
+    for question in questions:
+        # Get the user's selected answer from POST data
+        user_answer = request.POST.get(f'question_{question.id}')
+
+        # Only process if the user provided an answer
+        if user_answer in ['A', 'B', 'C', 'D']:
+            # Store the user's answer in the UserAnswers table
+            UserAnswers.objects.update_or_create(
+                user=custom_user,
+                question=question,
+                defaults={'selected_option': user_answer}
+            )
+
+            # Increment correct count if the answer is correct
+            if user_answer == question.correct_option:
+                correct_count += 1
+        else:
+            user_answer = None
+
+        # Retrieve the stored answer from the database
+        try:
+            stored_answer = UserAnswers.objects.get(user=custom_user, question=question).selected_option
+        except UserAnswers.DoesNotExist:
+            stored_answer = "Not answered"
+
+        # Append the question and user answer to the list
+        question_data.append({
+            'question': question,
+            'user_answer': stored_answer,
+            'correct_answer': question.correct_option,
+        })
+
+    # Render the result page, passing the structured data to the template
+    context = {
+        'quiz': quiz,
+        'questions_data': question_data,
+        'correct_count': correct_count,
+        'total_questions': total_questions,
+    }
+    return render(request, 'quiz_result.html', context)
+
+
+def quiz_result(request, quiz_id):
+    # Ensure the user is logged in
+    custom_user_id = request.session.get('custom_user_id')
+    if not custom_user_id:
+        messages.error(request, "You must be logged in to view quiz results.")
+        return redirect('login')
+
+    # Get the quiz
+    quiz = get_object_or_404(Quizs, id=quiz_id)
+
+    # Retrieve user's answers for the specific quiz
+    user_answers = UserAnswers.objects.filter(user_id=custom_user_id, question__quiz=quiz)
+
+    # Prepare data for display
+    results = []
+    correct_count = 0
+    total_questions = quiz.questions.count()
+
+    # Create a dictionary to map question ids to user answers
+    user_answers_dict = {user_answer.question.id: user_answer.selected_option for user_answer in user_answers}
+
+    for question in quiz.questions.all():  # Iterate through all questions in the quiz
+        selected_option = user_answers_dict.get(question.id, "Not answered")  # Get the selected option or default to "Not answered"
+        correct_answer = question.correct_option
+        is_correct = (selected_option == correct_answer)
+
+        results.append({
+            'question': question,
+            'selected_option': selected_option,
+            'correct_option': correct_answer,
+            'is_correct': is_correct,  # Keep track of whether the answer is correct
+        })
+
+        if is_correct:
+            correct_count += 1
+
+    context = {
+        'quiz': quiz,
+        'results': results,
+        'correct_count': correct_count,
+        'total_questions': total_questions,
+    }
+    return render(request, 'quiz_result.html', context)
+
+
+def quiz_questions(request, quiz_id):
+    quiz = Quizs.objects.get(id=quiz_id)
+    questions = Question.objects.filter(quizs=quiz)  # Adjust based on your models
+
+    return render(request, 'quiz_questions.html', {'quiz': quiz, 'questions': questions})
 
 from django.shortcuts import render, redirect, get_object_or_404 # type: ignore
 from django.http import HttpResponse # type: ignore
@@ -1276,7 +1468,7 @@ def create_assignment(request):
 
 from django.contrib import messages  # type: ignore
 from django.shortcuts import redirect, render  # type: ignore
-from django.utils import timezone
+from django.utils import timezone # type: ignore
 from .models import Assignment, AssignmentSubmission, CustomUser  # Ensure to import your models
 
 def assignment_submission_view(request):
@@ -1385,8 +1577,51 @@ def view_assignment(request):
     else:
         return redirect('login')
 
+from django.db.models import Subquery, OuterRef # type: ignore
+from django.shortcuts import render # type: ignore
+from .models import AssignmentSubmission, Course
+
+def evaluate_assignments(request):
+    selected_course_id = request.GET.get('course_id')
+    courses = Course.objects.all()
+
+    # Get the latest submission for each student
+    latest_submissions = AssignmentSubmission.objects.filter(
+        student=OuterRef('student'),
+        assignment=OuterRef('assignment')
+    ).order_by('-submitted_at')
+
+    if selected_course_id:
+        # Filter by course and ensure we only get the latest submission for each student
+        submissions = AssignmentSubmission.objects.filter(
+            assignment__course_name__id=selected_course_id,
+            submitted_at=Subquery(latest_submissions.values('submitted_at')[:1])
+        )
+    else:
+        # Get the latest submission for each student across all courses
+        submissions = AssignmentSubmission.objects.filter(
+            submitted_at=Subquery(latest_submissions.values('submitted_at')[:1])
+        )
+
+    context = {
+        'submissions': submissions,
+        'courses': courses,
+        'selected_course_id': selected_course_id,
+    }
+    return render(request, 'evaluate_assignment.html', context)
+
+from django.shortcuts import get_object_or_404, redirect # type: ignore
+from .models import AssignmentSubmission
+from django.views.decorators.http import require_POST # type: ignore
 
 
-def evaluate_assignment(request):
-    # Logic to evaluate assignments submitted by students
-    return render(request, 'evaluate_assignment.html')
+@require_POST # type: ignore
+def submit_grade(request, submission_id):
+    submission = get_object_or_404(AssignmentSubmission, id=submission_id)
+    grade = request.POST.get('grade')
+
+    if grade is not None:
+        submission.grade = grade  # Store the grade in the grade field
+        submission.save()  # Save the submission to update the database
+
+    return redirect('evaluate_assignment')

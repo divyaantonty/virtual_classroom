@@ -1,14 +1,25 @@
-<h2>{{ quiz.name }}</h2>
-<form method="post">
+<form method="POST" action="{% url 'submit_quiz' quiz.id %}">
     {% csrf_token %}
     {% for question in questions %}
-        <div>
-            <p>{{ question.question_text }}</p>
-            <label><input type="radio" name="option_{{ question.id }}" value="{{ question.option1 }}"> {{ question.option1 }}</label><br>
-            <label><input type="radio" name="option_{{ question.id }}" value="{{ question.option2 }}"> {{ question.option2 }}</label><br>
-            <label><input type="radio" name="option_{{ question.id }}" value="{{ question.option3 }}"> {{ question.option3 }}</label><br>
-            <label><input type="radio" name="option_{{ question.id }}" value="{{ question.option4 }}"> {{ question.option4 }}</label><br>
+        <div class="question">
+            <p>{{ question.text }}</p>
+            <label>
+                <input type="radio" name="question_{{ question.id }}" value="A"> {{ question.option_a }}
+            </label>
+            <br>
+            <label>
+                <input type="radio" name="question_{{ question.id }}" value="B"> {{ question.option_b }}
+            </label>
+            <br>
+            <label>
+                <input type="radio" name="question_{{ question.id }}" value="C"> {{ question.option_c }}
+            </label>
+            <br>
+            <label>
+                <input type="radio" name="question_{{ question.id }}" value="D"> {{ question.option_d }}
+            </label>
         </div>
+        <hr>  <!-- Add a horizontal line for better separation -->
     {% endfor %}
-    <button type="submit">Submit Answers</button>
+    <button type="submit">Submit Quiz</button>
 </form>

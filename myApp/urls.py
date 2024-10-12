@@ -44,11 +44,12 @@ urlpatterns = [
     path('student_dashboard/', views.student_dashboard, name='student_dashboard'),
     path('view-scheduled-classes/', views.view_scheduled_classes, name='view_scheduled_classes'),
     path('view-materials/', views.view_materials, name='view_materials'),
-    path('available_quizzes/', views.available_quizzes, name='available_quizzes'),
-    path('view_quiz/<int:quiz_id>/', views.view_quiz, name='view_quiz'),
     path('assignment_detail/', views.assignment_submission_view, name='assignment_detail'),
-    
-
+    path('quiz/<int:quiz_id>/', views.take_quiz, name='take_quiz'),
+    path('available_quizzes/', views.available_quizzes, name='available_quizzes'),
+    path('quiz/<int:quiz_id>/', views.quiz_questions, name='quiz_questions'),
+    path('quiz/submit/<int:quiz_id>/', views.submit_quiz, name='submit_quiz'),
+    path('quiz/<int:quiz_id>/', views.quiz_result, name='quiz_result'),
 
     path('teacher_dashboard/', views.teacher_dashboard, name='teacher_dashboard'),
     path('schedule-class/', views.schedule_class, name='schedule_class'),
@@ -60,8 +61,8 @@ urlpatterns = [
     path('add_question/<int:quiz_id>/', views.add_question, name='add_question'),
     path('create_assignment/', views.create_assignment, name='create_assignment'),
     path('view_assignment/', views.view_assignment, name='view_assignment'),
-    path('evaluate_assignment/', views.evaluate_assignment, name='evaluate_assignment'),
-    
+    path('evaluate_assignment/', views.evaluate_assignments, name='evaluate_assignment'),
+    path('submit-grade/<int:submission_id>/', views.submit_grade, name='submit_grade'),
 
     path('parent_dashboard/', views.parent_dashboard, name='parent_dashboard'),
     path('view-class-schedule/', views.view_class_schedule, name='view_class_schedule'),

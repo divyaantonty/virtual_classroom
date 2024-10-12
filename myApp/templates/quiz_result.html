@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Result</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .quiz-title {
+            text-align: center;
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .result-summary {
+            text-align: center;
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        .correct-count {
+            font-weight: bold;
+            color: #28a745; /* Green color for correct answers */
+        }
+
+        .total-questions {
+            font-weight: bold;
+            color: #dc3545; /* Red color for total questions */
+        }
+
+        .questions {
+            margin: 20px 0;
+        }
+
+        .question-card {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .question-text {
+            font-size: 16px;
+            color: #333;
+        }
+
+        .correct-answer {
+            font-size: 14px;
+            color: #007bff; /* Blue color for correct answers */
+        }
+
+        .retake-button {
+            display: inline-block;
+            background: #007bff; /* Blue color */
+            color: white;
+            padding: 10px 15px;
+            text-decoration: none;
+            border-radius: 5px;
+            text-align: center;
+            transition: background 0.3s;
+        }
+
+        .retake-button:hover {
+            background: #0056b3; /* Darker blue on hover */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="quiz-title">Quiz Result: {{ quiz.name }}</h2>
+    
+        <p class="result-summary">
+            You answered <span class="correct-count">{{ correct_count }}</span> out of <span class="total-questions">{{ total_questions }}</span> questions correctly.
+        </p>
+    
+        <div class="questions">
+            {% for data in questions_data %}
+                <div class="question-card">
+                    <p class="question-text"><strong>Question:</strong> {{ data.question.text }}</p>
+    
+                    <p class="user-answer"><strong>Your answer:</strong> 
+                        {% if data.user_answer %}
+                            {{ data.user_answer }}
+                        {% else %}
+                            Not answered
+                        {% endif %}
+                    </p>
+    
+                    <p class="correct-answer"><strong>Correct answer:</strong> {{ data.correct_answer }}</p>
+                    <hr>
+                </div>
+            {% endfor %}
+        </div>
+    
+        <a class="back-button" href="{% url 'student_dashboard' %}">Back to Dashboard</a>
+        <a class="retake-button" href="{% url 'take_quiz' quiz.id %}">Retake Quiz</a>
+    </div>
+    
+</body>
+</html>

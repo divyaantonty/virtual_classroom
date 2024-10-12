@@ -1,10 +1,90 @@
-<h2>Available Quizzes</h2>
-<ul>
-    {% for quiz in quizzes %}
-    <li>
-        <a href="{% url 'view_quiz' quiz.id %}">{{ quiz.title }}</a> - {{ quiz.start_date }} to {{ quiz.end_date }}
-    </li>
-    {% empty %}
-    <li>No quizzes available at the moment.</li>
-    {% endfor %}
-</ul>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Available Quizzes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .quiz-list {
+            margin-top: 20px;
+        }
+        .quiz-item {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        .quiz-item:last-child {
+            border-bottom: none;
+        }
+        .quiz-item h2 {
+            margin: 0;
+            font-size: 20px;
+            color: #007bff;
+        }
+        .quiz-item p {
+            margin: 5px 0;
+            color: #666;
+        }
+        .quiz-item .start-time {
+            color: #28a745;
+        }
+        .quiz-item .end-time {
+            color: #dc3545;
+        }
+        .btn {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Available Quizzes</h1>
+
+    {% if quizzes %}
+        <div class="quiz-list">
+            {% for quiz in quizzes %}
+            <div class="quiz-item">
+                <h2>{{ quiz.title }}</h2>
+                <p><strong>Course:</strong> {{ quiz.course.course_name }}</p>
+                <p><strong>Start Date:</strong> {{ quiz.start_date }}</p>
+                <p><strong>Start Time:</strong> <span class="start-time">{{ quiz.start_time }}</span></p>
+                <p><strong>End Date:</strong> {{ quiz.end_date }}</p>
+                <p><strong>End Time:</strong> <span class="end-time">{{ quiz.end_time }}</span></p>
+                <a href="{% url 'quiz_questions' quiz.id %}" class="btn">Attempt Quiz</a>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No quizzes are currently available for your course.</p>
+    {% endif %}
+
+</div>
+
+</body>
+</html>

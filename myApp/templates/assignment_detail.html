@@ -174,77 +174,85 @@
         <!-- Assignment details heading -->
         <h1>Assignment Details</h1>
 
-        <!-- Assignment table -->
-        <table>
-            <thead>
-                <tr>
-                    <th>Assignment Title</th>
-                    <th>Description</th>
-                    <th>Start Date</th>
-                    <th>End Date</th>
-                    <th>Start Time</th>
-                    <th>End Time</th>
-                    <th>Course</th>
-                    <th>Teacher</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for detail in assignment_details %}
-                <tr>
-                    <td>{{ detail.assignment.title }}</td>
-                    <td>{{ detail.assignment.description }}</td>
-                    <td>{{ detail.assignment.start_date }}</td>
-                    <td>{{ detail.assignment.end_date }}</td>
-                    <td>{{ detail.assignment.start_time }}</td>
-                    <td>{{ detail.assignment.end_time }}</td>
-                    <td>{{ detail.assignment.course_name }}</td>
-                    <td>{{ detail.assignment.teacher }}</td>
-                    <td>
-                        {% if detail.submission %}
-                            <span style="color: green;">Submitted</span>
-                        {% else %}
-                            {% if detail.has_reached_deadline %}
-                                <span style="color: red;">Not submitted before the deadline</span>
-                            {% else %}
-                                <span style="color: orange;">Pending</span>
-                            {% endif %}
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if detail.assignment.file %}
-                            <a href="{{ detail.assignment.file.url }}" download>Download Question</a>
-                        {% else %}
-                            <span>No question file available</span>
-                        {% endif %}
-                        <br><br>
-                        {% if detail.submission %}
-                            <a href="{{ detail.submission.file.url }}" download>Download your submission</a>
-                            {% if detail.submission_allowed %}
-                                <p>You can still update your submission before the deadline.</p>
-                                <form method="post" enctype="multipart/form-data">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="assignment_id" value="{{ detail.assignment.id }}">
-                                    <input type="file" name="file" required>
-                                    <button type="submit">Update Submission</button>
-                                </form>
-                            {% endif %}
-                        {% else %}
-                            {% if not detail.has_reached_deadline %}
-                                <form method="post" enctype="multipart/form-data">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="assignment_id" value="{{ detail.assignment.id }}">
-                                    <input type="file" name="file" required>
-                                    <button type="submit">Submit Assignment</button>
-                                </form>
-                            {% endif %}
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<table>
+    <thead>
+        <tr>
+            <th>Assignment Title</th>
+            <th>Description</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Course</th>
+            <th>Teacher</th>
+            <th>Status</th>
+            <th>Grade</th> <!-- New column for Grade -->
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for detail in assignment_details %}
+        <tr>
+            <td>{{ detail.assignment.title }}</td>
+            <td>{{ detail.assignment.description }}</td>
+            <td>{{ detail.assignment.start_date }}</td>
+            <td>{{ detail.assignment.end_date }}</td>
+            <td>{{ detail.assignment.start_time }}</td>
+            <td>{{ detail.assignment.end_time }}</td>
+            <td>{{ detail.assignment.course_name }}</td>
+            <td>{{ detail.assignment.teacher }}</td>
+            <td>
+                {% if detail.submission %}
+                    <span style="color: green;">Submitted</span>
+                {% else %}
+                    {% if detail.has_reached_deadline %}
+                        <span style="color: red;">Not submitted before the deadline</span>
+                    {% else %}
+                        <span style="color: orange;">Pending</span>
+                    {% endif %}
+                {% endif %}
+            </td>
+            <td>
+                {% if detail.submission and detail.submission.grade %}
+                    <span style="color: blue;">Grade: {{ detail.submission.grade }}</span> <!-- Display the grade -->
+                {% else %}
+                    <span style="color: gray;">Not graded yet</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if detail.assignment.file %}
+                    <a href="{{ detail.assignment.file.url }}" download>Download Question</a>
+                {% else %}
+                    <span>No question file available</span>
+                {% endif %}
+                <br><br>
+                {% if detail.submission %}
+                    <a href="{{ detail.submission.file.url }}" download>Download your submission</a>
+                    {% if detail.submission_allowed %}
+                        <p>You can still update your submission before the deadline.</p>
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="hidden" name="assignment_id" value="{{ detail.assignment.id }}">
+                            <input type="file" name="file" required>
+                            <button type="submit">Update Submission</button>
+                        </form>
+                    {% endif %}
+                {% else %}
+                    {% if not detail.has_reached_deadline %}
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="hidden" name="assignment_id" value="{{ detail.assignment.id }}">
+                            <input type="file" name="file" required>
+                            <button type="submit">Submit Assignment</button>
+                        </form>
+                    {% endif %}
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
     </div>
 </body>
 </html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ quiz.title }}</title>
+</head>
+<body>
+    <h1>{{ quiz.title }}</h1>
+    <p><strong>Course:</strong> {{ quiz.course.course_name }}</p>
+    <p><strong>Teacher:</strong> {{ quiz.teacher.name }}</p>
+    <p><strong>Start Date:</strong> {{ quiz.start_date }}</p>
+    <p><strong>End Date:</strong> {{ quiz.end_date }}</p>
+    <p><strong>Start Time:</strong> {{ quiz.start_time }}</p>
+    <p><strong>End Time:</strong> {{ quiz.end_time }}</p>
+
+    <h2>Questions</h2>
+    {% if questions %}
+        <ul>
+            {% for question in questions %}
+                <li>
+                    <strong>{{ question.text }}</strong><br>
+                    <ul>
+                        <li>Option A: {{ question.option_a }}</li>
+                        <li>Option B: {{ question.option_b }}</li>
+                        <li>Option C: {{ question.option_c }}</li>
+                        <li>Option D: {{ question.option_d }}</li>
+                        <li><strong>Correct Option:</strong> {{ question.correct_option }}</li>
+                    </ul>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No questions have been added to this quiz yet.</p>
+    {% endif %}
+
+    <a href="{% url 'add_question_to_quiz' quiz.id %}">Add Question</a>
+    <a href="{% url 'quiz_list' %}">Back to Quiz List</a>
+</body>
+</html>

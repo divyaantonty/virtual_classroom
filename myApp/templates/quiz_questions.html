@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ quiz.title }}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 15px;
+        }
+        strong {
+            color: #333;
+        }
+        h2 {
+            font-size: 24px;
+            margin-top: 30px;
+            color: #444;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .question-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .question-table th,
+        .question-table td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+            font-size: 16px;
+        }
+        .question-table th {
+            background-color: #007bff;
+            color: white;
+        }
+        .question-table td {
+            background-color: #f9f9f9;
+        }
+        .action-links {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .action-links a {
+            display: inline-block;
+            padding: 12px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-right: 10px;
+            transition: background-color 0.3s ease;
+        }
+        .action-links a:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>{{ quiz.title }}</h1>
+    <p><strong>Course:</strong> {{ quiz.course.course_name }}</p>
+    <p><strong>Teacher:</strong> {{ quiz.teacher.name }}</p>
+    <p><strong>Start Date:</strong> {{ quiz.start_date }}</p>
+    <p><strong>End Date:</strong> {{ quiz.end_date }}</p>
+    <p><strong>Start Time:</strong> {{ quiz.start_time }}</p>
+    <p><strong>End Time:</strong> {{ quiz.end_time }}</p>
+
+    <h2>Questions</h2>
+    {% if questions %}
+        <table class="question-table">
+            <thead>
+                <tr>
+                    <th>Question</th>
+                    <th>Option A</th>
+                    <th>Option B</th>
+                    <th>Option C</th>
+                    <th>Option D</th>
+                    <th>Correct Option</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for question in questions %}
+                    <tr>
+                        <td>{{ question.text }}</td>
+                        <td>{{ question.option_a }}</td>
+                        <td>{{ question.option_b }}</td>
+                        <td>{{ question.option_c }}</td>
+                        <td>{{ question.option_d }}</td>
+                        <td>{{ question.correct_option }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No questions have been added to this quiz yet.</p>
+    {% endif %}
+
+    <div class="action-links">
+        <a href="{% url 'add_question_to_quiz' quiz.id %}">Add Question</a>
+        <a href="{% url 'quiz_list' %}">Back to Quiz List</a>
+    </div>
+</div>
+
+</body>
+</html>

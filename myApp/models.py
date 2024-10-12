@@ -174,31 +174,37 @@ class Quizs(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.course.course_name}"
-    
-    def is_active(self):
-        current_date = timezone.now().date()
-        current_time = timezone.now().time()
+ 
+class Question(models.Model):
+    quiz = models.ForeignKey(Quizs, on_delete=models.CASCADE, related_name='questions')
+    text = models.CharField(max_length=300)
+    option_a = models.CharField(max_length=100)
+    option_b = models.CharField(max_length=100)
+    option_c = models.CharField(max_length=100)
+    option_d = models.CharField(max_length=100)
+    correct_option = models.CharField(max_length=1, choices=[('A', 'A'), ('B', 'B'), ('C', 'C'), ('D', 'D')])
 
-        # Check if the quiz is active based on the start and end dates and times
-        return (self.start_date <= current_date <= self.end_date) and \
-               (self.start_time <= current_time if current_date == self.start_date else True) and \
-               (current_time <= self.end_time if current_date == self.end_date else True)
+class Answer(models.Model):
+    question = models.ForeignKey(Question, related_name='answers', on_delete=models.CASCADE)
+    text = models.CharField(max_length=255) 
 
+from .models import CustomUser  # Import your custom user model
 
+class UserAnswer(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)  # Direct reference to the custom user model
+    quiz = models.ForeignKey(Quizs, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    selected_answer = models.CharField(max_length=255)
+    is_correct = models.BooleanField()
+    submitted_at = models.DateTimeField(auto_now_add=True)
 
-
-
-class Questions(models.Model):
-    quiz = models.ForeignKey('Quizs', on_delete=models.CASCADE)
-    question_text = models.TextField()
-    option1 = models.CharField(max_length=255)
-    option2 = models.CharField(max_length=255)
-    option3 = models.CharField(max_length=255)
-    option4 = models.CharField(max_length=255)
-    correct_option = models.CharField(max_length=255)
-
+class UserAnswers(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, related_name='user_answers', on_delete=models.CASCADE)
+    selected_option = models.CharField(max_length=1, choices=[('A', 'A'), ('B', 'B'), ('C', 'C'), ('D', 'D')])
+     
     def __str__(self):
-        return f"Question for {self.quiz.title}"
+        return f"{self.user.username} - {self.question.text}: {self.selected_option}"
 
 
 from django.db import models # type: ignore
@@ -224,6 +230,7 @@ class AssignmentSubmission(models.Model):
     student = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     file = models.FileField(upload_to='submissions/', blank=True, null=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
+    grade = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # New field for grade
 
     def __str__(self):
         return f"Submission by {self.student} for {self.assignment}"
