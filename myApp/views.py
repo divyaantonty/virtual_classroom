@@ -617,15 +617,6 @@ def interview_teacher(request):
 
     return render(request, 'interview_teacher.html', {'teachers': teachers})
 
-from django.shortcuts import render # type: ignore
-
-def feedback_to_student(request):
-    return render(request, 'feedback_student.html')
-
-from django.shortcuts import render # type: ignore
-
-def feedback_to_teacher(request):
-    return render(request, 'feedback_teacher.html')
 
 
 from django.shortcuts import render, redirect
@@ -1625,3 +1616,49 @@ def submit_grade(request, submission_id):
         submission.save()  # Save the submission to update the database
 
     return redirect('evaluate_assignment')
+
+from django.shortcuts import render, redirect
+from django.views.decorators.http import require_POST
+from .models import FeedbackQuestion
+
+def add_feedback_question(request):
+    question_text = request.POST.get('question_text')
+    if question_text:
+        FeedbackQuestion.objects.create(question_text=question_text)  # Save the question to the database
+        return redirect('admin_dashboard')  # Redirect to admin dashboard after saving
+
+    return render(request, 'add_feedback_question.html', {'error': 'Please enter a question.'})
+
+
+
+from django.shortcuts import render, redirect
+from .models import Feedback, FeedbackQuestion
+
+def feedback_view(request):
+    questions = FeedbackQuestion.objects.all()  # Load all questions from the database
+
+    if request.method == 'POST':
+        user_id = request.session.get('custom_user_id', 'Anonymous')  # Get the user ID from session
+        for question in questions:
+            response = request.POST.get(f'question_{question.id}')
+            if response:  # Ensure there's a response before saving
+                Feedback.objects.create(
+                    user=user_id,
+                    question=question,
+                    response=response
+                )
+        return redirect('student_dashboard')  # Redirect to a thank you page or another view
+
+    return render(request, 'feedback_form.html', {'questions': questions})
+
+def thank_you_view(request):
+    return render(request, 'thank_you.html')
+
+from django.shortcuts import render
+from .models import Feedback
+
+def view_feedback_responses(request):
+    feedback_responses = Feedback.objects.all()  # Fetch all feedback responses
+    return render(request, 'view_feedback_responses.html', {'feedback_responses': feedback_responses})
+
+

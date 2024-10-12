@@ -50,6 +50,7 @@ urlpatterns = [
     path('quiz/<int:quiz_id>/', views.quiz_questions, name='quiz_questions'),
     path('quiz/submit/<int:quiz_id>/', views.submit_quiz, name='submit_quiz'),
     path('quiz/<int:quiz_id>/', views.quiz_result, name='quiz_result'),
+    path('feedback/', views.feedback_view, name='feedback_form'),
 
     path('teacher_dashboard/', views.teacher_dashboard, name='teacher_dashboard'),
     path('schedule-class/', views.schedule_class, name='schedule_class'),
@@ -68,11 +69,13 @@ urlpatterns = [
     path('view-class-schedule/', views.view_class_schedule, name='view_class_schedule'),
     path('parent_update_profile/', views.parent_update_profile, name='parent_update_profile'),
     path('view_study_materials/', views.view_study_materials, name='view_study_materials'),
-
+   
 
     path('admin_dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('manage-students/', views.manage_students, name='manage_students'),
     path('delete_student/<int:student_id>/', views.delete_student, name='delete_student'),
+    path('add_feedback_question/', views.add_feedback_question, name='add_feedback_question'),
+     path('view_feedback_responses/', views.view_feedback_responses, name='view_feedback_responses'),
 
 
     path('manage-teachers/', views.manage_teachers, name='manage_teachers'),
@@ -81,9 +84,6 @@ urlpatterns = [
     path('interview-teacher/', views.interview_teacher, name='interview_teacher'),
     path('reject_teacher/<int:teacher_id>/', views.reject_teacher, name='reject_teacher'),
     path('delete_teacher/<int:teacher_id>/', views.delete_teacher, name='delete_teacher'),
-
-    path('feedback/teacher/', views.feedback_to_teacher, name='feedback_teacher'),
-    path('feedback/student/', views.feedback_to_student, name='feedback_student'),
 
 
     path('password_reset/', views.PasswordResetView.as_view(template_name='password_reset.html'), name='password_reset'),

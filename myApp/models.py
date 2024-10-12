@@ -234,3 +234,31 @@ class AssignmentSubmission(models.Model):
 
     def __str__(self):
         return f"Submission by {self.student} for {self.assignment}"
+    
+
+from django.db import models
+
+class FeedbackQuestion(models.Model):
+    question_text = models.TextField()
+
+    def __str__(self):
+        return self.question_text
+
+
+class Feedback(models.Model):
+    user = models.CharField(max_length=255)  # Use custom_user_id from the session
+    question = models.ForeignKey(FeedbackQuestion, on_delete=models.CASCADE)
+    response = models.CharField(
+        max_length=20,
+        choices=[
+            ('strongly_agree', 'Strongly Agree'),
+            ('agree', 'Agree'),
+            ('neutral', 'Neutral'),
+            ('disagree', 'Disagree'),
+            ('strongly_disagree', 'Strongly Disagree'),
+        ]
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user} - {self.question} - {self.response}"

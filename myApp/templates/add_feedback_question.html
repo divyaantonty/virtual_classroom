@@ -1,0 +1,70 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Feedback Questions</title>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+        }
+        .container {
+            margin-top: 50px;
+            max-width: 600px;
+        }
+        .form-title {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+            color: #333;
+        }
+        .btn-primary {
+            width: 100%;
+        }
+        .question-group {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="form-title">Add Feedback Questions</h2>
+        <form id="feedback-form" method="POST" action="{% url 'add_feedback_question' %}">
+            {% csrf_token %}
+            <div id="question-container">
+                <div class="form-group question-group">
+                    <label for="question_text_0">Question</label>
+                    <textarea id="question_text_0" name="question_text" class="form-control" placeholder="Enter your question here..." rows="4" required></textarea>
+                </div>
+            </div>
+            <button type="button" class="btn btn-secondary" id="add-question">Add Another Question</button>
+            <button type="submit" class="btn btn-primary">Add Questions</button>
+        </form>
+    </div>
+
+    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script>
+        $(document).ready(function() {
+            let questionCount = 1;  // Counter for questions
+
+            $('#add-question').click(function() {
+                // Create a new question textarea
+                const newQuestion = `
+                    <div class="form-group question-group">
+                        <label for="question_text_${questionCount}">Question</label>
+                        <textarea id="question_text_${questionCount}" name="question_text" class="form-control" placeholder="Enter your question here..." rows="4" required></textarea>
+                    </div>
+                `;
+                $('#question-container').append(newQuestion);
+                questionCount++;  // Increment the counter
+            });
+        });
+    </script>
+</body>
+</html>
