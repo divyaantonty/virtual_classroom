@@ -150,20 +150,33 @@ def login_view(request):
 
     return render(request, 'login.html')
 
-# Dashboard views
+from django.shortcuts import render, redirect
+from .models import CustomUser, FeedbackQuestion, Feedback
 
 def student_dashboard(request):
     custom_user_id = request.session.get('custom_user_id')
     if not custom_user_id:
         return redirect('login')  # Redirect to login if CustomUser not authenticated
+
     # Fetch the CustomUser object based on the session ID
     try:
         custom_user = CustomUser.objects.get(id=custom_user_id)
     except CustomUser.DoesNotExist:
         return redirect('login')  # Redirect if the user doesn't exist
 
-    # Pass the CustomUser object to the template
-    return render(request, 'student_dashboard.html', {'custom_user': custom_user})
+    # Check for unanswered feedback questions for the logged-in user
+    feedback_questions = FeedbackQuestion.objects.all()
+    answered_questions = Feedback.objects.filter(user=custom_user_id).values_list('question_id', flat=True)
+    
+    # Identify new feedback questions (not answered by the user)
+    new_feedback_questions = feedback_questions.exclude(id__in=answered_questions)
+    print('New Feedback Questions:', list(new_feedback_questions))
+
+    # Pass the CustomUser object and feedback status to the template
+    return render(request, 'student_dashboard.html', {
+        'custom_user': custom_user,
+        'new_feedback_questions': new_feedback_questions,  # This will contain unanswered questions
+    })
 
 def teacher_dashboard(request):
     teacher_id = request.session.get('teacher_id')

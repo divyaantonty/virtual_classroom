@@ -112,6 +112,27 @@
             z-index: 1000; /* Ensure the header stays above other content */
             background-color: white; /* Optional: To ensure visibility if content scrolls under it */
         }
+        <style>
+            /* Existing styles */
+        
+            .alert {
+                margin-top: 20px;
+                padding: 15px;
+                background-color: #f8d7da; /* Light red background */
+                color: #721c24; /* Dark red text color */
+                border: 1px solid #f5c6cb; /* Light red border */
+                border-radius: 5px;
+                font-size: 0.8em; /* Smaller text size */
+            }
+            
+            .alert a {
+                font-weight: bold;
+                color: #721c24; /* Dark red color for links */
+                text-decoration: underline;
+            }
+        </style>
+        
+        
     </style>
 </head>
 
@@ -126,6 +147,16 @@
                         <h2 class="mb-0">Student Dashboard</h2>
                         <p>Welcome {{ custom_user.username }}</p>
                     </a>
+                    {% if new_feedback_questions %}
+                    
+                        <span style="color: red; font-size: 0.8em;">
+                            <a href="{% url 'feedback_form' %}" class="alert-link" style="color: red; font-weight: bold; text-decoration: none;">
+                                You have new feedback questions to answer!
+                            </a>
+                        </span>
+                    
+                    {% endif %}
+
                 </div>
                 <div class="profile-dropdown">
                     <span class="mr-2">👤</span> <!-- Unicode user icon -->
