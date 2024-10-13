@@ -1686,3 +1686,86 @@ def view_feedback_responses(request):
     return render(request, 'view_feedback_responses.html', {'feedback_responses': feedback_responses})
 
 
+# views.py
+from django.shortcuts import render, redirect
+from django.http import JsonResponse
+from .models import CalendarEvent, Course
+
+def add_event(request):
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        start_time = request.POST.get('start_time')
+        end_time = request.POST.get('end_time')
+        description = request.POST.get('description', '')
+        event_type = request.POST.get('event_type')
+        course_id = request.POST.get('course_id')
+
+        # Debugging: print the received values
+        print(f'Title: {title}, Start Time: {start_time}, End Time: {end_time}, Course ID: {course_id}')
+        
+        # Check if course_id is provided
+        if not course_id:
+            courses = Course.objects.all()  # Fetch courses to repopulate the form
+            return render(request, 'add_event.html', {'error': 'Course must be selected.', 'courses': courses})
+
+        # Convert start_time and end_time
+        start_time = timezone.make_aware(timezone.datetime.fromisoformat(start_time))
+        end_time = timezone.make_aware(timezone.datetime.fromisoformat(end_time))
+
+        # Create the CalendarEvent object
+        event = CalendarEvent(
+            title=title,
+            start_time=start_time,
+            end_time=end_time,
+            description=description,
+            event_type=event_type,
+            course_id=course_id,
+            created_by_id=request.session.get('teacher_id')  # Set created_by to the teacher
+        )
+        
+        # Attempt to save the event
+        try:
+            event.save()
+            print('Event saved successfully!')
+        except Exception as e:
+            print(f'Error saving event: {e}')
+        
+        return redirect('view_events')  # Redirect to the event list after saving
+
+    courses = Course.objects.all()  # Fetch courses for the dropdown
+    return render(request, 'add_event.html', {'courses': courses})  # Render the template with courses
+
+
+def view_events(request):
+    teacher_id = request.session.get('teacher_id')
+    events = CalendarEvent.objects.filter(created_by_id=teacher_id)
+    return render(request, 'view_events.html', {'events': events})
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import CalendarEvent
+from django.contrib.auth import get_user_model
+
+def student_events(request):
+    CustomUser = get_user_model()  # Fetch the custom user model
+    custom_user_id = request.session.get('custom_user_id')
+
+    if not custom_user_id:
+        messages.error(request, 'You must be logged in as a student to view events.')
+        return redirect('login')  # Redirect to login if no user session
+
+    # Fetch the CustomUser (student) object using the session ID
+    student = get_object_or_404(CustomUser, id=custom_user_id)
+
+    # Fetch the course associated with the student
+    course = student.course  # This will fetch the course if exists
+
+    if not course:
+        messages.error(request, 'You are not registered for any courses.')
+        return redirect('student_dashboard')  # Redirect if no course is associated
+
+    # Fetch events for the course the student is enrolled in
+    events = CalendarEvent.objects.filter(course=course)
+
+    return render(request, 'student_event.html', {'events': events})

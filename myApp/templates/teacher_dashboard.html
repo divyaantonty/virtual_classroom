@@ -127,6 +127,26 @@
             background-color: #ddd;
         }
 
+        .profile-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .profile-dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: #f8f9fa;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+        
+        .profile-dropdown:hover .profile-dropdown-content {
+            display: block;
+        }
+        
+
     </style>
 </head>
 
@@ -142,9 +162,15 @@
                         <p>Welcome {{ first_name }} {{ last_name }}</p> <!-- Display teacher's name here -->
                     </a>
                 </div>
-                <div class="logout-container">
-                    <a href="{% url 'logout' %}" class="nav-link text-right" style="color: black;">Logout</a>
+                <div class="profile-dropdown">
+                    <a href="#" class="nav-link text-right" style="color: black;">
+                        {{ first_name }} {{ last_name }} 
+                    </a>
+                    <div class="profile-dropdown-content">
+                        <a href="{% url 'logout' %}" style="color: black;">Logout</a>
+                    </div>
                 </div>
+                
             </div>
         </header>
 
@@ -187,7 +213,9 @@
                     <div class="feature-box">
                         <a href="{% url 'create_quiz' %}">Conduct Quizzes</a>
                     </div>
-                    
+                    <div class="feature-box">
+                        <a href="{% url 'add_event' %}">Manage Calendar</a>
+                    </div>
                     <div class="feature-box">
                         <a href="{% url 'view_profile' %}">View Profile</a>
                     </div>

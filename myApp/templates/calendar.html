@@ -1,0 +1,37 @@
+<!-- calendar.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.10.1/main.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.10.1/main.min.js"></script>
+    <style>
+        #calendar {
+            max-width: 800px;
+            margin: 40px auto;
+        }
+    </style>
+</head>
+<body>
+    <h2>Event Calendar</h2>
+    <div id="calendar"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                events: '/events/',  // Fetch events from the server using the EventDataView
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                eventClick: function(info) {
+                    alert('Event: ' + info.event.title + '\n' + 'Description: ' + info.event.extendedProps.description);
+                }
+            });
+            calendar.render();
+        });
+    </script>
+</body>
+</html>

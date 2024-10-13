@@ -1,0 +1,36 @@
+<!-- event_create.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Event</title>
+</head>
+<body>
+    <h2>Create New Event</h2>
+    <form method="POST">
+        {% csrf_token %}
+        <label for="title">Event Title:</label>
+        <input type="text" name="title" required><br><br>
+
+        <label for="start_time">Start Time:</label>
+        <input type="datetime-local" name="start_time" required><br><br>
+
+        <label for="end_time">End Time:</label>
+        <input type="datetime-local" name="end_time" required><br><br>
+
+        <label for="description">Description:</label>
+        <textarea name="description"></textarea><br><br>
+
+        <label for="event_type">Event Type:</label>
+        <input type="text" name="event_type" required><br><br>
+
+        <label for="course_id">Course:</label>
+        <select name="course_id" required>
+            {% for course in courses %}
+                <option value="{{ course.id }}">{{ course.name }}</option>
+            {% endfor %}
+        </select><br><br>
+
+        <input type="submit" value="Create Event">
+    </form>
+</body>
+</html>
