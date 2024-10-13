@@ -1779,8 +1779,15 @@ def student_events(request):
 
     # Fetch events for the course the student is enrolled in
     events = CalendarEvent.objects.filter(course=course)
+    event_type = request.GET.get('event_type', '')
+    if event_type:
+        events = events.filter(event_type=event_type)  # Filter by event type
+    context = {
+        'events': events,
+        'courses': course,
+    }    
 
-    return render(request, 'student_event.html', {'events': events})
+    return render(request, 'student_event.html', context)
 
 
 from django.http import JsonResponse
@@ -1816,3 +1823,4 @@ def get_event_color(event_type):
         'personal_event': '#6c757d'   # Gray for personal events
     }
     return color_map.get(event_type, '#007bff')  # Default to Bootstrap primary color
+

@@ -20,6 +20,24 @@
 <body>
     <div class="container">
         <h1>Your Upcoming Events</h1>
+
+        <!-- Filter Form for Event Type -->
+        <form method="GET" class="mb-3">
+            <div class="form-row">
+                <div class="col">
+                    <select name="event_type" class="form-control" onchange="this.form.submit()">
+                        <option value="">All Events</option>
+                        <option value="assignment" {% if request.GET.event_type == 'assignment' %}selected{% endif %}>Assignments</option>
+                        <option value="exam" {% if request.GET.event_type == 'exam' %}selected{% endif %}>Exams</option>
+                        <option value="class" {% if request.GET.event_type == 'class' %}selected{% endif %}>Class Schedule</option>
+                    </select>
+                </div>
+                <div class="col">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                </div>
+            </div>
+        </form>
+
         <div id="calendar"></div>
     </div>
     
