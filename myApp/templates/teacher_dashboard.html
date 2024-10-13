@@ -51,6 +51,23 @@
             }
         }
 
+        // Toggle dropdown menu for Conduct Quizzes
+        function toggleQuizDropdown() {
+            var dropdown = document.getElementById('quizDropdown');
+            if (dropdown.style.display === "none" || dropdown.style.display === "") {
+                dropdown.style.display = "block";
+            } else {
+                dropdown.style.display = "none";
+            }
+        }
+        function toggleMaterialDropdown() {
+            const dropdown = document.getElementById('materialDropdown');
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        }
+       
+        
+
+
     </script>
 
     <style>
@@ -204,15 +221,27 @@
                             <a href="{% url 'evaluate_assignment' %}">Evaluate Assignments</a>
                         </div>
                     </div>
-                    <div class="feature-box">
-                        <a href="{% url 'upload_material' %}">Upload Study Materials</a>
+                    <div class="feature-box" onclick="toggleMaterialDropdown()">
+                        <a href="#">Study Materials</a>
+                        <div class="dropdown-content" id="materialDropdown">
+                            <a href="{% url 'upload_material' %}">Upload Study Materials</a>
+                            <a href="{% url 'view_uploaded_materials' %}">View Uploaded Materials</a>
+                        </div>
                     </div>
+                    
                     <div class="feature-box">
                         <a href="#">Make Discussion Forum</a>
                     </div>
-                    <div class="feature-box">
-                        <a href="{% url 'create_quiz' %}">Conduct Quizzes</a>
+                    <div class="feature-box" onclick="toggleQuizDropdown()">
+                        <a href="#">Conduct Quizzes</a>
+                        <!-- Dropdown menu for quiz-related actions -->
+                        <div class="dropdown-content" id="quizDropdown">
+                            <a href="{% url 'create_quiz' %}">Create Quiz</a>
+                            <a href="{% url 'view_quiz_questions' %}">View Questions</a>
+                            {% comment %} <a href="{% url 'view_student_answers' %}">View Student Answers</a> {% endcomment %}
+                        </div>
                     </div>
+                    
                     <div class="feature-box">
                         <a href="{% url 'add_event' %}">Manage Calendar</a>
                     </div>

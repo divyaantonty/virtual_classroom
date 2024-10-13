@@ -20,325 +20,258 @@
     <link rel="stylesheet" href="{% static 'css/aos.css' %}">
     <link rel="stylesheet" href="{% static 'css/jquery.mb.YTPlayer.min.css' %}" media="all">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    <script type="text/javascript">
-        function preventBack() {
-            window.history.forward(); 
-        }
-          
-        setTimeout("preventBack()", 0);
-          
-        window.onunload = function () { null };
-    </script>
 
     <style>
-        .header-container {
+        body {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px;
+            background-color: #f0f0f0; /* Light background for the body */
         }
 
-        .logout-container {
-            color: black;
-        }
-
-        .feature-box {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            padding: 20px;
-            margin-bottom: 10px;
-            text-align: left;
+        .sidebar {
             width: 250px;
-            position: relative; /* For dropdown positioning */
-        }
-
-        .site-section {
+            background-color: green; /* Set sidebar background color to black */
             padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            color: white; /* Text color for the sidebar */
         }
 
-        .site-section.ftco-subscribe-1 {
-            min-height: 300px;
-            background-size: cover;
-            background-position: center;
+        .sidebar .feature-box {
+            margin-bottom: 15px;
         }
 
-        .container {
-            display: flex;
-            flex-direction: row;
-            gap: 10px;
-            max-width: 100%;
+        .sidebar .feature-box a {
+            display: block;
+            padding: 10px;
+            color: white; /* Text color for links in the sidebar */
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background 0.3s;
         }
 
-        .feature-boxes {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
+        .sidebar .feature-box a:hover {
+            background-color: blue; /* Change background on hover */
+            color: white; /* Ensure text remains white on hover */
+        }
+        .logout-button {
+            margin-top: 20px; /* Space above the logout button */
+            padding: 10px;
+            background-color: #dc3545; /* Red background for logout */
+            color: white; /* Text color for logout button */
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%; /* Full width */
+            text-align: center; /* Center text */
+            text-decoration: none; /* Remove underline */
         }
 
-        .site-navbar {
-            position: sticky;
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 1000;
-            background-color: white;
+        .logout-button:hover {
+            background-color: #c82333; /* Darker red on hover */
         }
 
         .dropdown-content {
-            display: none; /* Initially hidden */
+            display: none;
             position: absolute;
-            background-color: #f1f1f1;
+            background-color: black;
             min-width: 200px;
-            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
             z-index: 1;
         }
 
         .dropdown-content a {
-            color: black;
-            padding: 12px 16px;
+            padding: 10px;
+            color: black; /* Text color for dropdown links */
             text-decoration: none;
             display: block;
         }
 
         .dropdown-content a:hover {
-            background-color: #ddd;
-        }
-
-
-        /* Styling the form */
-        form {
-            width: 60%;
-            background-color: #f9f9f9;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        h1 {
-            text-align: center;
-            color: #007bff;
-        }
-
-        label {
-            font-weight: bold;
-            margin-bottom: 5px;
-            display: inline-block;
-        }
-
-        input,
-        select {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        button {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        /* Styling the table format */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        th,
-        td {
-            padding: 15px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-
-        th {
-            background-color: #007bff;
-            color: white;
-        }
-
-        tr:hover {
             background-color: #f1f1f1;
         }
 
-        /* Responsive design */
-        @media (max-width: 768px) {
-            form {
-                width: 90%;
-            }
-        }
-
-        /* Styling the sidebar */
-        .sidebar {
-            width: 25%;
-            margin-right: 20px;
-        }
-
-        .feature-box a {
+        .feature-box:hover .dropdown-content {
             display: block;
+        }
+
+        .content {
+            flex-grow: 1;
+            padding: 20px;
+        }
+
+        /* Style for the form */
+        form {
+            background-color: white; /* Form background color */
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
             padding: 10px;
-            background-color: #007bff;
-            color: white;
-            text-align: center;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2; /* Header background color */
+        }
+
+        input[type="text"],
+        input[type="url"],
+        input[type="date"],
+        input[type="time"],
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box; /* Include padding in width */
+        }
+
+        button {
+            background-color: green; /* Button background color */
+            color: white; /* Button text color */
+            padding: 10px 20px;
+            border: none;
             border-radius: 5px;
-            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.3s;
         }
 
-        .feature-box a:hover {
-            background-color: #0056b3;
-        }
-
-        /* Clearfix */
-        .clearfix::after {
-            content: "";
-            clear: both;
-            display: table;
+        button:hover {
+            background-color: #0056b3; /* Darker button background on hover */
         }
     </style>
+
+    <script type="text/javascript">
+        function preventBack() {
+            window.history.forward();
+        }
+
+        setTimeout("preventBack()", 0);
+
+        window.onunload = function () { null };
+
+        function toggleDropdown() {
+            document.getElementById("classDropdown").classList.toggle("show");
+        }
+
+        function toggleAssignmentDropdown() {
+            document.getElementById("assignmentDropdown").classList.toggle("show");
+        }
+
+        function toggleQuizDropdown() {
+            document.getElementById("quizDropdown").classList.toggle("show");
+        }
+
+        window.onclick = function (event) {
+            if (!event.target.matches('.feature-box a')) {
+                const dropdowns = document.getElementsByClassName("dropdown-content");
+                for (let i = 0; i < dropdowns.length; i++) {
+                    dropdowns[i].classList.remove('show');
+                }
+            }
+        };
+    </script>
 </head>
 
 <body>
-    <div class="site-wrap">
-            <div class="container header-container">
-                <div class="site-logo">
-                        <img src="{% static 'images/logo.png' %}" alt="Image" class="img-fluid">
-                        <h2 class="mb-0">Teacher Dashboard</h2>
-                        <p>Welcome {{ first_name }} {{ last_name }}</p>
-                    </a>
-                </div>
+    <div class="sidebar">
+        <div class="feature-box" onclick="toggleDropdown()">
+            <a href="#">Create Class</a>
+            <div class="dropdown-content" id="classDropdown">
+                <a href="{% url 'schedule_class' %}">Schedule Class</a>
+                <a href="{% url 'view_teacher_schedule_class' %}">View Classes</a>
             </div>
-        </header>
-
-        <h1 style="text-align:center; margin: 20px 0;">Schedule a Class</h1>
-    
-        <div class="container clearfix">
-            <!-- Left side navigation -->
-            <div class="sidebar">
-                <div class="site-section">
-                    <div class="feature-box">
-                        <a href="{% url 'schedule_class' %}">Create Class</a>
-                    </div>
-                    <div class="feature-box">
-                        <a href="#">Create Assignments</a>
-                    </div>
-                    <div class="feature-box">
-                        <a href="{% url 'upload_material' %}">Upload Study Materials</a>
-                    </div>
-                    <div class="feature-box">
-                        <a href="#">Make Discussion Forum</a>
-                    </div>
-                    <div class="feature-box">
-                        <a href="#">Conduct Polls and Quizzes</a>
-                    </div>
-                    <div class="feature-box">
-                        <a href="{% url 'change_password' %}">Change Password</a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Form to schedule the class -->
-            <form method="POST" onsubmit="return validateForm();">
-                {% csrf_token %}
-                {% if error_message %}
-                    <p style="color: red;">{{ error_message }}</p>
-                {% endif %}
-                <table>
-                    <tr>
-                        <th>Field</th>
-                        <th>Input</th>
-                    </tr>
-                    <tr>
-                        <td><label for="class_name">Class Name:</label></td>
-                        <td><input type="text" id="class_name" name="class_name" required></td>
-                    </tr>
-                    <tr>
-                        <td><label for="course">Select Course:</label></td>
-                        <td>
-                            <select name="course" id="course" required>
-                                {% for course in courses %}
-                                <option value="{{ course.id }}">{{ course.course_name }}</option>
-                                {% endfor %}
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><label for="date">Date:</label></td>
-                        <td>
-                            <input type="date" id="date" name="date" required min="{{ today }}">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><label for="start_time">Start Time:</label></td>
-                        <td><input type="time" id="start_time" name="start_time" required></td>
-                    </tr>
-                    <tr>
-                        <td><label for="end_time">End Time:</label></td>
-                        <td><input type="time" id="end_time" name="end_time" required></td>
-                    </tr>
-                    <tr>
-                        <td><label for="meeting_link">Meeting Link:</label></td>
-                        <td><input type="url" id="meeting_link" name="meeting_link" required></td>
-                    </tr>
-                </table>
-
-                <div style="text-align: center; margin: 20px 0;">
-                <button type="submit">Schedule Class</button>
-                </div>
-                
-                    <a href="{% url 'teacher_dashboard' %}" class="btn btn-primary" style="text-decoration: none; padding: 10px 20px; background-color: #007bff; color: white; border-radius: 5px;">Back to Teacher Dashboard</a>
-                </div>
-            </form>
         </div>
+        <div class="feature-box" onclick="toggleAssignmentDropdown()">
+            <a href="#">Create Assignments</a>
+            <div class="dropdown-content" id="assignmentDropdown">
+                <a href="{% url 'create_assignment' %}">Create Assignment</a>
+                <a href="{% url 'view_assignment' %}">View Assignments</a>
+                <a href="{% url 'evaluate_assignment' %}">Evaluate Assignments</a>
+            </div>
+        </div>
+        <div class="feature-box">
+            <a href="{% url 'upload_material' %}">Upload Study Materials</a>
+        </div>
+        <div class="feature-box">
+            <a href="#">Make Discussion Forum</a>
+        </div>
+        <div class="feature-box" onclick="toggleQuizDropdown()">
+            <a href="#">Conduct Quizzes</a>
+            <div class="dropdown-content" id="quizDropdown">
+                <a href="{% url 'create_quiz' %}">Create Quiz</a>
+                <a href="{% url 'view_quiz_questions' %}">View Questions</a>
+            </div>
+        </div>
+        <div class="feature-box">
+            <a href="{% url 'add_event' %}">Manage Calendar</a>
+        </div>
+        <div class="feature-box">
+            <a href="{% url 'view_profile' %}">View Profile</a>
+        </div>
+           <a href="{% url 'logout' %}" class="logout-button">Logout</a> <!-- Logout button -->
+
     </div>
 
-    <script>
-        // Function to validate form
-        function validateForm() {
-            const className = document.getElementById('class_name').value;
-            const date = document.getElementById('date').value;
-            const startTime = document.getElementById('start_time').value;
-            const endTime = document.getElementById('end_time').value;
-            const meetingLink = document.getElementById('meeting_link').value;
-            const today = new Date().toISOString().split('T')[0];
+    <div class="content">
+        <h1>Schedule a New Class</h1> 
+        <!-- Form to schedule the class -->
+        <form method="POST" onsubmit="return validateForm();">
+            {% csrf_token %}
+            {% if error_message %}
+                <p style="color: red;">{{ error_message }}</p>
+            {% endif %}
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Input</th>
+                </tr>
+                <tr>
+                    <td><label for="class_name">Class Name:</label></td>
+                    <td><input type="text" id="class_name" name="class_name" required></td>
+                </tr>
+                <tr>
+                    <td><label for="course">Select Course:</label></td>
+                    <td>
+                        <select name="course" id="course" required>
+                            {% for course in courses %}
+                            <option value="{{ course.id }}">{{ course.course_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="date">Date:</label></td>
+                    <td>
+                        <input type="date" id="date" name="date" required min="{{ today }}">
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="start_time">Start Time:</label></td>
+                    <td><input type="time" id="start_time" name="start_time" required></td>
+                </tr>
+                <tr>
+                    <td><label for="end_time">End Time:</label></td>
+                    <td><input type="time" id="end_time" name="end_time" required></td>
+                </tr>
+                <tr>
+                    <td><label for="meeting_link">Meeting Link:</label></td>
+                    <td><input type="url" id="meeting_link" name="meeting_link" required></td>
+                </tr>
+            </table>
 
-            const classNameRegex = /^[a-zA-Z\s]{3,}$/;
-            if (!classNameRegex.test(className)) {
-                alert("Class Name must contain only letters and be at least 3 characters long.");
-                return false;
-            }
-
-            // Validate date (should be today or later)
-            if (date < today) {
-                alert("The date cannot be in the past. Please select today or a future date.");
-                return false;
-            }
-
-            // Validate start time and end time
-            if (startTime >= endTime) {
-                alert("End time must be after start time.");
-                return false;
-            }
-
-            // Validate meeting link
-            if (!meetingLink.startsWith("http")) {
-                alert("Please enter a valid meeting link starting with http or https.");
-                return false;
-            }
-
-            return true;
-        }
-    </script>
+            <div style="text-align: center; margin: 20px 0;">
+                <button type="submit">Schedule Class</button>
+            </div>
+        </form>
+    </div>
 
     <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.min.js' %}"></script>

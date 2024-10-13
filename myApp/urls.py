@@ -64,6 +64,7 @@ urlpatterns = [
     path('view_assignment/', views.view_assignment, name='view_assignment'),
     path('evaluate_assignment/', views.evaluate_assignments, name='evaluate_assignment'),
     path('submit-grade/<int:submission_id>/', views.submit_grade, name='submit_grade'),
+    path('view_uploaded_materials/', views.view_uploaded_materials, name='view_uploaded_materials'),
 
     path('parent_dashboard/', views.parent_dashboard, name='parent_dashboard'),
     path('view-class-schedule/', views.view_class_schedule, name='view_class_schedule'),
@@ -95,7 +96,11 @@ urlpatterns = [
     path('view_event/', views.view_events, name='view_events'),
     path('student_event/', views.student_events, name='student_event'),
     path('events/filtered/', views.filtered_events, name='filtered_events'),
-    
+
+
+    path('view_quiz_questions/', views.view_quiz_questions, name='view_quiz_questions'),
+    path('view_student_answers/', views.view_student_answers, name='view_student_answers'),
+
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

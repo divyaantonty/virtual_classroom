@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uploaded Materials</title>
+    <script type="text/javascript">
+        function preventBack() {
+            window.history.forward(); 
+        }
+          
+        setTimeout("preventBack()", 0);
+          
+        window.onunload = function () { null };
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            color: #333;
+        }
+        .back-button {
+            float: right;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: none;
+            cursor: pointer;
+        }
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        select {
+            padding: 8px;
+            margin-right: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #fff;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .no-materials {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Uploaded Study Materials</h1>
+
+<!-- Back Button -->
+<a href="{% url 'teacher_dashboard' %}" class="back-button">Back to Dashboard</a>
+
+<div class="filter-section">
+    <form method="GET">
+        <label for="course">Filter by Course:</label>
+        <select name="course" id="course" onchange="this.form.submit()">
+            <option value="">All Courses</option>
+            {% for course in courses %}
+                <option value="{{ course.id }}" {% if course.id == selected_course %}selected{% endif %}>{{ course.course_name }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+<h2>Uploaded Materials</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Description</th>
+            <th>File</th>
+            <th>Uploaded At</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for material in materials %}
+            <tr>
+                <td>{{ material.description }}</td>
+                <td><a href="{{ material.file.url }}">Download</a></td>
+                <td>{{ material.uploaded_at }}</td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="3" class="no-materials">No materials found.</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+</body>
+</html>

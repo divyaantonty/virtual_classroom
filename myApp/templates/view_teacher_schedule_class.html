@@ -1,4 +1,4 @@
-{% load static %}
+apply the validation at here {% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -6,13 +6,77 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Scheduled Classes</title>
+    <script type="text/javascript">
+        function preventBack() {
+            window.history.forward(); 
+        }
+          
+        setTimeout("preventBack()", 0);
+          
+        window.onunload = function () { null };
+    </script>
     <style>
         /* CSS Styles */
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
             margin: 0;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #4CAF50; /* Green background */
             padding: 20px;
+            height: 100vh; /* Full height */
+            color: white;
+            position: fixed; /* Fix sidebar to the left */
+        }
+
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+
+        .sidebar a:hover {
+            background-color: #45a049;
+        }
+
+        .feature-box {
+            cursor: pointer;
+        }
+
+        .dropdown-content {
+            display: none;
+            margin-left: 15px;
+        }
+
+        .feature-box:hover .dropdown-content {
+            display: block;
+        }
+
+        .logout-button {
+            background-color: red;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .logout-button:hover {
+            background-color: darkred;
+        }
+
+        .main-content {
+            margin-left: 270px; /* Adjust to the sidebar width */
+            padding: 20px;
+            width: calc(100% - 270px);
         }
 
         h1 {
@@ -46,15 +110,6 @@
             background-color: #f1f1f1;
         }
 
-        a {
-            color: #4CAF50;
-            text-decoration: none;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
         button {
             background-color: #4CAF50;
             color: white;
@@ -78,25 +133,24 @@
 
         /* Modal Styles */
         .modal {
-            display: none; /* Hidden by default */
-            position: fixed; /* Stay in place */
-            z-index: 1; /* Sit on top */
+            display: none;
+            position: fixed;
+            z-index: 1;
             left: 0;
             top: 0;
-            width: 100%; /* Full width */
-            height: 100%; /* Full height */
-            overflow: auto; /* Enable scroll if needed */
-            background-color: rgb(0, 0, 0); /* Fallback color */
-            background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
-            padding-top: 60px; /* Location of the box */
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+            padding-top: 60px;
         }
 
         .modal-content {
             background-color: #fefefe;
-            margin: 5% auto; /* 15% from the top and centered */
+            margin: 5% auto;
             padding: 20px;
             border: 1px solid #888;
-            width: 80%; /* Could be more or less, depending on screen size */
+            width: 80%;
         }
 
         .close {
@@ -116,99 +170,195 @@
 </head>
 
 <body>
-    <h1>Scheduled Classes</h1>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="feature-box" onclick="toggleDropdown()">
+            <a href="#">Create Class</a>
+            <div class="dropdown-content" id="classDropdown">
+                <a href="{% url 'schedule_class' %}">Schedule Class</a>
+                <a href="{% url 'view_teacher_schedule_class' %}">View Classes</a>
+            </div>
+        </div>
+        <div class="feature-box" onclick="toggleAssignmentDropdown()">
+            <a href="#">Create Assignments</a>
+            <div class="dropdown-content" id="assignmentDropdown">
+                <a href="{% url 'create_assignment' %}">Create Assignment</a>
+                <a href="{% url 'view_assignment' %}">View Assignments</a>
+                <a href="{% url 'evaluate_assignment' %}">Evaluate Assignments</a>
+            </div>
+        </div>
+        <div class="feature-box">
+            <a href="{% url 'upload_material' %}">Upload Study Materials</a>
+        </div>
+        <div class="feature-box">
+            <a href="#">Make Discussion Forum</a>
+        </div>
+        <div class="feature-box" onclick="toggleQuizDropdown()">
+            <a href="#">Conduct Quizzes</a>
+            <div class="dropdown-content" id="quizDropdown">
+                <a href="{% url 'create_quiz' %}">Create Quiz</a>
+                <a href="{% url 'view_quiz_questions' %}">View Questions</a>
+            </div>
+        </div>
+        <div class="feature-box">
+            <a href="{% url 'add_event' %}">Manage Calendar</a>
+        </div>
+        <div class="feature-box">
+            <a href="{% url 'view_profile' %}">View Profile</a>
+        </div>
+        <a href="{% url 'logout' %}" class="logout-button">Logout</a>
+    </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Class Name</th>
-                <th>Course Name</th>
-                <th>Date</th>
-                <th>Start Time</th>
-                <th>End Time</th>
-                <th>Meeting Link</th>
-                <th>Actions</th>
-                <th>Delete Class</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% if future_classes %}
-                {% for scheduled_class in future_classes %}
-                    <tr>
-                        <td>{{ scheduled_class.class_name }}</td>
-                        <td>{{ scheduled_class.course_name }}</td>
-                        <td>{{ scheduled_class.date }}</td>
-                        <td>{{ scheduled_class.start_time }}</td>
-                        <td>{{ scheduled_class.end_time }}</td>
-                        <td><a href="{{ scheduled_class.meeting_link }}" target="_blank">Join Meeting</a></td>
-                        <td><button onclick="openEditModal('{{ scheduled_class.id }}', '{{ scheduled_class.class_name }}', '{{ scheduled_class.course_name }}', '{{ scheduled_class.date }}', '{{ scheduled_class.start_time }}', '{{ scheduled_class.end_time }}', '{{ scheduled_class.meeting_link }}')">Edit</button></td>
-                        <td><button>Delete</button></td>
-                    </tr>
-                {% endfor %}
-            {% else %}
+    <!-- Main Content -->
+    <div class="main-content">
+        <h1>Scheduled Classes</h1>
+
+        <table>
+            <thead>
                 <tr>
-                    <td colspan="7">No future classes scheduled.</td>
+                    <th>Class Name</th>
+                    <th>Course Name</th>
+                    <th>Date</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Meeting Link</th>
                 </tr>
-            {% endif %}
-        </tbody>
-    </table>
-
-    <a class="back-link" href="{% url 'teacher_dashboard' %}">Back to Teacher Dashboard</a>
-
-    <!-- The Modal -->
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeEditModal()">&times;</span>
-            <h2>Edit Class</h2>
-            <form id="editClassForm" method="POST" action="{% url 'edit_class' %}">
-                {% csrf_token %}
-                <input type="hidden" id="classId" name="class_id">
-                <label for="className">Class Name:</label>
-                <input type="text" id="className" name="class_name" required><br><br>
-                <label for="courseName">Course Name:</label>
-                <select id="courseName" name="course_name" required>
-                    <option value="">Select a Course</option>
-                    {% for course in courses %}
-                    <option value="{{ course.id }}">{{ course.course_name }}</option> <!-- Adjust the field as per your Course model -->
+            </thead>
+            <tbody>
+                {% if future_classes %}
+                    {% for scheduled_class in future_classes %}
+                        <tr>
+                            <td>{{ scheduled_class.class_name }}</td>
+                            <td>{{ scheduled_class.course_name }}</td>
+                            <td>{{ scheduled_class.date }}</td>
+                            <td>{{ scheduled_class.start_time }}</td>
+                            <td>{{ scheduled_class.end_time }}</td>
+                            <td><a href="{{ scheduled_class.meeting_link }}" target="_blank">Join Meeting</a></td>
+    
+                        </tr>
                     {% endfor %}
-                </select><br><br>
-                <label for="classDate">Date:</label>
-                <input type="date" id="classDate" name="date" required><br><br>
-                <label for="startTime">Start Time:</label>
-                <input type="time" id="startTime" name="start_time" required><br><br>
-                <label for="endTime">End Time:</label>
-                <input type="time" id="endTime" name="end_time" required><br><br>
-                <label for="meetingLink">Meeting Link:</label>
-                <input type="url" id="meetingLink" name="meeting_link" required><br><br>
-                <button type="submit">Save Changes</button>
-            </form>
+                {% else %}
+                    <tr>
+                        <td colspan="7">No future classes scheduled.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <a class="back-link" href="{% url 'teacher_dashboard' %}">Back to Teacher Dashboard</a>
+
+        <!-- The Modal -->
+        <div id="editModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeEditModal()">&times;</span>
+                <h2>Edit Class</h2>
+                <form id="editClassForm" method="POST" action="{% url 'edit_class' %}">
+                    {% csrf_token %}
+                    <input type="hidden" id="classId" name="class_id">
+                    <label for="className">Class Name:</label>
+                    <input type="text" id="className" name="class_name" required><br><br>
+                    <label for="courseName">Course Name:</label>
+                    <select id="courseName" name="course_name" required>
+                        <option value="">Select a Course</option>
+                        {% for course in courses %}
+                        <option value="{{ course.id }}">{{ course.course_name }}</option>
+                        {% endfor %}
+                    </select><br><br>
+                    <label for="classDate">Date:</label>
+                    <input type="date" id="classDate" name="date" required><br><br>
+                    <label for="startTime">Start Time:</label>
+                    <input type="time" id="startTime" name="start_time" required><br><br>
+                    <label for="endTime">End Time:</label>
+                    <input type="time" id="endTime" name="end_time" required><br><br>
+                    <label for="meetingLink">Meeting Link:</label>
+                    <input type="url" id="meetingLink" name="meeting_link" required><br><br>
+                    <button type="submit">Save Changes</button>
+                </form>
+            </div>
         </div>
     </div>
 
     <script>
-        function openEditModal(id, className, date, startTime, endTime, meetingLink) {
+        // Toggle dropdown function
+        function toggleDropdown() {
+            var dropdown = document.getElementById('classDropdown');
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function toggleAssignmentDropdown() {
+            var dropdown = document.getElementById('assignmentDropdown');
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function toggleQuizDropdown() {
+            var dropdown = document.getElementById('quizDropdown');
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        }
+
+        // Modal functions
+        function openEditModal(id, name, course, date, start, end, link) {
+            document.getElementById('editModal').style.display = 'block';
             document.getElementById('classId').value = id;
-            document.getElementById('className').value = className;
-            document.getElementById('courseName').value = courseName; 
+            document.getElementById('className').value = name;
+            document.getElementById('courseName').value = course;
             document.getElementById('classDate').value = date;
-            document.getElementById('startTime').value = startTime;
-            document.getElementById('endTime').value = endTime;
-            document.getElementById('meetingLink').value = meetingLink;
-            document.getElementById('editModal').style.display = "block";
+            document.getElementById('startTime').value = start;
+            document.getElementById('endTime').value = end;
+            document.getElementById('meetingLink').value = link;
         }
 
         function closeEditModal() {
-            document.getElementById('editModal').style.display = "none";
-        }
-
-        // Close the modal if the user clicks anywhere outside of the modal
-        window.onclick = function(event) {
-            const modal = document.getElementById('editModal');
-            if (event.target == modal) {
-                modal.style.display = "none";
-            }
+            document.getElementById('editModal').style.display = 'none';
         }
     </script>
 </body>
 
-</html>
+</html>   
+
+
+<script>
+    // Front-end validation
+    document.getElementById('editClassForm').addEventListener('submit', function(event) {
+        var className = document.getElementById('className').value;
+        var classDate = new Date(document.getElementById('classDate').value);
+        var startTime = document.getElementById('startTime').value;
+        var endTime = document.getElementById('endTime').value;
+        var meetingLink = document.getElementById('meetingLink').value;
+        var today = new Date();
+        var valid = true;
+        var errorMessage = '';
+
+        // Class name validation (First letter capital and at least 3 characters)
+        var nameRegex = /^[A-Z][a-zA-Z]{2,}$/;
+        if (!nameRegex.test(className)) {
+            errorMessage += 'Class name must start with an uppercase letter and be at least 3 characters long.\n';
+            valid = false;
+        }
+
+        // Date validation (today's date or future dates only)
+        today.setHours(0, 0, 0, 0); // Reset time part
+        if (classDate < today) {
+            errorMessage += 'Class date cannot be in the past.\n';
+            valid = false;
+        }
+
+        // Time validation (End time should be after start time)
+        if (startTime >= endTime) {
+            errorMessage += 'End time must be later than start time.\n';
+            valid = false;
+        }
+
+        // Meeting link validation (valid URL)
+        var urlRegex = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+        if (!urlRegex.test(meetingLink)) {
+            errorMessage += 'Please enter a valid meeting link.\n';
+            valid = false;
+        }
+
+        // If there is an error, prevent form submission and alert the user
+        if (!valid) {
+            event.preventDefault(); // Prevent form submission
+            alert(errorMessage); // Show error messages
+        }
+    });
+</script>

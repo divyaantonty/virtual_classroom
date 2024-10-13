@@ -3,6 +3,15 @@
 {% block content %}
 <div class="container mt-5">
     <h2 class="text-center mb-4">View Assignments</h2>
+    <script type="text/javascript">
+        function preventBack() {
+            window.history.forward(); 
+        }
+          
+        setTimeout("preventBack()", 0);
+          
+        window.onunload = function () { null };
+    </script>
 
     <!-- Course filter dropdown -->
     <div class="mb-4">
@@ -51,12 +60,11 @@
                     {% endif %}
                 </td>
                 <td>
-                    {% if assignment.end_date < today %}
-                        <span class="badge badge-danger">Completed</span>
-                    {% else %}
-                        <span class="badge badge-success">Ongoing</span>
-                    {% endif %}
+                    <span class="badge {% if assignment.status == 'Completed' %}badge-danger{% else %}badge-success{% endif %}">
+                        {{ assignment.status }}
+                    </span>
                 </td>
+                
             </tr>
             {% empty %}
             <tr>

@@ -1,0 +1,135 @@
+{% load static %}
+<a href="{% url 'teacher_dashboard' %}" class="back-button">Back</a>
+<h1 class="page-title">Quiz Questions</h1>
+
+<!-- Quiz Course Selection Form -->
+<form method="GET" action="{% url 'view_quiz_questions' %}" class="course-form">
+    <label for="courseSelect" class="form-label">Select Course:</label>
+    <select name="course_id" id="courseSelect" class="form-control" onchange="this.form.submit()">
+        <option value="">Select Course</option>
+        {% for course in courses %}
+            <option value="{{ course.id }}" {% if course.id == selected_course %}selected{% endif %}>
+                {{ course.course_name }}
+            </option>
+        {% endfor %}
+    </select>
+</form>
+
+<!-- Display Questions -->
+{% if questions %}
+    <ul class="question-list">
+        {% for question in questions %}
+            <li class="question-item">
+                <div class="question-text">
+                    <strong>{{ question.text }}</strong>
+                </div>
+                <div class="options">
+                    <span class="option">A: {{ question.option_a }}</span><br>
+                    <span class="option">B: {{ question.option_b }}</span><br>
+                    <span class="option">C: {{ question.option_c }}</span><br>
+                    <span class="option">D: {{ question.option_d }}</span>
+                </div>
+                <div class="correct-option">
+                    <em>Correct Option: <span class="correct-answer">{{ question.correct_option }}</span></em>
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p class="no-questions-message">No questions found for the selected course.</p>
+{% endif %}
+<style>
+    /* General Page Styling */
+    .page-title {
+        font-size: 2.5rem;
+        text-align: center;
+        margin-bottom: 30px;
+        color: #343a40;
+        font-weight: 600;
+    }
+
+    /* Course Form Styling */
+    .course-form {
+        max-width: 400px;
+        margin: 0 auto 30px auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .form-label {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #495057;
+    }
+
+    .form-control {
+        font-size: 1.1rem;
+        padding: 8px 12px;
+        border-radius: 5px;
+        border: 1px solid #ced4da;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: border-color 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: #28a745;
+        outline: none;
+        box-shadow: 0 0 8px rgba(40, 167, 69, 0.3);
+    }
+
+    /* Questions List Styling */
+    .question-list {
+        list-style: none;
+        padding: 0;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .question-item {
+        background-color: #f8f9fa;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .question-text {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 10px;
+    }
+
+    .options {
+        font-size: 1.1rem;
+        color: #495057;
+        line-height: 1.6;
+    }
+
+    .option {
+        display: block;
+        padding: 5px 0;
+    }
+
+    .correct-option {
+        font-size: 1.1rem;
+        margin-top: 10px;
+        font-style: italic;
+        color: #28a745;
+        font-weight: bold;
+    }
+
+    .correct-answer {
+        color: #007bff;
+    }
+
+    /* No Questions Message */
+    .no-questions-message {
+        text-align: center;
+        font-size: 1.3rem;
+        color: #dc3545;
+        font-weight: bold;
+    }
+</style>

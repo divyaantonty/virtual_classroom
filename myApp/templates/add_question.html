@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quiz Questions</title>
+    <script type="text/javascript">
+        function preventBack() {
+            window.history.forward(); 
+        }
+          
+        setTimeout("preventBack()", 0);
+          
+        window.onunload = function () { null };
+    </script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -71,6 +80,7 @@
 
 <div class="container">
     <h1>Create Quiz Questions</h1>
+    <a href="{% url 'teacher_dashboard' %}" class="back-button">Back</a>
     <form method="post" id="questionForm">
         {% csrf_token %}
 
@@ -102,6 +112,15 @@
 </div>
 
 <script>
+    <script type="text/javascript">
+        function preventBack() {
+            window.history.forward(); 
+        }
+          
+        setTimeout("preventBack()", 0);
+          
+        window.onunload = function () { null };
+    </script>
     // Counter to track the number of question blocks
     let questionCount = 1;
 

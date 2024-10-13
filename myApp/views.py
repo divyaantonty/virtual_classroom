@@ -735,7 +735,7 @@ def schedule_class(request):
         )
         schedule.save()
         if schedule:
-            return redirect('schedule_class')  
+            return redirect('teacher_dashboard')  
 
     current_datetime = datetime.now()
     scheduled_classes = ClassSchedule.objects.filter(teacher=teacher, date__gte=today, end_time__gt=current_datetime.time())
@@ -799,6 +799,7 @@ from django.contrib import messages # type: ignore
 from .models import ClassSchedule
 
 def edit_class(request):
+    courses = Course.objects.all()
     if request.method == 'POST':
         class_id = request.POST.get('class_id')
         course_id = request.POST.get('course_name')
@@ -810,7 +811,7 @@ def edit_class(request):
 
         try:
             scheduled_class = ClassSchedule.objects.get(id=class_id)
-            scheduled_class.course_id = course_id
+            scheduled_class.course_name = course_id
             scheduled_class.class_name = class_name
             scheduled_class.date = date
             scheduled_class.start_time = start_time
@@ -822,7 +823,7 @@ def edit_class(request):
         except ClassSchedule.DoesNotExist:
             messages.error(request, "Class not found.")
 
-        return redirect('view_teacher_schedule_class')  # Redirect to the view scheduled classes page
+        return redirect('view_teacher_schedule_class', {'courses': courses})  # Redirect to the view scheduled classes page
 
 from django.contrib import messages # type: ignore
 from django.shortcuts import redirect, render # type: ignore
@@ -1553,15 +1554,15 @@ def assignment_submission_view(request):
     return render(request, 'assignment_detail.html', {'assignment_details': assignment_details})
 
 
-
-from django.shortcuts import render, redirect # type: ignore
+from django.shortcuts import render, redirect  # type: ignore
+from django.utils import timezone
 from .models import Assignment, Course
 
 def view_assignment(request):
     if 'teacher_id' in request.session:
         teacher_id = request.session['teacher_id']
 
-        # Fetch all courses from the Course table, regardless of their relation to assignments
+        # Fetch all courses from the Course table
         courses = Course.objects.all()
 
         # Get the selected course ID from the GET request
@@ -1573,6 +1574,17 @@ def view_assignment(request):
         else:
             assignments = Assignment.objects.filter(teacher_id=teacher_id)
 
+        # Get the current date and time
+        current_datetime = timezone.localtime()
+
+        # Add a 'status' attribute to each assignment based on end date and time
+        for assignment in assignments:
+            if (assignment.end_date < current_datetime.date() or
+                (assignment.end_date == current_datetime.date() and assignment.end_time <= current_datetime.time())):
+                assignment.status = 'Completed'
+            else:
+                assignment.status = 'Ongoing'
+
         return render(request, 'view_assignment.html', {
             'assignments': assignments,
             'courses': courses,
@@ -1580,6 +1592,8 @@ def view_assignment(request):
         })
     else:
         return redirect('login')
+
+
 
 from django.db.models import Subquery, OuterRef # type: ignore
 from django.shortcuts import render # type: ignore
@@ -1824,3 +1838,85 @@ def get_event_color(event_type):
     }
     return color_map.get(event_type, '#007bff')  # Default to Bootstrap primary color
 
+
+
+from django.shortcuts import render, redirect
+from .models import Quizs, Course, Question
+
+def view_quiz_questions(request):
+    teacher_id = request.session.get('teacher_id')  # Retrieve the teacher_id from the session
+
+    if not teacher_id:
+        # If the teacher is not logged in or the session has expired, redirect to the login page
+        return redirect('login')
+
+    course_id = request.GET.get('course_id')  # Get the course ID from the query parameters
+    courses = Course.objects.all()  # Get all available courses for the filter dropdown
+
+    # Fetch quizzes created by this teacher
+    quizzes = Quizs.objects.filter(teacher_id=teacher_id)
+    
+    # Fetch questions for quizzes of the selected course
+    questions = Question.objects.none()  # Start with an empty QuerySet
+
+    if course_id:  # If a course is selected, filter questions by that course
+        # Filter quizzes based on the course and fetch related questions
+        quizzes = quizzes.filter(course_id=course_id)
+        questions = Question.objects.filter(quiz__in=quizzes)  # Fetch questions for the selected course's quizzes
+
+    context = {
+        'courses': courses,
+        'questions': questions,
+        'selected_course': course_id,
+    }
+    return render(request, 'view_quiz_questions.html', context)
+
+
+from django.shortcuts import render, redirect
+from .models import Question, UserAnswers, Quizs
+
+def view_student_answers(request):
+    teacher_id = request.session.get('teacher_id')  # Retrieve the teacher_id from the session
+
+    if not teacher_id:
+        return redirect('login')
+
+    # Fetch all quizzes related to the teacher
+    quizzes = Quizs.objects.filter(teacher_id=teacher_id)  # Adjust this if needed
+
+    # Fetch all questions related to those quizzes
+    questions = Question.objects.filter(quiz__in=quizzes)
+
+    # Fetch all student answers for those questions
+    student_answers = UserAnswers.objects.filter(question__in=questions).select_related('user')
+
+    context = {
+        'quizzes': quizzes,
+        'student_answers': student_answers,
+    }
+
+    return render(request, 'view_student_answers.html', context)
+
+
+from django.shortcuts import render
+from .models import Material, Course
+
+def view_uploaded_materials(request):
+    # Assuming you have a session variable for the logged-in teacher
+    teacher_id = request.session.get('teacher_id')
+    
+    # Fetch courses taught by the teacher
+    courses = Course.objects.all() 
+    course_id = request.GET.get('course', None)  # Get the selected course from the dropdown filter
+    materials = Material.objects.filter(teacher_id=teacher_id)  # Get materials uploaded by the teacher
+
+    # Filter materials by the selected course if course_id is provided
+    if course_id:
+        materials = materials.filter(course_id=course_id)
+
+    context = {
+        'materials': materials,
+        'courses': courses,
+        'selected_course': course_id,
+    }
+    return render(request, 'view_uploaded_materials.html', context)

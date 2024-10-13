@@ -1,0 +1,12 @@
+<h1>Student Answers</h1>
+
+{% for quiz in quizzes %}
+    <h2>{{ quiz.title }}</h2>
+    <ul>
+        {% for answer in student_answers %}
+            {% if answer.question.quiz == quiz %}
+                <li>{{ answer.user.username }}: {{ answer.selected_option }}</li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+{% endfor %}

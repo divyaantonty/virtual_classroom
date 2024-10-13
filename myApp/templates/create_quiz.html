@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Quiz</title>
+    <script type="text/javascript">
+        function preventBack() {
+            window.history.forward(); 
+        }
+          
+        setTimeout("preventBack()", 0);
+          
+        window.onunload = function () { null };
+    </script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -18,16 +27,21 @@
         .card {
             background-color: white;
             border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
             width: 700px;
-            max-width: 100%;
-            padding: 20px;
+            max-width: 90%;
+            padding: 30px;
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
         }
         h1 {
             text-align: center;
-            color: #444;
-            font-size: 24px;
+            color: #333;
+            font-size: 28px;
             margin-bottom: 20px;
+            font-weight: 600;
         }
         .form-group {
             display: flex;
@@ -47,6 +61,11 @@
             border: 1px solid #ccc;
             border-radius: 5px;
             font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: #28a745;
+            outline: none;
         }
         .form-group select {
             background-color: #fff;
@@ -63,10 +82,16 @@
             font-size: 16px;
             cursor: pointer;
             margin-top: 10px;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.2s;
         }
         button:hover {
             background-color: #218838;
+            transform: translateY(-2px);
+        }
+        .error {
+            color: red;
+            margin-top: 5px;
+            font-size: 12px;
         }
         @media (max-width: 768px) {
             .form-group {
@@ -82,8 +107,10 @@
 <body>
 
 <div class="card">
+    <a href="{% url 'teacher_dashboard' %}" class="back-button">Back</a>
     <h1>Create Quiz</h1>
-    <form method="POST">
+
+    <form method="POST" id="quizForm">
         {% csrf_token %}
         <div class="form-group">
             <label for="course">Course:</label>
@@ -97,31 +124,94 @@
         <div class="form-group">
             <label for="title">Quiz Title:</label>
             <input type="text" name="title" id="title" required>
+            <div class="error" id="titleError"></div>
         </div>
 
         <div class="form-group">
             <label for="start_date">Start Date:</label>
             <input type="date" name="start_date" id="start_date" required>
+            <div class="error" id="startDateError"></div>
         </div>
 
         <div class="form-group">
             <label for="end_date">End Date:</label>
             <input type="date" name="end_date" id="end_date" required>
+            <div class="error" id="endDateError"></div>
         </div>
 
         <div class="form-group">
             <label for="start_time">Start Time:</label>
             <input type="time" name="start_time" id="start_time" required>
+            <div class="error" id="startTimeError"></div>
         </div>
 
         <div class="form-group">
             <label for="end_time">End Time:</label>
             <input type="time" name="end_time" id="end_time" required>
+            <div class="error" id="endTimeError"></div>
         </div>
 
         <button type="submit">Create Quiz</button>
     </form>
 </div>
+
+<script>
+    document.getElementById('quizForm').addEventListener('submit', function(event) {
+        let isValid = true;
+
+        // Clear previous error messages
+        document.querySelectorAll('.error').forEach(function(error) {
+            error.textContent = '';
+        });
+
+        // Validate Quiz Title: first character should be uppercase
+        const titleInput = document.getElementById('title');
+        const titleValue = titleInput.value.trim();
+        if (titleValue === '' || titleValue.charAt(0) !== titleValue.charAt(0).toUpperCase()) {
+            document.getElementById('titleError').textContent = 'Title must start with a capital letter.';
+            isValid = false;
+        }
+
+        // Validate Start Date: must be in the future
+        const startDateInput = document.getElementById('start_date');
+        const startDateValue = new Date(startDateInput.value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (startDateValue <= today) {
+            document.getElementById('startDateError').textContent = 'Start date must be in the future.';
+            isValid = false;
+        }
+
+        // Validate End Date: must be after Start Date
+        const endDateInput = document.getElementById('end_date');
+        const endDateValue = new Date(endDateInput.value);
+        if (endDateValue <= startDateValue) {
+            document.getElementById('endDateError').textContent = 'End date must be after Start date.';
+            isValid = false;
+        }
+
+        // Validate Start Time: must be in the future
+        const startTimeInput = document.getElementById('start_time');
+        const startTimeValue = new Date(startDateInput.value + 'T' + startTimeInput.value);
+        if (startTimeValue <= today) {
+            document.getElementById('startTimeError').textContent = 'Start time must be in the future.';
+            isValid = false;
+        }
+
+        // Validate End Time: must be after Start Time
+        const endTimeInput = document.getElementById('end_time');
+        const endTimeValue = new Date(endDateInput.value + 'T' + endTimeInput.value);
+        if (endTimeValue <= startTimeValue) {
+            document.getElementById('endTimeError').textContent = 'End time must be after Start time.';
+            isValid = false;
+        }
+
+        // Prevent form submission if validation fails
+        if (!isValid) {
+            event.preventDefault();
+        }
+    });
+</script>
 
 </body>
 </html>

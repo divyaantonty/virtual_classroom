@@ -4,12 +4,79 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Assignment</title>
+    <script type="text/javascript">
+        function preventBack() {
+            window.history.forward(); 
+        }
+          
+        setTimeout("preventBack()", 0);
+          
+        window.onunload = function () { null };
+    </script>
     <style>
+        /* Basic Styles */
         body {
             font-family: 'Arial', sans-serif;
             background-color: #f4f4f4;
             margin: 0;
+            display: flex;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 250px;
+            background-color: #4CAF50; /* Green background */
             padding: 20px;
+            height: 100vh; /* Full height */
+            color: white;
+            position: fixed; /* Fixed sidebar on the left */
+        }
+
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+
+        .sidebar a:hover {
+            background-color: #45a049;
+        }
+
+        .feature-box {
+            cursor: pointer;
+        }
+
+        .dropdown-content {
+            display: none;
+            margin-left: 15px;
+        }
+
+        .feature-box:hover .dropdown-content {
+            display: block;
+        }
+
+        .logout-button {
+            background-color: red;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .logout-button:hover {
+            background-color: darkred;
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            margin-left: 270px; /* Adjust to the sidebar width */
+            padding: 20px;
+            width: calc(100% - 270px);
         }
 
         h1 {
@@ -70,47 +137,159 @@
             color: red;
             font-size: 14px;
         }
+
+        .back-button {
+            background-color: #f4f4f4;
+            color: #333;
+            border: 1px solid #ccc;
+            padding: 8px 15px;
+            text-decoration: none;
+            margin-top: 20px;
+            display: inline-block;
+            cursor: pointer;
+            text-align: center;
+            border-radius: 5px;
+        }
+
+        .back-button:hover {
+            background-color: #ddd;
+        }
     </style>
 </head>
 <body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="feature-box" onclick="toggleDropdown()">
+            <a href="#">Create Class</a>
+            <div class="dropdown-content" id="classDropdown">
+                <a href="{% url 'schedule_class' %}">Schedule Class</a>
+                <a href="{% url 'view_teacher_schedule_class' %}">View Classes</a>
+            </div>
+        </div>
+        <div class="feature-box" onclick="toggleAssignmentDropdown()">
+            <a href="#">Create Assignments</a>
+            <div class="dropdown-content" id="assignmentDropdown">
+                <a href="{% url 'create_assignment' %}">Create Assignment</a>
+                <a href="{% url 'view_assignment' %}">View Assignments</a>
+                <a href="{% url 'evaluate_assignment' %}">Evaluate Assignments</a>
+            </div>
+        </div>
+        <div class="feature-box">
+            <a href="{% url 'upload_material' %}">Upload Study Materials</a>
+        </div>
+        <div class="feature-box">
+            <a href="#">Make Discussion Forum</a>
+        </div>
+        <div class="feature-box" onclick="toggleQuizDropdown()">
+            <a href="#">Conduct Quizzes</a>
+            <div class="dropdown-content" id="quizDropdown">
+                <a href="{% url 'create_quiz' %}">Create Quiz</a>
+                <a href="{% url 'view_quiz_questions' %}">View Questions</a>
+            </div>
+        </div>
+        <div class="feature-box">
+            <a href="{% url 'add_event' %}">Manage Calendar</a>
+        </div>
+        <div class="feature-box">
+            <a href="{% url 'view_profile' %}">View Profile</a>
+        </div>
+        <a href="{% url 'logout' %}" class="logout-button">Logout</a>
+    </div>
 
-<h1>Create Assignment</h1>
-<form method="POST" enctype="multipart/form-data">
-    {% csrf_token %}
-    <label for="course">Select Course:</label>
-    <select name="course" required>
-        <option value="">Select a course</option>
-        {% for course in courses %}
-            <option value="{{ course.id }}">{{ course.course_name }}</option>
-        {% endfor %}
-    </select><br>
-    
-    <label for="title">Title:</label>
-    <input type="text" name="title" required><br>
+    <!-- Main Content -->
+    <div class="main-content">
+        <h1>Create Assignment</h1>
+        <form id="assignmentForm" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <label for="course">Select Course:</label>
+            <select name="course" required>
+                <option value="">Select a course</option>
+                {% for course in courses %}
+                    <option value="{{ course.id }}">{{ course.course_name }}</option>
+                {% endfor %}
+            </select><br>
 
-    <label for="description">Description:</label>
-    <textarea name="description" required></textarea><br>
+            <label for="title">Title:</label>
+            <input type="text" id="title" name="title" required><br>
+            <div class="error" id="titleError"></div>
 
-    <label for="start_date">Start Date:</label>
-    <input type="date" name="start_date" required><br>
+            <label for="description">Description:</label>
+            <textarea id="description" name="description" required></textarea><br>
+            <div class="error" id="descriptionError"></div>
 
-    <label for="end_date">End Date:</label>
-    <input type="date" name="end_date" required><br>
+            <label for="start_date">Start Date:</label>
+            <input type="date" id="start_date" name="start_date" required><br>
+            <div class="error" id="startDateError"></div>
 
-    <label for="start_time">Start Time:</label>
-    <input type="time" name="start_time" required><br>
+            <label for="end_date">End Date:</label>
+            <input type="date" id="end_date" name="end_date" required><br>
+            <div class="error" id="endDateError"></div>
 
-    <label for="end_time">End Time:</label>
-    <input type="time" name="end_time" required><br>
+            <label for="start_time">Start Time:</label>
+            <input type="time" id="start_time" name="start_time" required><br>
 
-    <label for="file">Upload Assignment File:</label>
-    <input type="file" name="file" accept=".pdf,.doc,.docx"><br>
+            <label for="end_time">End Time:</label>
+            <input type="time" id="end_time" name="end_time" required><br>
+            <div class="error" id="timeError"></div>
 
-    <button type="submit">Create Assignment</button>
-</form>
-<a href="{% url 'teacher_dashboard' %}">  <!-- Replace with actual URL or view name -->
-    <button class="back-button">Back to Teacher Dashboard</button>
-</a>
+            <label for="file">Upload Assignment File:</label>
+            <input type="file" name="file" accept=".pdf,.doc,.docx"><br>
 
+            <button type="submit">Create Assignment</button>
+        </form>
+        <a href="{% url 'teacher_dashboard' %}">
+            <button class="back-button">Back to Teacher Dashboard</button>
+        </a>
+    </div>
+
+    <script>
+        document.getElementById('assignmentForm').addEventListener('submit', function (e) {
+            let isValid = true;
+
+            // Title validation
+            const title = document.getElementById('title').value;
+            const titlePattern = /^[A-Z][a-zA-Z\s]{2,}$/;
+            if (!titlePattern.test(title)) {
+                document.getElementById('titleError').textContent = 'Title must start with a capital letter and be at least 3 characters long.';
+                isValid = false;
+            } else {
+                document.getElementById('titleError').textContent = '';
+            }
+
+            // Description validation
+            const description = document.getElementById('description').value;
+            const descriptionPattern = /^[A-Za-z0-9\s,.\-!?()]+$/;
+            if (!descriptionPattern.test(description)) {
+                document.getElementById('descriptionError').textContent = 'Description can only contain letters, numbers, and basic punctuation.';
+                isValid = false;
+            } else {
+                document.getElementById('descriptionError').textContent = '';
+            }
+
+            // Date validation
+            const today = new Date().toISOString().split('T')[0];
+            const startDate = document.getElementById('start_date').value;
+            const endDate = document.getElementById('end_date').value;
+
+            if (startDate < today) {
+                document.getElementById('startDateError').textContent = 'Start date cannot be in the past.';
+                isValid = false;
+            } else {
+                document.getElementById('startDateError').textContent = '';
+            }
+
+            if (endDate < startDate) {
+                document.getElementById('endDateError').textContent = 'End date cannot be earlier than start date.';
+                isValid = false;
+            } else {
+                document.getElementById('endDateError').textContent = '';
+            }
+
+            // Prevent form submission if not valid
+            if (!isValid) {
+                e.preventDefault();
+            }
+        });
+    </script>
 </body>
 </html>
