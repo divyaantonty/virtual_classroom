@@ -1618,27 +1618,38 @@ def submit_grade(request, submission_id):
     return redirect('evaluate_assignment')
 
 from django.shortcuts import render, redirect
-from django.views.decorators.http import require_POST
 from .models import FeedbackQuestion
 
 def add_feedback_question(request):
-    question_text = request.POST.get('question_text')
-    if question_text:
-        FeedbackQuestion.objects.create(question_text=question_text)  # Save the question to the database
-        return redirect('admin_dashboard')  # Redirect to admin dashboard after saving
+    if request.method == 'POST':
+        questions = []
+        for key, value in request.POST.items():
+            if key.startswith('question_text_'):
+                questions.append(value)
 
-    return render(request, 'add_feedback_question.html', {'error': 'Please enter a question.'})
+        if questions:
+            for question_text in questions:
+                FeedbackQuestion.objects.create(question_text=question_text)  # Save each question to the database
+            return redirect('admin_dashboard')  # Redirect to admin dashboard after saving
+        else:
+            return render(request, 'add_feedback_question.html', {'error': 'Please enter at least one question.'})
 
+    return render(request, 'add_feedback_question.html')
 
 
 from django.shortcuts import render, redirect
 from .models import Feedback, FeedbackQuestion
 
 def feedback_view(request):
-    questions = FeedbackQuestion.objects.all()  # Load all questions from the database
+    user_id = request.session.get('custom_user_id', 'Anonymous')  # Get the user ID from the session
+
+    # Get a list of questions that the user has already answered
+    answered_questions = Feedback.objects.filter(user=user_id).values_list('question_id', flat=True)
+
+    # Load only the questions that the user has not yet answered
+    questions = FeedbackQuestion.objects.exclude(id__in=answered_questions)
 
     if request.method == 'POST':
-        user_id = request.session.get('custom_user_id', 'Anonymous')  # Get the user ID from session
         for question in questions:
             response = request.POST.get(f'question_{question.id}')
             if response:  # Ensure there's a response before saving

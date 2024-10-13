@@ -39,7 +39,7 @@
             <div id="question-container">
                 <div class="form-group question-group">
                     <label for="question_text_0">Question</label>
-                    <textarea id="question_text_0" name="question_text" class="form-control" placeholder="Enter your question here..." rows="4" required></textarea>
+                    <textarea id="question_text_0" name="question_text_0" class="form-control" placeholder="Enter your question here..." rows="4" required></textarea>
                 </div>
             </div>
             <button type="button" class="btn btn-secondary" id="add-question">Add Another Question</button>
@@ -54,11 +54,11 @@
             let questionCount = 1;  // Counter for questions
 
             $('#add-question').click(function() {
-                // Create a new question textarea
+                // Create a new question textarea with a unique name
                 const newQuestion = `
                     <div class="form-group question-group">
                         <label for="question_text_${questionCount}">Question</label>
-                        <textarea id="question_text_${questionCount}" name="question_text" class="form-control" placeholder="Enter your question here..." rows="4" required></textarea>
+                        <textarea id="question_text_${questionCount}" name="question_text_${questionCount}" class="form-control" placeholder="Enter your question here..." rows="4" required></textarea>
                     </div>
                 `;
                 $('#question-container').append(newQuestion);

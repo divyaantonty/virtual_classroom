@@ -7,28 +7,32 @@
     <h1>Feedback Form</h1>
     <form method="post">
         {% csrf_token %}
-        {% for question in questions %}
-            <div>
-                <p><strong>{{ question.question_text }}</strong></p>
-                <label>
-                    <input type="radio" name="question_{{ question.id }}" value="strongly_agree" required> Strongly Agree
-                </label>
-                <label>
-                    <input type="radio" name="question_{{ question.id }}" value="agree"> Agree
-                </label>
-                <label>
-                    <input type="radio" name="question_{{ question.id }}" value="neutral"> Neutral
-                </label>
-                <label>
-                    <input type="radio" name="question_{{ question.id }}" value="disagree"> Disagree
-                </label>
-                <label>
-                    <input type="radio" name="question_{{ question.id }}" value="strongly_disagree"> Strongly Disagree
-                </label>
-            </div>
-            <br>
-        {% endfor %}
-        <button type="submit">Submit</button>
+        {% if questions %}
+            {% for question in questions %}
+                <div>
+                    <p><strong>{{ question.question_text }}</strong></p>
+                    <label>
+                        <input type="radio" name="question_{{ question.id }}" value="strongly_agree" required> Strongly Agree
+                    </label>
+                    <label>
+                        <input type="radio" name="question_{{ question.id }}" value="agree"> Agree
+                    </label>
+                    <label>
+                        <input type="radio" name="question_{{ question.id }}" value="neutral"> Neutral
+                    </label>
+                    <label>
+                        <input type="radio" name="question_{{ question.id }}" value="disagree"> Disagree
+                    </label>
+                    <label>
+                        <input type="radio" name="question_{{ question.id }}" value="strongly_disagree"> Strongly Disagree
+                    </label>
+                </div>
+                <br>
+            {% endfor %}
+            <button type="submit">Submit</button>
+        {% else %}
+            <p>No feedback questions available at the moment.</p>
+        {% endif %}
     </form>
 </body>
 </html>
