@@ -1,6 +1,7 @@
 {% block content %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,22 +18,75 @@
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #f8f9fa;
+            background-color: #eef2f3;
+            margin: 0;
+            padding: 0;
+            display: flex; /* Use flexbox for layout */
+        }
+
+        /* Sidebar styling */
+        .sidebar {
+            width: 250px; /* Fixed width for sidebar */
+            background-color: black; /* Black background for sidebar */
+            padding: 20px;
+            color: white;
+            height: 100vh; /* Full height of the viewport */
+            position: sticky; /* Keeps the sidebar fixed on scroll */
+            top: 0; /* Aligns sidebar to the top */
+        }
+
+        .feature-box {
+            margin-bottom: 15px; /* Space between links */
+        }
+
+        .feature-box a {
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+            display: block; /* Makes links fill the entire box */
+            transition: background-color 0.3s; /* Smooth transition */
+        }
+
+        .feature-box a:hover {
+            background-color: #0056b3; /* Darker blue on hover */
         }
 
         .container {
+            flex: 1; /* Allow main content to take remaining space */
             max-width: 800px;
-            margin: 0 auto;
-            background-color: white;
+            margin: 50px auto; /* Center content */
+            background-color: #ffffff;
             border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+            border: 1px solid #ddd;
         }
 
         h2 {
             text-align: center;
-            color: #007bff;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .back-to-dashboard {
+            text-align: right;
             margin-bottom: 20px;
+        }
+
+        .back-to-dashboard a {
+            text-decoration: none;
+            color: #fff;
+            background-color: #007bff;
+            padding: 10px 20px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+            font-weight: bold;
+        }
+
+        .back-to-dashboard a:hover {
+            background-color: #0056b3;
         }
 
         .materials-table {
@@ -43,57 +97,128 @@
 
         .materials-table th,
         .materials-table td {
-            padding: 10px;
-            border: 1px solid #dee2e6;
+            padding: 15px;
+            border: 1px solid #ccc;
             text-align: left;
+            font-size: 16px;
         }
 
         .materials-table th {
             background-color: #007bff;
             color: white;
+            font-weight: bold;
         }
 
         .materials-table td {
             background-color: #f8f9fa;
+            transition: background-color 0.3s;
+        }
+
+        .materials-table td:hover {
+            background-color: #e9ecef; /* Lighten on hover */
         }
 
         .btn-download {
-            padding: 8px 15px;
+            display: inline-block;
+            padding: 10px 15px;
             background-color: #28a745;
             color: white;
             border: none;
             border-radius: 4px;
             text-decoration: none;
             transition: background-color 0.3s;
+            font-size: 14px;
         }
 
         .btn-download:hover {
             background-color: #218838;
         }
 
-        .back-to-dashboard {
-            text-align: right;
-            margin-bottom: 20px;
+        p.no-materials {
+            text-align: center;
+            color: #777;
+            font-size: 18px;
+            margin-top: 20px;
         }
 
-        .back-to-dashboard a {
-            text-decoration: none;
-            color: white;
-            background-color: #6c757d;
-            padding: 10px 20px;
-            border-radius: 4px;
-            transition: background-color 0.3s;
+        /* Logout link styling */
+        .logout-link {
+            position: absolute; /* Position at the bottom */
+            bottom: 20px; /* Space from the bottom */
+            left: 20px; /* Align to the left */
+            color: white; /* White text */
+            text-decoration: none; /* No underline */
+            padding: 10px;
+            border-radius: 4px; /* Rounded corners */
+            background-color: #dc3545; /* Bootstrap danger color */
+            transition: background-color 0.3s; /* Smooth transition */
         }
 
-        .back-to-dashboard a:hover {
-            background-color: #5a6268;
+        .logout-link:hover {
+            background-color: #c82333; /* Darker red on hover */
+        }
+
+        /* Responsive design */
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h2 {
+                font-size: 24px;
+            }
+
+            .materials-table th,
+            .materials-table td {
+                font-size: 14px;
+                padding: 10px;
+            }
+
+            .btn-download {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+
+            .sidebar {
+                width: 100%; /* Full width on small screens */
+                height: auto; /* Auto height on small screens */
+            }
         }
     </style>
 </head>
+
 <body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="feature-box">
+            <a href="{% url 'view_scheduled_classes' %}">View and Join Classes</a>
+        </div>
+        <div class="feature-box">
+            <a href="{% url 'assignment_detail' %}">Submit Assignments</a>
+        </div>
+        <div class="feature-box">
+            <a href="{% url 'view_materials' %}">Access Study Materials</a>
+        </div>
+        <div class="feature-box">
+            <a href="#">Discussion Forum</a>
+        </div>
+        <div class="feature-box">
+            <a href="{% url 'available_quizzes' %}">View Available Quizzes</a>
+        </div>
+        <div class="feature-box">
+            <a href="{% url 'feedback_form' %}">Feedback</a>
+        </div>
+        <div class="feature-box">
+            <a href="{% url 'student_event' %}">Events</a>
+        </div>
+        <!-- Logout Link -->
+        <a href="{% url 'logout' %}" class="logout-link">Logout</a>
+    </div>
+
+    <!-- Main Content -->
     <div class="container">
         <h2>Available Study Materials</h2>
-        
+
         <div class="back-to-dashboard">
             <a href="{% url 'student_dashboard' %}">Back to Dashboard</a>
         </div>
@@ -118,9 +243,10 @@
             </tbody>
         </table>
         {% else %}
-            <p style="text-align: center;">No materials available for your selected course.</p>
+            <p class="no-materials">No materials available for your selected course.</p>
         {% endif %}
     </div>
 </body>
+
 </html>
 {% endblock %}

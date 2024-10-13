@@ -29,6 +29,35 @@
             color: #333;
             margin: 0;
             padding: 0;
+            display: flex;
+            min-height: 100vh; /* Ensure body takes full height */
+        }
+
+        /* Sidebar styling */
+        .sidebar {
+            width: 250px; /* Fixed width for sidebar */
+            background-color: black; /* Sidebar color */
+            padding: 20px;
+            color: white;
+            position: sticky;
+            top: 0; /* Keeps the sidebar fixed on scroll */
+            height: 100vh; /* Full height of the viewport */
+        }
+
+        .feature-box {
+            margin-bottom: 15px; /* Space between links */
+        }
+
+        .feature-box a {
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+            display: block; /* Makes links fill the entire box */
+            transition: background-color 0.3s; /* Smooth transition */
+        }
+
+        .feature-box a:hover {
+            background-color: #0056b3; /* Darker blue on hover */
         }
 
         /* Header styling */
@@ -40,34 +69,64 @@
             position: sticky;
             top: 0;
             z-index: 1000; /* Ensure the header is above other content */
-        }
-
-        /* Main content styling */
-        main {
-            padding: 20px;
-            margin-bottom: 60px; /* Add space above the footer */
+            display: flex; /* Use flexbox for header layout */
+            justify-content: space-between; /* Space between elements */
+            align-items: center; /* Center items vertically */
         }
 
         h1 {
-            text-align: center;
-            color: white; /* Ensure the text color contrasts with the header background */
             margin: 0; /* Remove margin for better alignment */
         }
 
         .quote {
-            text-align: center;
             font-style: italic;
             margin-top: 10px; /* Slight space above the quote */
             color: #f9f9f9; /* Lighter color for contrast */
         }
 
+        /* Profile dropdown styling */
+        .profile-dropdown {
+            position: relative;
+            display: inline-block;
+            margin-right: 20px; /* Space from right edge */
+        }
+
+        .profile-dropdown-content {
+            display: none; /* Hidden by default */
+            position: absolute;
+            right: 0; /* Aligns dropdown to the right */
+            background-color: white;
+            min-width: 160px;
+            z-index: 1; /* Ensure it appears above other content */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+        }
+
+        .profile-dropdown:hover .profile-dropdown-content {
+            display: block; /* Show dropdown on hover */
+        }
+
+        .profile-dropdown a {
+            color: black;
+            text-decoration: none;
+            display: block;
+            padding: 10px;
+        }
+
+        /* Main content styling */
+        .content {
+            flex: 1; /* Allow main to take remaining space */
+            padding: 20px;
+            margin: 20px; /* Add margin around the main content */
+            background-color: white; /* Main content background */
+            border-radius: 8px; /* Rounded corners */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+        }
+
         /* Table styling */
         table {
-            width: 90%;
-            margin: 20px auto; /* Center the table */
+            width: 100%; /* Full width of the container */
+            margin-top: 20px; /* Space above the table */
             border-collapse: collapse;
-            background-color: #fff;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
         th,
@@ -86,6 +145,10 @@
             background-color: #f9f9f9;
         }
 
+        tr:hover {
+            background-color: #e6f0ff; /* Highlight row on hover */
+        }
+
         a {
             display: inline-block;
             margin-top: 20px;
@@ -95,43 +158,103 @@
             text-decoration: none;
             border-radius: 4px;
             text-align: center;
+            transition: background-color 0.3s; /* Smooth transition for hover */
         }
 
         a:hover {
             background-color: #0056b3; /* Button hover color */
         }
 
-        /* Footer styling */
-        footer {
-            background-color: #007bff; /* Footer color */
-            padding: 10px;
-            color: white;
+        .no-classes {
             text-align: center;
-            position: relative; /* Changed to relative to avoid fixed positioning issues */
-            bottom: 0;
-            width: 100%;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .messages {
+            margin: 20px; /* Add margin around messages */
+            padding: 10px;
+            border: 1px solid #ff4c4c; /* Red border for error messages */
+            background-color: #ffdddd; /* Light red background */
+            color: #d8000c; /* Dark red text */
+        }
+
+        /* Logout button styling */
+        .logout-button {
+            margin-top: auto; /* Pushes the button to the bottom */
+            margin-bottom: 20px; /* Space from bottom */
+            background-color: #dc3545; /* Red color for logout */
+        }
+
+        .logout-button:hover {
+            background-color: #c82333; /* Darker red on hover */
         }
     </style>
 </head>
 
 <body>
 
-    <!-- Header -->
-    <header>
-        <h1>Your Scheduled Classes</h1>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="feature-box">
+            <a href="{% url 'view_scheduled_classes' %}">View and Join Classes</a>
+        </div>
+        <div class="feature-box">
+            <a href="{% url 'assignment_detail' %}">Submit Assignments</a>
+        </div>
+        <div class="feature-box">
+            <a href="{% url 'view_materials' %}">Access Study Materials</a>
+        </div>
+        <div class="feature-box">
+            <a href="#">Discussion Forum</a>
+        </div>
+        <div class="feature-box">
+            <a href="{% url 'available_quizzes' %}">View Available Quizzes</a>
+        </div>
+        <div class="feature-box">
+            <a href="{% url 'feedback_form' %}">Feedback</a>
+        </div>
+        <div class="feature-box">
+            <a href="{% url 'student_event' %}">Events</a>
+        </div>
+
+        <!-- Logout Button -->
+        <div class="feature-box">
+            <a href="{% url 'logout' %}" class="logout-button">Logout</a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+        <header>
+            <h1>Your Scheduled Classes</h1>
+            <div class="profile-dropdown">
+                <a href="#" class="nav-link text-right" style="color: black;">
+                    {{ custom_user.username }}
+                </a>
+                <div class="profile-dropdown-content">
+                    <a href="{% url 'logout' %}" style="color: black;">Logout</a>
+                </div>
+            </div>
+            <div>
+                <a href="{% url 'student_dashboard' %}" style="color: white;">Back to Dashboard</a>
+            </div>
+        </header>
+
         <div class="quote">
             <p>"Education is the most powerful weapon which you can use to change the world." - Nelson Mandela</p>
         </div>
-    </header>
-    {% if messages %}
-    <ul class="messages">
-        {% for message in messages %}
-            <li class="alert alert-danger">{{ message }}</li>
-        {% endfor %}
-    </ul>
-{% endif %}
-    <!-- Main Content -->
-    <main>
+
+        {% if messages %}
+        <div class="messages">
+            <ul>
+                {% for message in messages %}
+                    <li class="alert alert-danger">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
         {% if scheduled_classes %}
         <table>
             <thead>
@@ -158,14 +281,11 @@
             </tbody>
         </table>
         {% else %}
-        <p style="text-align: center;">No scheduled classes found for your course.</p>
+        <p class="no-classes">No scheduled classes found for your course.</p>
         {% endif %}
 
-        <div style="text-align: center;">
-            <a href="{% url 'student_dashboard' %}">Back to Dashboard</a>
-        </div>
-    </main>
-
+    </div>
+    
 </body>
 
 </html>
