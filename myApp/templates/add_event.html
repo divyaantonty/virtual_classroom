@@ -46,8 +46,14 @@
             
             <div class="mb-3">
                 <label for="event_type" class="form-label">Event Type:</label>
-                <input type="text" name="event_type" class="form-control" required>
+                <select name="event_type" id="event_type" class="form-control" required>
+                    <option value="">Select Event Type</option>
+                    <option value="class_schedule">Class Schedule</option>
+                    <option value="exam">Exam</option>
+                    <option value="assignment">Assignment</option>
+                </select>
             </div>
+            
             <button type="submit" class="btn btn-primary">Add Event</button>
             
             {% if error %}

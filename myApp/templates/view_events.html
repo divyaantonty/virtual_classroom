@@ -47,50 +47,81 @@
 <body>
     <div class="container">
         <h1>Upcoming Events</h1>
+
+        <!-- Filter dropdown for event types -->
+        <div class="mb-3">
+            <label for="filter_event_type" class="form-label">Filter by Event Type:</label>
+            <select id="filter_event_type" class="form-control" onchange="filterEvents()">
+                <option value="">All Event Types</option>
+                <option value="class_schedule">Class Schedule</option>
+                <option value="exam">Exam</option>
+                <option value="assignment">Assignment</option>
+            </select>
+        </div>
+
+        <!-- Filter dropdown for courses -->
+        <div class="mb-3" id="course_filter_container" style="display: none;">
+            <label for="filter_course" class="form-label">Filter by Course:</label>
+            <select id="filter_course" class="form-control" onchange="filterEvents()">
+                <option value="">All Courses</option>
+                {% for course in courses %}
+                    <option value="{{ course.id }}">{{ course.course_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
         <div id="calendar"></div>
     </div>
 
     <script>
-        $(document).ready(function() {
-            $('#calendar').fullCalendar({
-                header: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'month,agendaWeek,agendaDay'
-                },
-                events: [
-                    {% for event in events %}
-                    {
-                        title: '{{ event.title }}',
-                        start: '{{ event.start_time|date:"Y-m-d H:i:s" }}',
-                        end: '{{ event.end_time|date:"Y-m-d H:i:s" }}',
-                        description: '{{ event.description }}',
-                        event_type: '{{ event.event_type }}',
-                        color: getEventColor('{{ event.event_type }}')  // Get color based on event type
-                    }{% if not forloop.last %},{% endif %}
-                    {% endfor %}
-                ],
-                eventClick: function(event) {
-                    alert("Event: " + event.title + "\nDescription: " + event.description + "\nType: " + event.event_type);
-                }
-            });
-    
-            // Function to return color based on event type
-            function getEventColor(eventType) {
-                switch (eventType) {
-                    case 'class':
-                        return '#ffcc00'; // Yellow for classes
-                    case 'assignment':
-                        return '#00ccff'; // Blue for assignments
-                    case 'exam':
-                        return '#ff6666'; // Red for exams
-                    default:
-                        return '#28a745'; // Green for default
-                }
+        $(document).ready(function () {
+            // Initialize FullCalendar with default settings
+            loadCalendar();
+
+            // Function to load the calendar with events
+            function loadCalendar(eventType = '', courseId = '') {
+                $('#calendar').fullCalendar('destroy'); // Clear the existing calendar instance
+                $('#calendar').fullCalendar({
+                    header: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'month,agendaWeek,agendaDay'
+                    },
+                    events: function (start, end, timezone, callback) {
+                        $.ajax({
+                            url: '{% url "filtered_events" %}',
+                            dataType: 'json',
+                            data: {
+                                event_type: eventType,
+                                course_id: courseId // Pass the course_id to the backend
+                            },
+                            success: function (data) {
+                                callback(data);
+                            }
+                        });
+                    },
+                    eventClick: function (event) {
+                        alert("Event: " + event.title + "\nDescription: " + event.description + "\nType: " + event.event_type);
+                    }
+                });
             }
+
+            // Function to filter events based on selected event type and course
+            window.filterEvents = function () {
+                const eventType = $('#filter_event_type').val();
+                const courseId = $('#filter_course').val();
+
+                // Show course filter if event type is selected
+                if (eventType) {
+                    $('#course_filter_container').show();
+                } else {
+                    $('#course_filter_container').hide();
+                }
+
+                loadCalendar(eventType, courseId); // Reload the calendar with new filters
+            };
         });
     </script>
-    
 
     <script src="{% static 'js/bootstrap.min.js' %}"></script>
 </body>

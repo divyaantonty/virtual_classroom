@@ -1736,10 +1736,22 @@ def add_event(request):
     return render(request, 'add_event.html', {'courses': courses})  # Render the template with courses
 
 
+from django.shortcuts import render
+from .models import Course, CalendarEvent  # Import your models
+
 def view_events(request):
     teacher_id = request.session.get('teacher_id')
+    
+    # Fetch events created by the teacher
     events = CalendarEvent.objects.filter(created_by_id=teacher_id)
-    return render(request, 'view_events.html', {'events': events})
+
+    # Fetch all courses (or you can filter based on the teacher's courses if applicable)
+    courses = Course.objects.all()  # Adjust this line if you need specific courses for the teacher
+
+    return render(request, 'view_events.html', {
+        'events': events,
+        'courses': courses  # Pass courses to the template
+    })
 
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -1769,3 +1781,38 @@ def student_events(request):
     events = CalendarEvent.objects.filter(course=course)
 
     return render(request, 'student_event.html', {'events': events})
+
+
+from django.http import JsonResponse
+from .models import CalendarEvent
+
+def filtered_events(request):
+    event_type = request.GET.get('event_type', '')
+    course_id = request.GET.get('course_id', '')
+    events = CalendarEvent.objects.all()
+
+    if event_type:
+        events = events.filter(event_type=event_type)
+    if course_id:
+        events = events.filter(course_id=course_id)    
+
+    event_list = [{
+        'title': event.title,
+        'start': event.start_time.isoformat(),
+        'end': event.end_time.isoformat(),
+        'description': event.description,
+        'event_type': event.event_type,
+        'color': get_event_color(event.event_type),
+    } for event in events]
+
+    return JsonResponse(event_list, safe=False)
+
+def get_event_color(event_type):
+    color_map = {
+        'class': '#ffcc00',  # Yellow for classes
+        'assignment': '#00ccff',      # Blue for assignments
+        'exam': '#ff6666',            # Red for exams
+        'holiday': '#28a745',         # Green for holidays
+        'personal_event': '#6c757d'   # Gray for personal events
+    }
+    return color_map.get(event_type, '#007bff')  # Default to Bootstrap primary color
