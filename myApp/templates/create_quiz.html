@@ -185,7 +185,7 @@
         // Validate End Date: must be after Start Date
         const endDateInput = document.getElementById('end_date');
         const endDateValue = new Date(endDateInput.value);
-        if (endDateValue <= startDateValue) {
+        if (endDateValue < startDateValue) {
             document.getElementById('endDateError').textContent = 'End date must be after Start date.';
             isValid = false;
         }

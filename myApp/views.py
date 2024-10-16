@@ -1268,7 +1268,6 @@ from django.db.models import Q
 from .models import CustomUser, Quizs, UserAnswers
 
 def available_quizzes(request):
-    # Retrieve the custom user ID from the session
     custom_user_id = request.session.get('custom_user_id')
 
     if not custom_user_id:
@@ -1289,22 +1288,26 @@ def available_quizzes(request):
 
     current_datetime = timezone.localtime()
 
-    # Fetch quizzes that have started
-    ongoing_or_upcoming_quizzes = Quizs.objects.filter(
+    # Fetch quizzes that are ongoing or upcoming and have not ended
+    available_quizzes = Quizs.objects.filter(
         course=registered_course,
         start_date__lte=current_datetime.date(),
-        start_time__lte=current_datetime.time(),
-        end_date__gte=current_datetime.date()
+        end_date__gte=current_datetime.date(),
+    ).filter(
+        Q(start_time__lte=current_datetime.time()) | Q(start_date__gt=current_datetime.date())
+    ).exclude(
+        Q(end_date__lt=current_datetime.date()) | 
+        (Q(end_date=current_datetime.date()) & Q(end_time__lt=current_datetime.time()))
     ).order_by('start_date', 'start_time')
 
     # Filter out quizzes that the student has already attempted
-    available_quizzes = []
-    for quiz in ongoing_or_upcoming_quizzes:
-        # Check if there are any answers by the student for this quiz
-        if not UserAnswers.objects.filter(user=student, question__quiz=quiz).exists():
-            available_quizzes.append(quiz)
+    available_quizzes = [quiz for quiz in available_quizzes if not UserAnswers.objects.filter(user=student, question__quiz=quiz).exists()]
 
-    return render(request, 'available_quizzes.html', {'quizzes': available_quizzes})
+    return render(request, 'available_quizzes.html', {
+        'quizzes': available_quizzes,
+        'today': current_datetime.date(),
+        'current_time': current_datetime.time()
+    })
 
 
 def submit_quiz(request, quiz_id):
@@ -1423,7 +1426,6 @@ def quiz_result(request, quiz_id):
 def quiz_questions(request, quiz_id):
     quiz = Quizs.objects.get(id=quiz_id)
     questions = Question.objects.filter(quizs=quiz)  # Adjust based on your models
-
     return render(request, 'quiz_questions.html', {'quiz': quiz, 'questions': questions})
 
 from django.shortcuts import render, redirect, get_object_or_404 # type: ignore
