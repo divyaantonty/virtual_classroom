@@ -5,7 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
-
+    <script type="text/javascript">
+        function preventBack() {
+            window.history.forward(); 
+        }
+          
+        setTimeout("preventBack()", 0);
+          
+        window.onunload = function () { null };
+    </script>
     {% load static %}
     <link href="https://fonts.googleapis.com/css?family=Muli:300,400,700,900" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'fonts/icomoon/style.css' %}">
@@ -206,7 +214,13 @@
                 <div class="dashboard-options">
                     <a href="{% url 'manage_students' %}" class="dashboard-box">Manage Students</a>
                     <a href="{% url 'manage_teachers' %}" class="dashboard-box">Manage Teachers</a>
-                    <a href="{% url 'add_courses' %}" class="dashboard-box">Add Courses</a>
+                    <div class="dropdown dashboard-box">
+                        <button class="dropdown-btn">Add Courses</button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'add_courses' %}">Add New Course</a>
+                            <a href="{% url 'course_list' %}">View Added Courses</a>
+                        </div>
+                    </div>
                     <a href="{% url 'view_messages' %}" class="dashboard-box">View Messages</a>
                     <div class="dropdown dashboard-box">
                         <button class="dropdown-btn">Send Feedback</button>

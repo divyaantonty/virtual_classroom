@@ -136,6 +136,8 @@ def login_view(request):
         # Check CustomUser model
         try:
             custom_user = CustomUser.objects.get(username=username)
+            if not custom_user.is_active:
+                messages.error(request, 'Your account is deactivated. Please contact support.')
             if custom_user.check_password(password):  # Assuming password is stored as plaintext
                 # Manually log in the CustomUser (using sessions)
                 request.session['custom_user_id'] = custom_user.id  # Store CustomUser ID in session
@@ -161,6 +163,8 @@ def student_dashboard(request):
     # Fetch the CustomUser object based on the session ID
     try:
         custom_user = CustomUser.objects.get(id=custom_user_id)
+        if not custom_user.is_active:
+            return redirect('login')
     except CustomUser.DoesNotExist:
         return redirect('login')  # Redirect if the user doesn't exist
 
@@ -341,6 +345,36 @@ def delete_student(request, student_id):
         return redirect('manage_students')
 
 
+# views.py
+from django.core.mail import send_mail
+from django.shortcuts import redirect, get_object_or_404
+from django.contrib import messages
+from .models import CustomUser
+
+def toggle_student_status(request, student_id):
+    student = get_object_or_404(CustomUser, id=student_id)
+    if student.is_active:
+        student.is_active = 0
+        email_subject = "Account Deactivated"
+        email_message = "Your account has been deactivated. Please contact support if you have any questions."
+    else:
+        student.is_active = True
+        email_subject = "Account Activated"
+        email_message = "Your account has been activated. You can now log in to the platform."
+
+    student.save()
+
+    # Send email to the student
+    send_mail(
+        email_subject,
+        email_message,
+        'divyaantony2025.mca.ajce.in',
+        [student.email],
+        fail_silently=False,
+    )
+
+    messages.success(request, f"Student '{student.username}' status updated successfully.")
+    return redirect('manage_students')
 
 
 from django.contrib.auth import logout as auth_logout
@@ -626,7 +660,7 @@ def interview_teacher(request):
         )
 
         messages.success(request, f'Interview scheduled successfully, and email sent to {teacher_email}!')
-        return redirect('interview_teacher')
+        return redirect('admin_dashboard')
 
     return render(request, 'interview_teacher.html', {'teachers': teachers})
 
@@ -1231,7 +1265,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Q
-from .models import CustomUser, Quizs  # Adjust based on your app's structure
+from .models import CustomUser, Quizs, UserAnswers
 
 def available_quizzes(request):
     # Retrieve the custom user ID from the session
@@ -1239,39 +1273,38 @@ def available_quizzes(request):
 
     if not custom_user_id:
         messages.error(request, "You are not logged in.")
-        return redirect('login')  # Redirect to login page if user ID is not in session
+        return redirect('login')
 
     try:
-        # Fetch the student (CustomUser) based on the custom user ID
         student = CustomUser.objects.get(id=custom_user_id)
     except CustomUser.DoesNotExist:
         messages.error(request, "Student not found.")
         return redirect('login')
 
-    # Check the registered course for the student
     registered_course = student.course  # Assuming there's a course field on CustomUser
 
     if not registered_course:
         messages.error(request, "You are not registered for any course.")
         return redirect('student_dashboard')
 
-    # Get current time in IST (based on TIME_ZONE setting in settings.py)
     current_datetime = timezone.localtime()
 
-    # Debug statement to check the current IST date and time
-    print(f"Current date and time (IST): {current_datetime}")
+    # Fetch quizzes that have started
+    ongoing_or_upcoming_quizzes = Quizs.objects.filter(
+        course=registered_course,
+        start_date__lte=current_datetime.date(),
+        start_time__lte=current_datetime.time(),
+        end_date__gte=current_datetime.date()
+    ).order_by('start_date', 'start_time')
 
-    # Fetch quizzes related to the registered course that are ongoing or in the future
-    quizzes = Quizs.objects.filter(
-        course=registered_course
-    ).filter(
-        Q(start_date=current_datetime.date(), end_time__gt=current_datetime.time(), end_date=current_datetime.date()) |  # Ongoing quizzes today
-        Q(start_date=current_datetime.date(), end_date__gt=current_datetime.date()) |  # Future quizzes (after today)
-        Q(start_date__gt=current_datetime.date())  # Future quizzes (after today)
-    ).order_by('start_date', 'start_time')  # Optional: order quizzes by start date and time
+    # Filter out quizzes that the student has already attempted
+    available_quizzes = []
+    for quiz in ongoing_or_upcoming_quizzes:
+        # Check if there are any answers by the student for this quiz
+        if not UserAnswers.objects.filter(user=student, question__quiz=quiz).exists():
+            available_quizzes.append(quiz)
 
-    # Render the available quizzes template
-    return render(request, 'available_quizzes.html', {'quizzes': quizzes})
+    return render(request, 'available_quizzes.html', {'quizzes': available_quizzes})
 
 
 def submit_quiz(request, quiz_id):

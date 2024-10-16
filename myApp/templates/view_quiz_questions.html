@@ -1,4 +1,13 @@
 {% load static %}
+<script type="text/javascript">
+    function preventBack() {
+        window.history.forward(); 
+    }
+      
+    setTimeout("preventBack()", 0);
+      
+    window.onunload = function () { null };
+</script>
 <a href="{% url 'teacher_dashboard' %}" class="back-button">Back</a>
 <h1 class="page-title">Quiz Questions</h1>
 

@@ -5,6 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Students</title>
+    <script type="text/javascript">
+        function preventBack() {
+            window.history.forward(); 
+        }
+          
+        setTimeout("preventBack()", 0);
+          
+        window.onunload = function () { null };
+    </script>
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
     <style>
         body {
@@ -101,11 +110,16 @@
                 <td>{{ student.email }}</td>
                 <td>{{ student.course.course_name }}</td> <!-- Display the course name -->
                 <td class="actions">
-                    <form action="{% url 'delete_student' student.id %}" method="POST">
+                    <form action="{% url 'toggle_student_status' student.id %}" method="POST">
                         {% csrf_token %}
-                        <button type="submit">Delete</button>
+                        {% if student.is_active %}
+                            <button type="submit" class="deactivate-btn">Deactivate</button>
+                        {% else %}
+                            <button type="submit" class="activate-btn">Activate</button>
+                        {% endif %}
                     </form>
                 </td>
+                
             </tr>
             {% endfor %}
         </tbody>
@@ -120,6 +134,7 @@
                 <th>Username</th>
                 <th>Email</th>
                 <th>Course</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -128,7 +143,14 @@
                 <td>{{ student.username }}</td>
                 <td>{{ student.email }}</td>
                 <td>{{ student.course.course_name }}</td> <!-- Display the course name -->
-                <td class="actions">
+                <td class="actions"> <!-- Added this cell for the action button -->
+                    <form action="{% url 'toggle_student_status' student.id %}" method="POST">
+                        {% csrf_token %}
+                        {% if not student.is_active %} <!-- Check if the student is deactivated -->
+                            <button type="submit" class="activate-btn">Activate</button>
+                        {% endif %}
+                    </form>
+                </td>
                 </td>
             </tr>
             {% endfor %}

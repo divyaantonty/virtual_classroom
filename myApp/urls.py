@@ -76,7 +76,8 @@ urlpatterns = [
     path('manage-students/', views.manage_students, name='manage_students'),
     path('delete_student/<int:student_id>/', views.delete_student, name='delete_student'),
     path('add_feedback_question/', views.add_feedback_question, name='add_feedback_question'),
-     path('view_feedback_responses/', views.view_feedback_responses, name='view_feedback_responses'),
+    path('view_feedback_responses/', views.view_feedback_responses, name='view_feedback_responses'),
+    path('toggle-student-status/<int:student_id>/', views.toggle_student_status, name='toggle_student_status'),
 
 
     path('manage-teachers/', views.manage_teachers, name='manage_teachers'),

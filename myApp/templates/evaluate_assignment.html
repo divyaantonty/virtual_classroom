@@ -1,5 +1,13 @@
 {% load static %}
-
+<script type="text/javascript">
+    function preventBack() {
+        window.history.forward(); 
+    }
+      
+    setTimeout("preventBack()", 0);
+      
+    window.onunload = function () { null };
+</script>
 {% block content %}
 <div class="container mt-5">
     <h2 class="text-center mb-4">Evaluate Assignments</h2>

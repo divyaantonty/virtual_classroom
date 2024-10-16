@@ -6,13 +6,73 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Event</title>
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <style>
+        body {
+            background-color: #f8f9fa; /* Light background color */
+            font-family: Arial, sans-serif; /* Change font family */
+        }
+
+        .container {
+            background: #ffffff; /* White background for the form */
+            border-radius: 8px; /* Rounded corners */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Soft shadow */
+            padding: 20px; /* Padding around the content */
+            margin-top: 50px; /* Space from the top */
+        }
+
+        h1 {
+            color: #007bff; /* Primary color for the header */
+            text-align: center; /* Center the title */
+        }
+
+        .form-label {
+            font-weight: bold; /* Bold labels */
+        }
+
+        .back-button {
+            display: inline-block; /* Make it inline-block */
+            margin-bottom: 20px; /* Space below the button */
+            text-decoration: none; /* Remove underline */
+            color: #007bff; /* Bootstrap primary color */
+        }
+
+        .back-button:hover {
+            text-decoration: underline; /* Underline on hover */
+        }
+
+        .btn-primary {
+            width: 100%; /* Full width for the button */
+            background-color: #007bff; /* Primary color */
+            border-color: #007bff; /* Same color for the border */
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3; /* Darker shade on hover */
+            border-color: #0056b3; /* Darker border on hover */
+        }
+
+        .alert {
+            margin-top: 20px; /* Space above the alert */
+        }
+    </style>
+    <script type="text/javascript">
+        function preventBack() {
+            window.history.forward(); 
+        }
+          
+        setTimeout("preventBack()", 0);
+          
+        window.onunload = function () { null };
+    </script>
 </head>
+
 <body>
+    <a href="{% url 'teacher_dashboard' %}" class="back-button">Back</a>
     <div class="container">
         <h1 class="mt-4">Add Event</h1>
 
         <!-- Your Form Here -->
-        <form method="POST" action="{% url 'add_event' %}" class="mt-4">
+        <form method="POST" action="{% url 'add_event' %}" class="mt-4" onsubmit="return validateForm()">
             {% csrf_token %}
             <div class="mb-3">
                 <label for="course_id" class="form-label">Course:</label>
@@ -26,22 +86,22 @@
 
             <div class="mb-3">
                 <label for="title" class="form-label">Title:</label>
-                <input type="text" name="title" class="form-control" required>
+                <input type="text" name="title" id="title" class="form-control" required>
             </div>
             
             <div class="mb-3">
                 <label for="start_time" class="form-label">Start Time:</label>
-                <input type="datetime-local" name="start_time" class="form-control" required>
+                <input type="datetime-local" name="start_time" id="start_time" class="form-control" required>
             </div>
             
             <div class="mb-3">
                 <label for="end_time" class="form-label">End Time:</label>
-                <input type="datetime-local" name="end_time" class="form-control" required>
+                <input type="datetime-local" name="end_time" id="end_time" class="form-control" required>
             </div>
             
             <div class="mb-3">
                 <label for="description" class="form-label">Description:</label>
-                <textarea name="description" class="form-control"></textarea>
+                <textarea name="description" id="description" class="form-control"></textarea>
             </div>
             
             <div class="mb-3">
@@ -64,6 +124,38 @@
         </form>
     </div>
     
+    <script>
+        function validateForm() {
+            const title = document.getElementById('title').value;
+            const startTime = new Date(document.getElementById('start_time').value);
+            const endTime = new Date(document.getElementById('end_time').value);
+            const description = document.getElementById('description').value;
+
+            // Validate title: first letter capital and at least 3 characters
+            const titleRegex = /^[A-Z][a-zA-Z\s]{2,}$/; // First letter capital, at least 3 characters
+            if (!titleRegex.test(title)) {
+                alert("Title must start with a capital letter and have at least 3 characters.");
+                return false;
+            }
+
+            // Validate that end time is in the future compared to start time
+            const now = new Date();
+            if (endTime <= startTime) {
+                alert("End time must be after start time.");
+                return false;
+            }
+
+            // Validate description: only characters
+            const descriptionRegex = /^[a-zA-Z\s]*$/; // Only letters and spaces
+            if (!descriptionRegex.test(description)) {
+                alert("Description can only contain letters.");
+                return false;
+            }
+
+            return true; // If all validations pass
+        }
+    </script>
+
     <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.min.js' %}"></script>
 </body>

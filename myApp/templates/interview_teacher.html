@@ -5,7 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interview Teacher</title>
-
+    <script type="text/javascript">
+        function preventBack() {
+            window.history.forward(); 
+        }
+          
+        setTimeout("preventBack()", 0);
+          
+        window.onunload = function () { null };
+    </script>
     {% load static %}
     <link href="https://fonts.googleapis.com/css?family=Muli:300,400,700,900" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'fonts/icomoon/style.css' %}">
@@ -64,7 +72,7 @@
             <h2>Interview Teacher</h2>
             <p>Fill in the details below to conduct an interview.</p>
         </div>
-        <form method="POST" action="{% url 'interview_teacher' %}">
+        <form method="POST" action="{% url 'interview_teacher' %}" onsubmit="return validateForm()">
             {% csrf_token %}
             <div class="form-group">
                 <label for="teacher_id">Select Teacher</label>
@@ -108,7 +116,7 @@
         <div style="margin-top: 20px;">
             <a href="{% url 'manage_teachers' %}" class="btn btn-secondary">Back to Dashboard</a>
         </div>
-        
+
         <script>
             function updateEmail() {
                 var selectElement = document.getElementById('teacher_id');
@@ -116,12 +124,54 @@
                 var email = selectedOption.getAttribute('data-email');
                 document.getElementById('teacher_email').value = email;
             }
+
+            function validateForm() {
+                // Get form values
+                var interviewDate = new Date(document.getElementById('interview_date').value);
+                var startingTime = document.getElementById('starting_time').value;
+                var endingTime = document.getElementById('ending_time').value;
+                var interviewerName = document.getElementById('interviewer_name').value;
+                var meetingLink = document.getElementById('meeting_link').value;
+
+                // Get current date to check against interview date
+                var today = new Date();
+                today.setHours(0, 0, 0, 0); // Set to midnight to only compare dates
+
+                // Interview date must be in the future
+                if (interviewDate <= today) {
+                    alert('Interview date must be a future date.');
+                    return false;
+                }
+
+                // Check if ending time is after the starting time
+                if (startingTime >= endingTime) {
+                    alert('Ending time must be after the starting time.');
+                    return false;
+                }
+
+                // Validate interviewer's name (first letter uppercase and at least 3 characters long)
+                var nameRegex = /^[A-Z][a-zA-Z\s]{2,}$/;
+                if (!nameRegex.test(interviewerName)) {
+                    alert('Interviewer’s name must start with a capital letter and be at least 3 characters long.');
+                    return false;
+                }
+
+                // Validate the meeting link format
+                var urlRegex = /^(https?:\/\/)[\w.-]+(\.[\w\.-]+)+[/#?]?.*$/;
+                if (!urlRegex.test(meetingLink)) {
+                    alert('Please enter a valid meeting link starting with http:// or https://.');
+                    return false;
+                }
+
+
+                // If all validations pass
+                return true;
+            }
         </script>
-        
-        
-    
-    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
-    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+
+        <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+        <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    </div>
 </body>
 
 </html>
