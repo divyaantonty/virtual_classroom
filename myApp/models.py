@@ -32,10 +32,15 @@ class CustomUserManager(BaseUserManager):
 class CustomUser(AbstractBaseUser):
     username = models.CharField(max_length=255, unique=True)
     email = models.EmailField(unique=True)
-    last_login = models.DateTimeField(null=True, blank=True)  # Add this line
+    first_name = models.CharField(max_length=100, blank=True, null=True)  # Added from Student model
+    last_name = models.CharField(max_length=100, blank=True, null=True)   # Added from Student model
+    date_of_birth = models.DateField(blank=True, null=True)               # Added from Student model
+    contact = models.CharField(max_length=15, blank=True, null=True)      # Added from Student model
+    last_login = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
-    is_staff = models.BooleanField(default=False)  # Add if you want users to access the admin site
+    is_staff = models.BooleanField(default=False)
+    is_superuser = models.BooleanField(default=False)  # Explicit superuser field
     course = models.ForeignKey('Course', on_delete=models.SET_NULL, null=True, blank=True, related_name='students')
 
     objects = CustomUserManager()
@@ -56,11 +61,13 @@ class Parent(models.Model):
     # Other fields...
 
 from django.contrib.auth.models import User # type: ignore
+from datetime import date
 
 class Teacher(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
     ]
 
     GENDER_CHOICES = [
@@ -72,7 +79,7 @@ class Teacher(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     gender = models.CharField(max_length=6, choices=GENDER_CHOICES)
-    age = models.IntegerField()
+    date_of_birth = models.DateField(default=date.today)
     email = models.EmailField()
     contact = models.CharField(max_length=15)
     address_line1 = models.CharField(max_length=255)
@@ -81,11 +88,11 @@ class Teacher(models.Model):
     state = models.CharField(max_length=100)
     zip_code = models.CharField(max_length=10)
     qualification = models.CharField(max_length=255, blank=True, null=True)
+    qualification_certificate = models.FileField(upload_to='certificates/qualifications/', blank=True, null=True)
+    experience_certificate = models.FileField(upload_to='certificates/experience/', blank=True, null=True)
+    assigned_course = models.ForeignKey('Course', on_delete=models.CASCADE, blank=True, null=True)
     teaching_area = models.CharField(max_length=255, blank=True, null=True)
-    classes = models.CharField(max_length=255, blank=True, null=True)
-    subjects = models.CharField(max_length=255, blank=True, null=True)
     experience = models.TextField(blank=True, null=True)
-    referral = models.CharField(max_length=255)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')  # Track approval status
     auto_generated_username = models.CharField(max_length=150, unique=True, null=True)
     auto_generated_password = models.CharField(max_length=128, null=True)  # Store hashed passwords
@@ -108,14 +115,64 @@ class ContactMessage(models.Model):
         return f'Message from {self.first_name} {self.last_name}'
 
 
+from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
+from django.conf import settings
+from datetime import timedelta
+from django.db.models import Avg
+
 class Course(models.Model):
-    course_name = models.CharField(max_length=255, default='Default Course Name')
+    course_name = models.CharField(max_length=255)
+    image = models.ImageField(upload_to='course_images/', blank=True, null=True)
     description = models.TextField()
-    duration = models.IntegerField(default=4)  # Setting default duration to 4 weeks
+    duration = models.IntegerField(default=4)  # in weeks
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    rating = models.DecimalField(
+        max_digits=3,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0), MaxValueValidator(5)]
+    )
+
+    def update_average_rating(self):
+        average_rating = self.ratings.aggregate(avg_rating=Avg('rating'))['avg_rating']
+        self.rating = round(average_rating, 2) if average_rating else None
+        self.save()
 
     def __str__(self):
         return self.course_name
 
+
+
+class Enrollment(models.Model):
+    student = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='enrollments')
+    enrollment_date = models.DateField(auto_now_add=True)
+    completion_date = models.DateField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.student} enrolled in {self.course}"
+
+
+class CourseRating(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='ratings')
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    rating = models.DecimalField(
+        max_digits=2,
+        decimal_places=1,
+        validators=[MinValueValidator(0), MaxValueValidator(5)]
+    )
+    review = models.TextField(blank=True, null=True)
+    date_rated = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Update the average rating of the course after saving a new rating
+        self.course.update_average_rating()
+
+    def __str__(self):
+        return f"Rating of {self.rating} for {self.course.course_name} by {self.student}"
 
 class ClassSchedule(models.Model):
     class_name = models.CharField(max_length=100)  
@@ -184,19 +241,6 @@ class Question(models.Model):
     option_d = models.CharField(max_length=100)
     correct_option = models.CharField(max_length=1, choices=[('A', 'A'), ('B', 'B'), ('C', 'C'), ('D', 'D')])
 
-class Answer(models.Model):
-    question = models.ForeignKey(Question, related_name='answers', on_delete=models.CASCADE)
-    text = models.CharField(max_length=255) 
-
-from .models import CustomUser  # Import your custom user model
-
-class UserAnswer(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)  # Direct reference to the custom user model
-    quiz = models.ForeignKey(Quizs, on_delete=models.CASCADE)
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    selected_answer = models.CharField(max_length=255)
-    is_correct = models.BooleanField()
-    submitted_at = models.DateTimeField(auto_now_add=True)
 
 class UserAnswers(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)

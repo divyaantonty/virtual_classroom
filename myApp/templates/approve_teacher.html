@@ -15,11 +15,29 @@
         <form method="post">
             {% csrf_token %}
             {{ form.as_p }}
+
+            <!-- Dropdown to select a course -->
+            <div class="form-group">
+                <label for="course">Assign Course to Teach</label>
+                <select name="course" id="course" class="form-control" required>
+                    <option value="">-- Select a Course --</option>
+                    {% for course in courses %}
+                    <option value="{{ course.id }}">{{ course.course_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Input for teaching area -->
+            <div class="form-group">
+                <label for="teaching_area">Assign Teaching Area</label>
+                <input type="text" name="teaching_area" id="teaching_area" class="form-control" required>
+            </div>
+
             <button type="submit" class="btn btn-success">Yes, Approve</button>
             <a href="{% url 'manage_teachers' %}" class="btn btn-secondary">Cancel</a>
         </form>
 
-        <!-- Add a check to see if the teacher is approved and display a message -->
+        <!-- Check if the teacher is approved and display a message -->
         {% if teacher.status == 'approved' %}
         <div class="alert alert-success mt-3">
             Teacher Approved!

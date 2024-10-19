@@ -66,8 +66,8 @@
         <div class="site-section">
             <div class="container">
                 <h2 class="mb-5 text-center">Add New Course</h2>
-
-                <form method="post" action="{% url 'add_courses' %}" class="form" onsubmit="return validateForm()">
+        
+                <form method="post" action="{% url 'add_courses' %}" class="form" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="row">
                         <div class="col-md-6 form-group">
@@ -85,7 +85,18 @@
                         <div class="col-md-12 form-group">
                             <label for="description">Course Description:</label>
                             <textarea name="description" id="description" cols="30" rows="5" class="form-control" 
-                                pattern="^[A-Za-z\s]+$" minlength="10" title="Description must be at least 10 characters long and can only contain alphabetic characters." required></textarea>
+                                minlength="10" title="Description must be at least 10 characters long." required></textarea>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label for="price">Price:</label>
+                            <input type="number" step="0.01" name="price" id="price" class="form-control form-control-lg" 
+                                title="Please enter a valid price." required>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label for="image">Course Image:</label>
+                            <input type="file" name="image" id="image" class="form-control form-control-lg" accept=".png, .jpg, .jpeg" >
                         </div>
                     </div>
                     <div class="row">
@@ -94,6 +105,17 @@
                         </div>
                     </div>
                 </form>
+        
+                {% if messages %}
+                    <ul class="messages">
+                        {% for message in messages %}
+                            <li class="{{ message.tags }}">{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        </div>
+        
                 
                 <script>
                 function validateForm() {

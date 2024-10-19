@@ -1,0 +1,159 @@
+{% load static %}
+<style>
+    /* Style for navigation bar */
+    .navbar {
+        display: flex;
+        justify-content: space-between;
+        background-color: #007bff;
+        padding: 10px 20px;
+        color: white;
+    }
+
+    .navbar .user-avatar {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .navbar .user-avatar img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+
+    .navbar .dropdown {
+        display: none;
+        position: absolute;
+        top: 50px;
+        right: 0;
+        background-color: white;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        z-index: 1000;
+    }
+
+    .navbar .dropdown a {
+        display: block;
+        padding: 10px;
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    .navbar .dropdown a:hover {
+        background-color: #f0f0f0;
+    }
+
+    .navbar .user-avatar:hover .dropdown {
+        display: block;
+    }
+
+    /* Course list styles */
+    .course-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin: 20px auto;
+        max-width: 1200px;
+        padding: 10px;
+    }
+
+    .course-item {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 10px;
+        width: calc(33.333% - 20px);
+        box-sizing: border-box;
+        text-align: center;
+    }
+
+    .course-item img {
+        max-width: 90%;
+        height: auto;
+        border-radius: 5px;
+    }
+
+    .course-item h2 {
+        font-size: 25px;
+        margin: 10px 0;
+    }
+
+    .course-item p {
+        margin: 5px 0;
+        font-size: 20px;
+    }
+
+    .enroll-button {
+        background-color: #007bff;
+        color: white;
+        padding: 5px 8px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background-color 0.3s;
+    }
+
+    .enroll-button:hover {
+        background-color: #0056b3;
+    }
+
+    .heading {
+        text-align: center;
+        margin: 20px 0;
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+    }
+</style>
+
+<!-- Navigation Bar with Avatar Dropdown -->
+<div class="navbar">
+    <h1 class="heading">Available Courses</h1>
+    <div class="user-avatar">
+        {% if request.user.profile.avatar %}
+            <img src="{{ request.user.profile.avatar.url }}" alt="User Avatar">
+        {% else %}
+            <img src="{% static 'path/to/default/avatar.jpg' %}" alt="Default Avatar">
+        {% endif %}
+        <span>{{ request.user.username }}</span>
+        <!-- Dropdown menu for user actions -->
+        <div class="dropdown">
+            <a href="{% url 'student_dashboard' %}">My Courses</a>
+            <a href="{% url 'logout' %}">Logout</a>
+        </div>
+    </div>
+</div>
+
+<!-- Courses List -->
+<div class="course-list">
+    {% for item in course_data %}
+        <div class="course-item">
+            <h2>{{ item.course.course_name }}</h2>
+            {% if item.course.image %}
+                <img src="{{ item.course.image.url }}" alt="{{ item.course.course_name }}">
+            {% else %}
+                <img src="{% static 'path/to/default/image.jpg' %}" alt="Default Image">
+            {% endif %}
+            <p>{{ item.course.description }}</p>
+            <p>Duration: {{ item.course.duration }} weeks</p>
+            <p>Price: {{ item.course.price }}</p>
+            <p>Rating: {{ item.course.rating }}</p>
+
+            <!-- Show appropriate button based on enrollment status -->
+            {% if item.is_enrolled %}
+                <button class="btn btn-secondary" disabled>Already Enrolled</button>
+            {% else %}
+                <form method="POST" action="{% url 'enroll_course' item.course.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">Enroll Now</button>
+                </form>
+            {% endif %}
+        </div>
+    {% empty %}
+        <p>No courses available at this time.</p>
+    {% endfor %}
+</div>

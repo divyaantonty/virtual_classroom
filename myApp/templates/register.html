@@ -51,6 +51,9 @@
         .dropdown-item:hover {
             background-color: #f1f1f1; /* Hover effect */
         }
+        .error-message {
+            margin-top: 5px;
+        }
       </style>
       
 </head>
@@ -143,46 +146,61 @@
         <div class="site-section">
             <div class="container">
                 <div class="row justify-content-center">
-                    <div class="col-md-5">
-                        <form method="POST" action="{% url 'register' %}">                           
-                             {% csrf_token %}
-                            <div class="form-row">
-                                <div class="col-md-12 form-group">
-                                    <label for="username">Username</label>
-                                    <input type="text" name="username" id="username" class="form-control" required>
-                                </div>
-                                <div class="col-md-12 form-group">
-                                    <label for="email">Email</label>
-                                    <input type="email" name="email" id="email" class="form-control" required>
-                                </div>
-                                <div class="col-md-12 form-group">
-                                    <label for="password">Password</label>
-                                    <input type="password" name="password" id="password" class="form-control" required>
-                                </div>
-                                <div class="col-md-12 form-group">
-                                    <label for="confirm_password">Confirm Password</label>
-                                    <input type="password" name="confirm_password" id="confirm_password" class="form-control" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="course">Select Course</label>
-                                    <select name="course" id="course" class="form-control" required>
-                                        <option value="">-- Select a Course --</option>
-                                        {% for course in courses %}
-                                            <option value="{{ course.id }}">{{ course.course_name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>                                                            
-                            </div>
-                            <input type="submit" value="Register" class="btn btn-primary btn-lg px-5">
-                            {% if messages %}
+                    <div class="col-md-8">
+                        {% if messages %}
                                 <ul class="messages">
                                     {% for message in messages %}
                                         <li class="{{ message.tags }}">{{ message }}</li>
                                     {% endfor %}
                                 </ul>
                             {% endif %}
+                        <form method="POST" action="{% url 'register' %}">
+                            {% csrf_token %}
+                            <div class="form-row">
+                                
+                            <div class="col-md-6 form-group">
+                                    <label for="first_name">First Name</label>
+                                    <input type="text" name="first_name" id="first_name" class="form-control" oninput="validateFirstName()">
+                                    <small id="first_name_error" class="text-danger"></small>
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label for="last_name">Last Name</label>
+                                    <input type="text" name="last_name" id="last_name" class="form-control" oninput="validateLastName()">
+                                    <small id="last_name_error" class="text-danger"></small>
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label for="email">Email</label>
+                                    <input type="email" name="email" id="email" class="form-control" required oninput="validateEmail()">
+                                    <small id="email_error" class="text-danger"></small>
+                                </div>                                <div class="col-md-6 form-group">
+                                    <label for="contact">Contact</label>
+                                    <input type="text" name="contact" id="contact" class="form-control" oninput="validateContact()">
+                                    <small id="contact_error" class="text-danger"></small>
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label for="date_of_birth">Date of Birth</label>
+                                    <input type="date" name="date_of_birth" id="date_of_birth" class="form-control" oninput="validateAge()">
+                                    <small id="dob_error" class="text-danger"></small>
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label for="username">Username</label>
+                                    <input type="text" name="username" id="username" class="form-control" required oninput="validateUsername()">
+                                    <small id="username_error" class="text-danger"></small>
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label for="password">Password</label>
+                                    <input type="password" name="password" id="password" class="form-control" required oninput="validatePassword()">
+                                    <small id="password_error" class="text-danger"></small>
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label for="confirm_password">Confirm Password</label>
+                                    <input type="password" name="confirm_password" id="confirm_password" class="form-control" required oninput="validateConfirmPassword()">
+                                    <small id="confirm_password_error" class="text-danger"></small>
+                                </div>
+                            </div>
+                            <input type="submit" value="Register" class="btn btn-primary btn-lg px-5">
+                            
                         </form>
-                        
                         
                         <div class="row mt-3">
                             <div class="col-12 text-center">
@@ -247,5 +265,61 @@
     <script src="{% static 'js/main.js' %}"></script>
 
 </body>
+<script>
+    function validateFirstName() {
+        const firstName = document.getElementById('first_name').value;
+        const error = document.getElementById('first_name_error');
+        const regex = /^[A-Z][a-zA-Z]*$/;
+        error.textContent = regex.test(firstName) ? '' : 'First name must start with a capital letter and have no spaces.';
+    }
 
+    function validateLastName() {
+        const lastName = document.getElementById('last_name').value;
+        const error = document.getElementById('last_name_error');
+        const regex = /^[A-Z][a-zA-Z]*$/;
+        error.textContent = regex.test(lastName) ? '' : 'Last name must start with a capital letter and have no spaces.';
+    }
+
+    function validateEmail() {
+        const email = document.getElementById('email').value;
+        const error = document.getElementById('email_error');
+        const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        error.textContent = regex.test(email) ? '' : 'Please enter a valid email address.';
+    }
+
+    function validateContact() {
+        const contact = document.getElementById('contact').value;
+        const error = document.getElementById('contact_error');
+        const regex = /^[6-9]\d{9}$/;
+        error.textContent = regex.test(contact) ? '' : 'Contact must start with digits 6-9 and be 10 digits long.';
+    }
+
+    function validateAge() {
+        const dob = new Date(document.getElementById('date_of_birth').value);
+        const error = document.getElementById('dob_error');
+        const age = new Date().getFullYear() - dob.getFullYear();
+        error.textContent = age >= 18 ? '' : 'You must be at least 18 years old.';
+    }
+
+    function validateUsername() {
+        const username = document.getElementById('username').value;
+        const error = document.getElementById('username_error');
+        error.textContent = username ? '' : 'Username is required.';
+        // You can add a unique check by making an AJAX call to your server to see if the username exists
+    }
+
+    function validatePassword() {
+        const password = document.getElementById('password').value;
+        const error = document.getElementById('password_error');
+        const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        error.textContent = regex.test(password) ? '' : 'Password must contain uppercase, lowercase letters, numbers, and special characters.';
+    }
+
+    function validateConfirmPassword() {
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirm_password').value;
+        const error = document.getElementById('confirm_password_error');
+        error.textContent = password === confirmPassword ? '' : 'Passwords do not match.';
+    }
+</script>
 </html>

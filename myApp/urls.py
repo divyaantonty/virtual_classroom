@@ -51,6 +51,9 @@ urlpatterns = [
     path('quiz/submit/<int:quiz_id>/', views.submit_quiz, name='submit_quiz'),
     path('quiz/<int:quiz_id>/', views.quiz_result, name='quiz_result'),
     path('feedback/', views.feedback_view, name='feedback_form'),
+    path('available-courses/', views.available_courses, name='available_courses'),
+    path('enroll/<int:course_id>/', views.enroll_course, name='enroll_course'),
+
 
     path('teacher_dashboard/', views.teacher_dashboard, name='teacher_dashboard'),
     path('schedule-class/', views.schedule_class, name='schedule_class'),

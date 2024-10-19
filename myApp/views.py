@@ -8,29 +8,28 @@ from django.contrib import messages
 from django.utils.crypto import get_random_string
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
-from .models import CustomUser, Course, Parent, UserAnswers
+from .models import CustomUser, Course, Parent
 
 def register(request):
     if request.method == 'POST':
         # Extract form data from request.POST
-        username = request.POST.get('username')
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
         email = request.POST.get('email')
+        contact = request.POST.get('contact')
+        date_of_birth = request.POST.get('date_of_birth')
+        username = request.POST.get('username')
         password = request.POST.get('password')
-        confirm_password = request.POST.get('confirm_password')
-        course_id = request.POST.get('course')
+       
 
         # Perform basic validation
-        if not all([username, email, password, confirm_password, course_id]):
+        if not all([first_name, last_name, email, contact, date_of_birth, username, password]):
             messages.error(request, 'Please fill out all fields.')
             return render(request, 'register.html')
-        
-        if not (username.isalpha() or username.isdigit()):
-            messages.error(request, "Username should contain only alphabets or only digits, not both.")
-            return redirect('register')
 
-        if password != confirm_password:
-            messages.error(request, 'Passwords do not match.')
-            return render(request, 'register.html')
+        if not username.isalnum():
+            messages.error(request, "Username should contain only alphabets or numbers.")
+            return redirect('register')
 
         # Check if the username or email is unique for the student
         if CustomUser.objects.filter(username=username).exists():
@@ -42,33 +41,21 @@ def register(request):
             return render(request, 'register.html')
 
         # Validate email format
-        try:
-            validate_email(email)
-            if not email.endswith('@gmail.com'):
-                raise ValidationError('Email must be in Gmail format.')
-        except ValidationError as e:
-            messages.error(request, f'Invalid email: {e.message}')
-            return render(request, 'register.html')
-
+        
         # Validate password complexity
-        if not re.fullmatch(r'^(?=.*[A-Z])(?=.*\d)(?=.*[a-zA-Z])(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$', password):
-            messages.error(request, 'Password must contain at least 6 characters, including 1 uppercase letter, 1 number, and 1 special character.')
-            return render(request, 'register.html')
+       
 
-        # Fetch the selected course
-        try:
-            course = Course.objects.get(id=course_id)
-        except Course.DoesNotExist:
-            messages.error(request, 'Selected course does not exist.')
-            return render(request, 'register.html')
 
         # Create and save student user instance
         student_user = CustomUser(
             username=username,
+            first_name=first_name,
+            last_name=last_name,
             email=email,
-            course=course,  # Save the selected course
-            password=make_password(password),  
-            
+            contact=contact,
+            date_of_birth=date_of_birth,
+            password=make_password(password),
+            is_active=True,  # Ensure the user is active upon registration
         )
         student_user.save()
 
@@ -77,7 +64,8 @@ def register(request):
 
         # Generate a random secure password for the parent
         parent_password = get_random_string(12)  # Generate a 12-character password
-        # After creating the student_user
+
+        # Create the parent instance linked to the student user
         parent = Parent.objects.create(
             auto_generated_username=parent_username,
             auto_generated_password=parent_password,
@@ -99,9 +87,8 @@ def register(request):
         messages.success(request, 'Account created successfully! Parent login credentials have been sent to your email.')
         return redirect('login')
     else:
-        # Fetch all courses to display in the registration form
-        courses = Course.objects.all()
-        return render(request, 'register.html', {'courses': courses})
+        return render(request, 'register.html')
+
 
 
 from django.shortcuts import render, redirect
@@ -141,7 +128,7 @@ def login_view(request):
             if custom_user.check_password(password):  # Assuming password is stored as plaintext
                 # Manually log in the CustomUser (using sessions)
                 request.session['custom_user_id'] = custom_user.id  # Store CustomUser ID in session
-                return redirect('student_dashboard')
+                return redirect('available_courses')
             else:
                 messages.error(request, 'Invalid password for CustomUser.')
         except CustomUser.DoesNotExist:
@@ -151,6 +138,63 @@ def login_view(request):
         messages.error(request, 'Invalid username or password.')
 
     return render(request, 'login.html')
+
+from django.shortcuts import render, redirect
+from .models import Course, Enrollment
+
+def available_courses(request):
+    # Check if the user is authenticated via session
+    if 'custom_user_id' not in request.session:
+        return redirect('login')  # Redirect to the login page if not authenticated
+    
+    # Get the logged-in user's ID from the session
+    custom_user_id = request.session['custom_user_id']
+    
+    # Fetch all courses
+    courses = Course.objects.all()
+    
+    # Prepare a list to hold course data along with enrollment status
+    course_data = []
+    
+    for course in courses:
+        # Check if the user is enrolled in the current course
+        is_enrolled = Enrollment.objects.filter(student_id=custom_user_id, course=course).exists()
+        
+        # Append course data with the enrollment status
+        course_data.append({
+            'course': course,
+            'is_enrolled': is_enrolled
+        })
+    
+    # Pass the course data (with enrollment status) to the template
+    return render(request, 'available_courses.html', {'course_data': course_data})
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Course, Enrollment
+from django.http import HttpResponseForbidden
+
+def enroll_course(request, course_id):
+    # Check if the user is authenticated via session
+    if 'custom_user_id' not in request.session:
+        # If the user is not authenticated, redirect to the login page
+        return redirect('login')  # Redirect to your custom login page
+
+    # Get the authenticated user's ID from the session
+    custom_user_id = request.session['custom_user_id']
+    
+    # Get the course the user is trying to enroll in
+    course = get_object_or_404(Course, id=course_id)
+
+    # Check if the user is already enrolled in this course
+    if Enrollment.objects.filter(student_id=custom_user_id, course=course).exists():
+        # You can add a message here indicating the user is already enrolled
+        return redirect('available_courses')  # Redirect back to the available courses page
+
+    # If the user is not enrolled, create a new Enrollment
+    enrollment = Enrollment.objects.create(student_id=custom_user_id, course=course)
+
+    # Optionally, you can show a success message or redirect to another page
+    return redirect('available_courses')  # Redirect to the course list page
 
 from django.shortcuts import render, redirect
 from .models import CustomUser, FeedbackQuestion, Feedback
@@ -411,28 +455,66 @@ from django.contrib.auth.views import PasswordResetCompleteView
 class CustomPasswordResetCompleteView(PasswordResetCompleteView):
     template_name = 'password_reset_complete.html'
 
+
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .forms import TeacherRegistrationForm  # Assuming you've created a form
 from .models import Teacher
 
 def register_teacher(request):
     if request.method == 'POST':
-        form = TeacherRegistrationForm(request.POST)
-        if form.is_valid():
-            teacher = form.save(commit=False)
-            teacher.status = 'pending'  # Set status as pending
+        # Extract data from the POST request
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        gender = request.POST.get('gender')
+        dob = request.POST.get('dob')
+        email = request.POST.get('email')
+        contact = request.POST.get('contact')
+        address_line1 = request.POST.get('address_line1')
+        address_line2 = request.POST.get('address_line2')
+        city = request.POST.get('city')
+        state = request.POST.get('state')
+        zip_code = request.POST.get('zip_code')
+        qualification = request.POST.get('qualification')
+        experience = request.POST.get('experience')
+
+        # Handle file uploads
+        qualification_certificate = request.FILES.get('qualification_certificate')
+        experience_certificate = request.FILES.get('experience_certificate', None)  # This file is optional
+
+        # Simple validation check for required fields
+        if not first_name or not last_name or not email:
+            messages.error(request, "First name, last name, and email are required.")
+        else:
+            # Create a new Teacher object and set the fields
+            teacher = Teacher(
+                first_name=first_name,
+                last_name=last_name,
+                gender=gender,
+                date_of_birth=dob,
+                email=email,
+                contact=contact,
+                address_line1=address_line1,
+                address_line2=address_line2,
+                city=city,
+                state=state,
+                zip_code=zip_code,
+                qualification=qualification,
+                experience=experience,
+                qualification_certificate=qualification_certificate,
+                experience_certificate=experience_certificate,  # This file is optional
+                status='pending'  # Set the initial status of the teacher to 'pending'
+            )
             teacher.save()
 
             # Add a success message
-            messages.success(request, "You have successfully registered!")
+            messages.success(request, "You have successfully registered! Please wait for your approval.")
 
-            # Redirect to the about page
+            # Redirect to the login page or another relevant page after successful registration
             return redirect('login')
-    else:
-        form = TeacherRegistrationForm()
-    
-    return render(request, 'register_teacher.html', {'form': form})
+
+    return render(request, 'register_teacher.html')
+
+
 
 from django.shortcuts import render, redirect
 from .models import Teacher  # Adjust the import based on your app structure
@@ -475,18 +557,26 @@ def manage_teachers(request):
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.mail import send_mail
 from django.utils.crypto import get_random_string
-from .models import Teacher
+from .models import Teacher,Course
 from .forms import ApproveTeacherForm
 
 def approve_teacher(request, teacher_id):
     teacher = get_object_or_404(Teacher, id=teacher_id)
-    
+    courses = Course.objects.all()
     if request.method == 'POST':
         form = ApproveTeacherForm(request.POST, instance=teacher)
         
         if form.is_valid():
+            # Get the selected course and teaching area from the form data
+            course_id = request.POST.get('course')  # Get course ID from form
+            teaching_area = request.POST.get('teaching_area')  # Get teaching area from form
+          
+            # Fetch the course object
+            course = get_object_or_404(Course, id=course_id)
             if teacher.status != 'approved':  # Check if already approved
                 teacher.status = 'approved'  # Update status to approved
+                teacher.assigned_course = course  # Assign selected course to the teacher
+                teacher.teaching_area = teaching_area  # Assign selected teaching area
                 teacher.save()
 
                 # Debugging: Check if teacher is approved
@@ -512,6 +602,8 @@ def approve_teacher(request, teacher_id):
                     f"Your account has been approved! Here are your login details:\n\n"
                     f"Username: {random_username}\n"
                     f"Password: {random_password}\n\n"
+                    f"You have been assigned to teach the course: **{course.course_name}**.\n"
+                    f"Teaching Area: **{teaching_area}**.\n\n"
                     "Please log in and change your password upon your first login.\n\n"
                     "Best Regards,\n"
                     "The Administration Team"
@@ -533,11 +625,19 @@ def approve_teacher(request, teacher_id):
         else:
             # Debugging: Show form errors if validation fails
             print(form.errors)
+
+
     
     else:
         form = ApproveTeacherForm(instance=teacher)
     
-    return render(request, 'approve_teacher.html', {'form': form, 'teacher': teacher})
+        context = {
+        'form': form,
+        'teacher': teacher,
+        'courses': courses  # Pass the courses to the template
+    }
+
+    return render(request, 'approve_teacher.html', context)
 
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -669,20 +769,23 @@ def interview_teacher(request):
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import Course
-from .forms import CourseForm
+
 def add_course(request):
     if request.method == 'POST':
-        form = CourseForm(request.POST)
-        if form.is_valid():
-            form.save()  
-            messages.success(request, 'Course added successfully!')
-            return redirect('course_list')  
-        else:
-            messages.error(request, 'Failed to add the course. Please correct the errors.')
-    else:
-        form = CourseForm()
+        course_name = request.POST.get('course_name')
+        description = request.POST.get('description')
+        duration = request.POST.get('duration')
+        price = request.POST.get('price')
+        image = request.FILES.get('image')
 
-    return render(request, 'add_courses.html', {'form': form})
+        new_course = Course(course_name=course_name, description=description, duration=int(duration), price=price, image=image)
+        new_course.save()
+
+        messages.success(request, 'Course added successfully!')
+        return redirect('course_list')
+    else:
+        return render(request, 'add_courses.html')
+
 
 
 def course_list(request):
