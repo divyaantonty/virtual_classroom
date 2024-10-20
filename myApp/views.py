@@ -139,6 +139,19 @@ def login_view(request):
 
     return render(request, 'login.html')
 
+def assigned_courses(request):
+    # Get the teacher ID from the session
+    teacher_id = request.session.get('teacher_id')
+
+    if teacher_id:
+        # Fetch the assigned courses from the session
+        assigned_courses = request.session.get('assigned_courses', [])
+
+        return render(request, 'assigned_courses.html', {'courses': assigned_courses})
+
+    return redirect('teacher_login')  # Redirect to login if no session found
+
+
 from django.shortcuts import render, redirect
 from .models import Course, Enrollment
 
@@ -557,42 +570,43 @@ def manage_teachers(request):
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.mail import send_mail
 from django.utils.crypto import get_random_string
-from .models import Teacher,Course
+from .models import Teacher, Course, TeacherCourse  # Assuming TeacherCourse is the model for the relationship
 from .forms import ApproveTeacherForm
 
 def approve_teacher(request, teacher_id):
     teacher = get_object_or_404(Teacher, id=teacher_id)
     courses = Course.objects.all()
+    
     if request.method == 'POST':
         form = ApproveTeacherForm(request.POST, instance=teacher)
         
         if form.is_valid():
-            # Get the selected course and teaching area from the form data
-            course_id = request.POST.get('course')  # Get course ID from form
-            teaching_area = request.POST.get('teaching_area')  # Get teaching area from form
-          
-            # Fetch the course object
-            course = get_object_or_404(Course, id=course_id)
-            if teacher.status != 'approved':  # Check if already approved
-                teacher.status = 'approved'  # Update status to approved
-                teacher.assigned_course = course  # Assign selected course to the teacher
-                teacher.teaching_area = teaching_area  # Assign selected teaching area
+            if teacher.status != 'approved':
+                teacher.status = 'approved'
+                
+                # Process selected courses and teaching areas
+                selected_courses = request.POST.getlist('courses')  # This retrieves a list of selected course IDs
+                for course_id in selected_courses:
+                    course = get_object_or_404(Course, id=course_id)
+                    teaching_area = request.POST.get(f'teaching_area_{course_id}', '')  # Get the teaching area for each course
+                    
+                    # Create or update the TeacherCourse relationship
+                    TeacherCourse.objects.create(teacher=teacher, course=course, teaching_area=teaching_area)
+
                 teacher.save()
 
                 # Debugging: Check if teacher is approved
                 print(f"Teacher {teacher.first_name} {teacher.last_name} is now approved")
              
                 # Generate random username and password
-                random_username = f"teacher_{get_random_string(8)}"  # Example username
-                random_password = get_random_string(8)  # Random password
+                random_username = f"teacher_{get_random_string(8)}"  
+                random_password = get_random_string(8)  
 
- 
                 # Debugging: Check if credentials are generated
                 print(f"Generated credentials: {random_username}, {random_password}")
-                # Save the credentials in the Teacher model
+                
                 teacher.auto_generated_username = random_username
-                teacher.auto_generated_password = random_password  # Store plain password
-                teacher.user = User  # Link the user instance
+                teacher.auto_generated_password = random_password  
                 teacher.save()
 
                 # Send email to the teacher
@@ -602,7 +616,7 @@ def approve_teacher(request, teacher_id):
                     f"Your account has been approved! Here are your login details:\n\n"
                     f"Username: {random_username}\n"
                     f"Password: {random_password}\n\n"
-                    f"You have been assigned to teach the course: **{course.course_name}**.\n"
+                    f"You have been assigned to teach the course(s).\n"
                     f"Teaching Area: **{teaching_area}**.\n\n"
                     "Please log in and change your password upon your first login.\n\n"
                     "Best Regards,\n"
@@ -613,28 +627,24 @@ def approve_teacher(request, teacher_id):
                 send_mail(
                     subject,
                     message,
-                    'divyaantony2025@mca.ajce.in',  # Replace with your admin email
+                    'divyaantony2025@mca.ajce.in',  
                     [teacher.email],
                     fail_silently=False,
                 )
 
-                return redirect('teacher_list')  # Redirect to the teacher list or another page
+                return redirect('admin_dashboard')  
             else:
-                # Debugging: If teacher is already approved
                 print("Teacher is already approved")
         else:
-            # Debugging: Show form errors if validation fails
             print(form.errors)
 
-
-    
     else:
         form = ApproveTeacherForm(instance=teacher)
-    
-        context = {
+
+    context = {
         'form': form,
         'teacher': teacher,
-        'courses': courses  # Pass the courses to the template
+        'courses': courses,
     }
 
     return render(request, 'approve_teacher.html', context)
@@ -777,8 +787,11 @@ def add_course(request):
         duration = request.POST.get('duration')
         price = request.POST.get('price')
         image = request.FILES.get('image')
+        start_date = request.POST.get('start_date')  # getting the start date
+        end_date = request.POST.get('end_date')
 
-        new_course = Course(course_name=course_name, description=description, duration=int(duration), price=price, image=image)
+        new_course = Course(course_name=course_name, description=description, duration=int(duration), price=price, image=image,starting_date=start_date,  # saving start date
+            ending_date=end_date,)
         new_course.save()
 
         messages.success(request, 'Course added successfully!')
@@ -793,33 +806,41 @@ def course_list(request):
     return render(request, 'course_list.html', {'courses': courses})
 
 from django.shortcuts import render, redirect
-from .models import Course, ClassSchedule, Teacher
-from datetime import date, datetime, time
+from .models import Course, ClassSchedule, Teacher, TeacherCourse
+from datetime import date, datetime
 
 def schedule_class(request):
-    teacher_id = request.session.get('teacher_id')  
+    teacher_id = request.session.get('teacher_id')  # Get teacher ID from session
     if not teacher_id:
-        return redirect('login')  
+        return redirect('login')  # Redirect to login if teacher ID is missing
     
     try:
-        teacher = Teacher.objects.get(id=teacher_id)
+        teacher = Teacher.objects.get(id=teacher_id)  # Fetch the logged-in teacher
     except Teacher.DoesNotExist:
-        return redirect('login')  
+        return redirect('login')  # Redirect to login if teacher is not found
 
-    courses = Course.objects.all()  
-    today = date.today() 
-    error_message = None  
+    # Fetch the assigned courses from TeacherCourse model
+    assigned_courses = TeacherCourse.objects.filter(teacher=teacher)
+    
+    if not assigned_courses.exists():
+        error_message = "No course is assigned to you."
+        return render(request, 'schedule_class.html', {
+            'today': date.today(),
+            'error_message': error_message
+        })
+
+    today = date.today()
+    error_message = None
 
     if request.method == 'POST':
         class_name = request.POST.get('class_name')
-        course_id = request.POST.get('course')
         selected_date_str = request.POST.get('date')
         start_time_str = request.POST.get('start_time')
         end_time_str = request.POST.get('end_time')
         meeting_link = request.POST.get('meeting_link')
+        selected_course_id = request.POST.get('assigned_course')  # Get selected course ID from dropdown
 
         # Convert strings to appropriate date and time objects
-        print("POST data:", request.POST)
         try:
             selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
             start_time = datetime.strptime(start_time_str, '%H:%M').time()
@@ -827,7 +848,7 @@ def schedule_class(request):
         except ValueError:
             error_message = "Invalid date or time format. Please use the correct format."
             return render(request, 'schedule_class.html', {
-                'courses': courses,
+                'assigned_courses': assigned_courses,
                 'today': today,
                 'error_message': error_message
             })
@@ -836,7 +857,19 @@ def schedule_class(request):
         if selected_date < today:
             error_message = "The selected date cannot be in the past."
             return render(request, 'schedule_class.html', {
-                'courses': courses,
+                'assigned_courses': assigned_courses,
+                'today': today,
+                'error_message': error_message
+            })
+        
+         # Fetch the selected course to validate dates
+        course = Course.objects.get(id=selected_course_id)  # Fetch the course by ID
+        
+        # Validate that the scheduled date is within the course's start and end dates
+        if selected_date < course.starting_date or selected_date > course.ending_date:
+            error_message = f"The scheduled date must be between {course.starting_date} and {course.ending_date}."
+            return render(request, 'schedule_class.html', {
+                'assigned_courses': assigned_courses,
                 'today': today,
                 'error_message': error_message
             })
@@ -845,46 +878,58 @@ def schedule_class(request):
         if end_time <= start_time:
             error_message = "End time must be after the start time."
             return render(request, 'schedule_class.html', {
-                'courses': courses,
+                'assigned_courses': assigned_courses,
+                'today': today,
+                'error_message': error_message
+            })
+        
+        # Overlap validation - Check if the new class conflicts with any existing scheduled classes
+        overlapping_classes = ClassSchedule.objects.filter(
+            teacher=teacher,
+            date=selected_date,
+            start_time__lt=end_time,  # An overlap if the class starts before the new one ends
+            end_time__gt=start_time   # And ends after the new one starts
+        )
+
+        if overlapping_classes.exists():
+            error_message = "The scheduled class overlaps with an existing class."
+            return render(request, 'schedule_class.html', {
+                'assigned_courses': assigned_courses,
                 'today': today,
                 'error_message': error_message
             })
 
-        # Get the selected course object
-        try:
-            course = Course.objects.get(id=course_id)
-        except Course.DoesNotExist:
-            error_message = "Selected course does not exist."
-            return render(request, 'schedule_class.html', {
-                'courses': courses,
-                'today': today,
-                'error_message': error_message
-            })
         # Create the class schedule record in the database
+        course = Course.objects.get(id=selected_course_id)  # Fetch the course by ID
         schedule = ClassSchedule(
             class_name=class_name,
-            course_name=course,
+            course_name=course,  # Use the fetched course
             date=selected_date,
             start_time=start_time,
             end_time=end_time,
             meeting_link=meeting_link,
-            teacher=teacher  
+            teacher=teacher
         )
         schedule.save()
-        if schedule:
-            return redirect('teacher_dashboard')  
 
+        if schedule:
+            return redirect('teacher_dashboard')  # Redirect to teacher's dashboard on success
+
+    # Fetch scheduled classes for this teacher
     current_datetime = datetime.now()
-    scheduled_classes = ClassSchedule.objects.filter(teacher=teacher, date__gte=today, end_time__gt=current_datetime.time())
+    scheduled_classes = ClassSchedule.objects.filter(
+        teacher=teacher, date__gte=today, end_time__gt=current_datetime.time()
+    )
 
     return render(request, 'schedule_class.html', {
-        'courses': courses,
+        'assigned_courses': assigned_courses,
         'today': today,
         'scheduled_classes': scheduled_classes,
         'error_message': error_message
     })
 
-    
+
+
 
 from django.shortcuts import render, redirect
 from django.utils import timezone
@@ -1193,8 +1238,8 @@ def parent_update_profile(request):
     context = {'parent': parent}
     return render(request, 'parent_update_profile.html', context)
 
-from django.shortcuts import render, redirect, get_object_or_404 # type: ignore
-from .models import Material, Course, Teacher
+from django.shortcuts import render, redirect, get_object_or_404  # type: ignore
+from .models import Material, Course, Teacher, TeacherCourse  # Import the TeacherCourse model
 
 def upload_material(request):
     if request.method == 'POST':
@@ -1202,26 +1247,33 @@ def upload_material(request):
         description = request.POST.get('description')  
         file = request.FILES.get('file') 
 
-       
-        if course_id and file:
-            course = Course.objects.get(id=course_id)
-            
-            teacher_id = request.session.get('teacher_id')
-            if teacher_id:
-                teacher = get_object_or_404(Teacher, id=teacher_id)  
+        # Get the teacher's ID from the session
+        teacher_id = request.session.get('teacher_id')
+        
+        if teacher_id:
+            # Fetch the courses assigned to the teacher
+            assigned_courses = TeacherCourse.objects.filter(teacher_id=teacher_id).values_list('course_id', flat=True)
 
-                Material.objects.create(
-                    teacher=teacher,  # Use the logged-in teacher from session
-                    course=course,
-                    file=file,
-                    description=description
-                )
-                return redirect('teacher_dashboard')  # Redirect to dashboard after upload
+            if course_id in assigned_courses:  # Ensure the selected course is assigned to the teacher
+                if file:
+                    course = get_object_or_404(Course, id=course_id)
+                    teacher = get_object_or_404(Teacher, id=teacher_id)  
 
-    # Fetch the list of courses to display in the form
-    courses = Course.objects.all()
+                    Material.objects.create(
+                        teacher=teacher,  # Use the logged-in teacher from session
+                        course=course,
+                        file=file,
+                        description=description
+                    )
+                    return redirect('teacher_dashboard')  # Redirect to dashboard after upload
+
+    # Fetch the list of courses assigned to the teacher to display in the form
+    teacher_id = request.session.get('teacher_id')
+    assigned_courses = TeacherCourse.objects.filter(teacher_id=teacher_id).values_list('course_id', flat=True)
+    courses = Course.objects.filter(id__in=assigned_courses)  # Get only assigned courses
     
     return render(request, 'upload_material.html', {'courses': courses})
+
 
 
 from .models import Material, CustomUser
@@ -1262,12 +1314,21 @@ def view_study_materials(request):
     
     return render(request, 'view_study_materials.html', {'materials': materials, 'student': student})
 
-from django.shortcuts import render, redirect, get_object_or_404 # type: ignore
-from django.utils import timezone # type: ignore
-from .models import Quizs, Question, Course, Teacher
-
+from django.shortcuts import render, redirect, get_object_or_404  # type: ignore
+from django.utils import timezone  # type: ignore
+from .models import Quizs, Course, TeacherCourse  # Import TeacherCourse for filtering
 
 def create_quiz(request):
+    teacher_id = request.session.get('teacher_id')  # Retrieve the teacher's ID from the session
+
+    if not teacher_id:
+        # Handle the case where the teacher is not logged in
+        return redirect('login')
+
+    # Fetch courses taught by the teacher
+    assigned_courses = TeacherCourse.objects.filter(teacher_id=teacher_id).values_list('course_id', flat=True)
+    courses = Course.objects.filter(id__in=assigned_courses)  # Filter to only assigned courses
+
     if request.method == 'POST':
         course_id = request.POST.get('course')
         title = request.POST.get('title')
@@ -1277,20 +1338,17 @@ def create_quiz(request):
         end_time = request.POST.get('end_time')
 
         course = get_object_or_404(Course, id=course_id)
-        teacher_id = request.session.get('teacher_id')  # Retrieve the teacher's ID from the session
-
-        if not teacher_id:
-            # Handle the case where the teacher is not logged in
-            return redirect('login')
-
-        quiz = Quizs(course=course, teacher_id=teacher_id, title=title, start_date=start_date,
-                     end_date=end_date, start_time=start_time, end_time=end_time)
+        
+        # Create and save the quiz
+        quiz = Quizs(course=course, teacher_id=teacher_id, title=title, 
+                     start_date=start_date, end_date=end_date, 
+                     start_time=start_time, end_time=end_time)
         quiz.save()
 
         return redirect('add_question', quiz_id=quiz.id)
     
-    courses = Course.objects.all()
     return render(request, 'create_quiz.html', {'courses': courses})
+
 
 def add_question(request, quiz_id):
     quiz = get_object_or_404(Quizs, id=quiz_id)
@@ -1531,10 +1589,10 @@ def quiz_questions(request, quiz_id):
     questions = Question.objects.filter(quizs=quiz)  # Adjust based on your models
     return render(request, 'quiz_questions.html', {'quiz': quiz, 'questions': questions})
 
-from django.shortcuts import render, redirect, get_object_or_404 # type: ignore
-from django.http import HttpResponse # type: ignore
-from .models import Assignment, Course, Teacher
-from django.core.exceptions import ValidationError # type: ignore
+from django.shortcuts import render, redirect, get_object_or_404  # type: ignore
+from django.http import HttpResponse  # type: ignore
+from .models import Assignment, Course, Teacher, TeacherCourse  # Import the TeacherCourse model
+from django.core.exceptions import ValidationError  # type: ignore
 from datetime import datetime
 
 def create_assignment(request):
@@ -1551,21 +1609,14 @@ def create_assignment(request):
 
         # Validate and convert date and time
         try:
-            # Convert start_date and end_date from string to date
             start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
             end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-
-            # Convert start_time and end_time from string to time
             start_time = datetime.strptime(start_time, '%H:%M').time()
             end_time = datetime.strptime(end_time, '%H:%M').time()
 
-            # Get the teacher from the session
             teacher_id = request.session.get('teacher_id')
-            teacher_id = request.session.get('teacher_id')
-            if teacher_id:
-                teacher = get_object_or_404(Teacher, id=teacher_id)
+            teacher = get_object_or_404(Teacher, id=teacher_id)
 
-            # Create the assignment instance
             assignment = Assignment(
                 title=title,
                 description=description,
@@ -1575,38 +1626,40 @@ def create_assignment(request):
                 end_time=end_time,
                 file=file,
                 course_name_id=course_name_id,
-                teacher=teacher  # Use the logged-in teacher from session
+                teacher=teacher
             )
 
-            # Custom validation checks
             if assignment.start_date > assignment.end_date:
                 raise ValidationError("Start date cannot be after end date.")
 
-            # Save the assignment to the database
             assignment.save()
 
-            # Redirect to teacher dashboard on success
-            return redirect('teacher_dashboard')  # Update this to your actual dashboard URL name
+            return redirect('teacher_dashboard')
 
         except ValidationError as e:
-            # Render the create assignment page with the error message
             return render(request, 'create_assignment.html', {
                 'error': str(e),
-                'courses': Course.objects.all(),
-                'assignment': request.POST  # Preserving the submitted data
+                'courses': courses,  # Pass the courses to the template
+                'assignment': request.POST
             })
         except Exception as e:
-            # Handle other exceptions and render the same page
             return render(request, 'create_assignment.html', {
-                'error': "An error occurred. Please try again.",
-                'courses': Course.objects.all(),
-                'assignment': request.POST  # Preserving the submitted data
+                'error': str(e),
+                'courses': courses,
+                'assignment': request.POST
             })
 
-    else:
-        # Fetch the list of courses to display in the form
-        courses = Course.objects.all()
-        return render(request, 'create_assignment.html', {'courses': courses})
+    # If not a POST request, get the assigned courses for the teacher
+    teacher_id = request.session.get('teacher_id')
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+
+    assigned_courses = TeacherCourse.objects.filter(teacher=teacher).select_related('course')
+    courses = [tc.course for tc in assigned_courses]
+
+    return render(request, 'create_assignment.html', {
+        'courses': courses,
+    })
+
 
 
 from django.contrib import messages  # type: ignore
@@ -1700,8 +1753,8 @@ def view_assignment(request):
     if 'teacher_id' in request.session:
         teacher_id = request.session['teacher_id']
 
-        # Fetch all courses from the Course table
-        courses = Course.objects.all()
+        assigned_courses = TeacherCourse.objects.filter(teacher_id=teacher_id).values_list('course_id', flat=True)
+        courses = Course.objects.filter(id__in=assigned_courses)
 
         # Get the selected course ID from the GET request
         selected_course_id = request.GET.get('course_id')
@@ -1733,38 +1786,48 @@ def view_assignment(request):
 
 
 
-from django.db.models import Subquery, OuterRef # type: ignore
-from django.shortcuts import render # type: ignore
-from .models import AssignmentSubmission, Course
+from django.db.models import Subquery, OuterRef  # type: ignore
+from django.shortcuts import render  # type: ignore
+from .models import AssignmentSubmission, Course, TeacherCourse  # Import the TeacherCourse model
 
 def evaluate_assignments(request):
-    selected_course_id = request.GET.get('course_id')
-    courses = Course.objects.all()
+    # Check if the teacher is logged in
+    if 'teacher_id' in request.session:
+        teacher_id = request.session['teacher_id']
+        selected_course_id = request.GET.get('course_id')
 
-    # Get the latest submission for each student
-    latest_submissions = AssignmentSubmission.objects.filter(
-        student=OuterRef('student'),
-        assignment=OuterRef('assignment')
-    ).order_by('-submitted_at')
+        # Fetch all courses assigned to the teacher from the TeacherCourse table
+        assigned_courses = TeacherCourse.objects.filter(teacher_id=teacher_id).values_list('course_id', flat=True)
+        courses = Course.objects.filter(id__in=assigned_courses)
 
-    if selected_course_id:
-        # Filter by course and ensure we only get the latest submission for each student
-        submissions = AssignmentSubmission.objects.filter(
-            assignment__course_name__id=selected_course_id,
-            submitted_at=Subquery(latest_submissions.values('submitted_at')[:1])
-        )
+        # Get the latest submission for each student
+        latest_submissions = AssignmentSubmission.objects.filter(
+            student=OuterRef('student'),
+            assignment=OuterRef('assignment')
+        ).order_by('-submitted_at')
+
+        if selected_course_id:
+            # Filter by course and ensure we only get the latest submission for each student
+            submissions = AssignmentSubmission.objects.filter(
+                assignment__course_name__id=selected_course_id,
+                assignment__course_name__id__in=assigned_courses,  # Ensure the course is assigned to the teacher
+                submitted_at=Subquery(latest_submissions.values('submitted_at')[:1])
+            )
+        else:
+            # Get the latest submission for each student across all assigned courses
+            submissions = AssignmentSubmission.objects.filter(
+                assignment__course_name__id__in=assigned_courses,  # Ensure the course is assigned to the teacher
+                submitted_at=Subquery(latest_submissions.values('submitted_at')[:1])
+            )
+
+        context = {
+            'submissions': submissions,
+            'courses': courses,
+            'selected_course_id': selected_course_id,
+        }
+        return render(request, 'evaluate_assignment.html', context)
     else:
-        # Get the latest submission for each student across all courses
-        submissions = AssignmentSubmission.objects.filter(
-            submitted_at=Subquery(latest_submissions.values('submitted_at')[:1])
-        )
-
-    context = {
-        'submissions': submissions,
-        'courses': courses,
-        'selected_course_id': selected_course_id,
-    }
-    return render(request, 'evaluate_assignment.html', context)
+        return redirect('login')  # Redirect to login if the teacher is not authenticated
 
 from django.shortcuts import get_object_or_404, redirect # type: ignore
 from .models import AssignmentSubmission
@@ -1838,10 +1901,9 @@ def view_feedback_responses(request):
     return render(request, 'view_feedback_responses.html', {'feedback_responses': feedback_responses})
 
 
-# views.py
 from django.shortcuts import render, redirect
-from django.http import JsonResponse
-from .models import CalendarEvent, Course
+from django.utils import timezone  # Ensure you have this imported
+from .models import CalendarEvent, Course, TeacherCourse  # Import TeacherCourse for filtering
 
 def add_event(request):
     if request.method == 'POST':
@@ -1857,7 +1919,7 @@ def add_event(request):
         
         # Check if course_id is provided
         if not course_id:
-            courses = Course.objects.all()  # Fetch courses to repopulate the form
+            courses = Course.objects.filter(id__in=TeacherCourse.objects.filter(teacher_id=request.session.get('teacher_id')).values_list('course_id', flat=True))
             return render(request, 'add_event.html', {'error': 'Course must be selected.', 'courses': courses})
 
         # Convert start_time and end_time
@@ -1884,25 +1946,31 @@ def add_event(request):
         
         return redirect('view_events')  # Redirect to the event list after saving
 
-    courses = Course.objects.all()  # Fetch courses for the dropdown
+    # Fetch courses assigned to the teacher for the dropdown
+    courses = Course.objects.filter(id__in=TeacherCourse.objects.filter(teacher_id=request.session.get('teacher_id')).values_list('course_id', flat=True))
+    
     return render(request, 'add_event.html', {'courses': courses})  # Render the template with courses
 
 
 from django.shortcuts import render
-from .models import Course, CalendarEvent  # Import your models
+from .models import Course, CalendarEvent, TeacherCourse  # Import your models
 
 def view_events(request):
     teacher_id = request.session.get('teacher_id')
     
-    # Fetch events created by the teacher
-    events = CalendarEvent.objects.filter(created_by_id=teacher_id)
+    if not teacher_id:
+        # Handle case where teacher_id is not found (e.g., redirect to login)
+        return redirect('login')
 
-    # Fetch all courses (or you can filter based on the teacher's courses if applicable)
-    courses = Course.objects.all()  # Adjust this line if you need specific courses for the teacher
+    # Fetch courses assigned to the teacher
+    assigned_courses = Course.objects.filter(id__in=TeacherCourse.objects.filter(teacher_id=teacher_id).values_list('course_id', flat=True))
+    
+    # Fetch events created by the teacher for the assigned courses
+    events = CalendarEvent.objects.filter(created_by_id=teacher_id, course_id__in=assigned_courses)
 
     return render(request, 'view_events.html', {
         'events': events,
-        'courses': courses  # Pass courses to the template
+        'courses': assigned_courses  # Pass only the courses assigned to the teacher to the template
     })
 
 
@@ -1978,8 +2046,8 @@ def get_event_color(event_type):
 
 
 
-from django.shortcuts import render, redirect
-from .models import Quizs, Course, Question
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Quizs, Course, Question, TeacherCourse  # Import TeacherCourse for filtering
 
 def view_quiz_questions(request):
     teacher_id = request.session.get('teacher_id')  # Retrieve the teacher_id from the session
@@ -1988,12 +2056,15 @@ def view_quiz_questions(request):
         # If the teacher is not logged in or the session has expired, redirect to the login page
         return redirect('login')
 
-    course_id = request.GET.get('course_id')  # Get the course ID from the query parameters
-    courses = Course.objects.all()  # Get all available courses for the filter dropdown
-
-    # Fetch quizzes created by this teacher
-    quizzes = Quizs.objects.filter(teacher_id=teacher_id)
+    # Fetch the courses taught by the teacher
+    assigned_courses = TeacherCourse.objects.filter(teacher_id=teacher_id).values_list('course_id', flat=True)
+    courses = Course.objects.filter(id__in=assigned_courses)  # Only get the courses assigned to the teacher
     
+    course_id = request.GET.get('course_id')  # Get the course ID from the query parameters
+
+    # Fetch quizzes created by this teacher for their assigned courses
+    quizzes = Quizs.objects.filter(teacher_id=teacher_id, course_id__in=assigned_courses)
+
     # Fetch questions for quizzes of the selected course
     questions = Question.objects.none()  # Start with an empty QuerySet
 
@@ -2008,7 +2079,6 @@ def view_quiz_questions(request):
         'selected_course': course_id,
     }
     return render(request, 'view_quiz_questions.html', context)
-
 
 from django.shortcuts import render, redirect
 from .models import Question, UserAnswers, Quizs
@@ -2034,17 +2104,17 @@ def view_student_answers(request):
     }
 
     return render(request, 'view_student_answers.html', context)
-
-
-from django.shortcuts import render
-from .models import Material, Course
+from django.shortcuts import render, get_object_or_404  # type: ignore
+from .models import Material, Course, TeacherCourse  # Import the TeacherCourse model
 
 def view_uploaded_materials(request):
     # Assuming you have a session variable for the logged-in teacher
     teacher_id = request.session.get('teacher_id')
-    
+
     # Fetch courses taught by the teacher
-    courses = Course.objects.all() 
+    assigned_courses = TeacherCourse.objects.filter(teacher_id=teacher_id).values_list('course_id', flat=True)  # Get assigned course IDs
+    courses = Course.objects.filter(id__in=assigned_courses)  # Get only assigned courses
+
     course_id = request.GET.get('course', None)  # Get the selected course from the dropdown filter
     materials = Material.objects.filter(teacher_id=teacher_id)  # Get materials uploaded by the teacher
 

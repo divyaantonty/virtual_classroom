@@ -90,8 +90,6 @@ class Teacher(models.Model):
     qualification = models.CharField(max_length=255, blank=True, null=True)
     qualification_certificate = models.FileField(upload_to='certificates/qualifications/', blank=True, null=True)
     experience_certificate = models.FileField(upload_to='certificates/experience/', blank=True, null=True)
-    assigned_course = models.ForeignKey('Course', on_delete=models.CASCADE, blank=True, null=True)
-    teaching_area = models.CharField(max_length=255, blank=True, null=True)
     experience = models.TextField(blank=True, null=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')  # Track approval status
     auto_generated_username = models.CharField(max_length=150, unique=True, null=True)
@@ -102,7 +100,13 @@ class Teacher(models.Model):
         return f"{self.first_name} {self.last_name}"
 
 
-
+class TeacherCourse(models.Model):
+    teacher = models.ForeignKey('Teacher', on_delete=models.CASCADE, related_name='teacher_courses')
+    course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='course_teachers')
+    teaching_area = models.CharField(max_length=255) 
+    class Meta:
+        unique_together = ('teacher', 'course')
+        
 class ContactMessage(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
@@ -127,6 +131,8 @@ class Course(models.Model):
     description = models.TextField()
     duration = models.IntegerField(default=4)  # in weeks
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    starting_date = models.DateField(default=date.today)
+    ending_date = models.DateField(blank=True, null=True)
     rating = models.DecimalField(
         max_digits=3,
         decimal_places=2,

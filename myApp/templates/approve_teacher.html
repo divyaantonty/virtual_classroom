@@ -12,28 +12,23 @@
         <h3>Approve Teacher</h3>
         <p>Are you sure you want to approve the teacher <strong>{{ teacher.first_name }} {{ teacher.last_name }}</strong>?</p>
 
-        <form method="post">
+        <form method="POST" action="{% url 'approve_teacher' teacher.id %}">
             {% csrf_token %}
             {{ form.as_p }}
 
             <!-- Dropdown to select a course -->
             <div class="form-group">
-                <label for="course">Assign Course to Teach</label>
-                <select name="course" id="course" class="form-control" required>
-                    <option value="">-- Select a Course --</option>
-                    {% for course in courses %}
-                    <option value="{{ course.id }}">{{ course.course_name }}</option>
-                    {% endfor %}
-                </select>
+                <label>Assign Courses to Teach</label><br>
+                {% for course in courses %}
+                    <div class="form-check">
+                        <input type="checkbox" name="courses" id="course_{{ course.id }}" value="{{ course.id }}" class="form-check-input" onclick="toggleTeachingAreaInput(this, '{{ course.id }}')">
+                        <label class="form-check-label" for="course_{{ course.id }}">{{ course.course_name }}</label>
+                        <!-- Input field for teaching area, hidden by default -->
+                        <input type="text" name="teaching_area_{{ course.id }}" id="teaching_area_{{ course.id }}" class="form-control mt-2" placeholder="Enter Teaching Area" style="display: none;">
+                    </div>
+                {% endfor %}
             </div>
-
-            <!-- Input for teaching area -->
-            <div class="form-group">
-                <label for="teaching_area">Assign Teaching Area</label>
-                <input type="text" name="teaching_area" id="teaching_area" class="form-control" required>
-            </div>
-
-            <button type="submit" class="btn btn-success">Yes, Approve</button>
+            <button type="submit" class="btn btn-success" {% if teacher.status == 'approved' %}disabled{% endif %}>Yes, Approve</button>
             <a href="{% url 'manage_teachers' %}" class="btn btn-secondary">Cancel</a>
         </form>
 
@@ -47,5 +42,16 @@
 
     <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script>
+        function toggleTeachingAreaInput(checkbox, courseId) {
+            const teachingAreaInput = document.getElementById('teaching_area_' + courseId);
+            if (checkbox.checked) {
+                teachingAreaInput.style.display = 'block'; // Show input field
+            } else {
+                teachingAreaInput.style.display = 'none'; // Hide input field
+                teachingAreaInput.value = ''; // Clear input field when unchecked
+            }
+        }
+    </script>
 </body>
 </html>

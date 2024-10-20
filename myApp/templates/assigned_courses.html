@@ -1,0 +1,9 @@
+<!-- assigned_courses.html -->
+<h1>Your Assigned Courses</h1>
+<ul>
+    {% for course in courses %}
+        <li>{{ course.name }} - {{ course.description }}</li>
+    {% empty %}
+        <li>No courses assigned.</li>
+    {% endfor %}
+</ul>

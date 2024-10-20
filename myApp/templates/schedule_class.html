@@ -146,6 +146,10 @@
         button:hover {
             background-color: #0056b3; /* Darker button background on hover */
         }
+        .error-message {
+            color: red;
+            margin-top: 10px;
+        }
     </style>
 
     <script type="text/javascript">
@@ -178,6 +182,7 @@
             }
         };
     </script>
+    
 </head>
 
 <body>
@@ -237,16 +242,21 @@
                     <td><label for="class_name">Class Name:</label></td>
                     <td><input type="text" id="class_name" name="class_name" required></td>
                 </tr>
+                
                 <tr>
-                    <td><label for="course">Select Course:</label></td>
+                    <td><label for="assigned_course">Assigned Course:</label></td>
                     <td>
-                        <select name="course" id="course" required>
-                            {% for course in courses %}
-                            <option value="{{ course.id }}">{{ course.course_name }}</option>
+                        <select id="assigned_course" name="assigned_course" required>
+                            <option value="" disabled selected>Select a course</option>
+                            {% for teacher_course in assigned_courses %}
+                                <option value="{{ teacher_course.course.id }}">{{ teacher_course.course.course_name }}</option>
                             {% endfor %}
                         </select>
                     </td>
                 </tr>
+                
+                
+                
                 <tr>
                     <td><label for="date">Date:</label></td>
                     <td>

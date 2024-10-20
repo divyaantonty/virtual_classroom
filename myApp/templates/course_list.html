@@ -126,6 +126,8 @@
                     <p>{{ course.description }}</p>
                     <p><strong>Duration:</strong> {{ course.duration }} weeks</p>
                     <p><strong>Price:</strong> ₹{{ course.price }}</p>
+                    <p><strong>Start Date:</strong> {{ course.starting_date|date:"F d, Y" }}</p>
+                    <p><strong>End Date:</strong> {{ course.ending_date|date:"F d, Y" }}</p>
                 </div>
             {% if forloop.counter|divisibleby:3 or forloop.last %}
             </div> <!-- Close the row after 3 courses or at the end of the loop -->
