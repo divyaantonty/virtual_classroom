@@ -258,36 +258,47 @@
 
             // Description validation
             const description = document.getElementById('description').value;
-            const descriptionPattern = /^[A-Za-z0-9\s,.\-!?()]+$/;
+            const descriptionPattern = /^[A-Za-z0-9\s,.'-]{10,}$/;
             if (!descriptionPattern.test(description)) {
-                document.getElementById('descriptionError').textContent = 'Description can only contain letters, numbers, and basic punctuation.';
+                document.getElementById('descriptionError').textContent = 'Description must be at least 10 characters long.';
                 isValid = false;
             } else {
                 document.getElementById('descriptionError').textContent = '';
             }
 
-            // Date validation
-            const today = new Date().toISOString().split('T')[0];
-            const startDate = document.getElementById('start_date').value;
-            const endDate = document.getElementById('end_date').value;
+            // Date and Time validation
+            const startDate = new Date(document.getElementById('start_date').value);
+            const endDate = new Date(document.getElementById('end_date').value);
+            const startTime = document.getElementById('start_time').value;
+            const endTime = document.getElementById('end_time').value;
 
-            if (startDate < today) {
-                document.getElementById('startDateError').textContent = 'Start date cannot be in the past.';
-                isValid = false;
-            } else {
-                document.getElementById('startDateError').textContent = '';
-            }
-
-            if (endDate < startDate) {
-                document.getElementById('endDateError').textContent = 'End date cannot be earlier than start date.';
+            if (startDate > endDate) {
+                document.getElementById('endDateError').textContent = 'End Date must be after Start Date.';
                 isValid = false;
             } else {
                 document.getElementById('endDateError').textContent = '';
             }
 
-            // Prevent form submission if not valid
+            if (startTime && endTime) {
+                const [startHour, startMinute] = startTime.split(':').map(Number);
+                const [endHour, endMinute] = endTime.split(':').map(Number);
+
+                // Creating Date objects to compare
+                const startDateTime = new Date(startDate);
+                startDateTime.setHours(startHour, startMinute);
+                const endDateTime = new Date(endDate);
+                endDateTime.setHours(endHour, endMinute);
+
+                if (startDateTime >= endDateTime) {
+                    document.getElementById('timeError').textContent = 'End Time must be after Start Time.';
+                    isValid = false;
+                } else {
+                    document.getElementById('timeError').textContent = '';
+                }
+            }
+
             if (!isValid) {
-                e.preventDefault();
+                e.preventDefault(); // Prevent form submission if not valid
             }
         });
     </script>

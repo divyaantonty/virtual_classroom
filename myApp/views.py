@@ -153,34 +153,42 @@ def assigned_courses(request):
 
 
 from django.shortcuts import render, redirect
+from django.utils import timezone
 from .models import Course, Enrollment
 
 def available_courses(request):
     # Check if the user is authenticated via session
     if 'custom_user_id' not in request.session:
         return redirect('login')  # Redirect to the login page if not authenticated
-    
+
     # Get the logged-in user's ID from the session
     custom_user_id = request.session['custom_user_id']
-    
+
     # Fetch all courses
     courses = Course.objects.all()
-    
+
+    # Get the current date
+    current_date = timezone.now().date()
+
     # Prepare a list to hold course data along with enrollment status
     course_data = []
-    
+
     for course in courses:
         # Check if the user is enrolled in the current course
         is_enrolled = Enrollment.objects.filter(student_id=custom_user_id, course=course).exists()
         
-        # Append course data with the enrollment status
+        # Append course data with the enrollment status and start date check
         course_data.append({
             'course': course,
-            'is_enrolled': is_enrolled
+            'is_enrolled': is_enrolled,
+            'can_enroll': current_date < course.starting_date  # Check if course hasn't started yet
         })
-    
-    # Pass the course data (with enrollment status) to the template
-    return render(request, 'available_courses.html', {'course_data': course_data})
+
+    # Pass the course data and current date to the template
+    return render(request, 'available_courses.html', {
+        'course_data': course_data,
+        'current_date': current_date
+    })
 
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Course, Enrollment
@@ -249,11 +257,12 @@ def teacher_dashboard(request):
         teacher = Teacher.objects.get(id=teacher_id)
     except Teacher.DoesNotExist:
         return redirect('login')  # Redirect if the teacher doesn't exist
-
+    teacher_courses = TeacherCourse.objects.filter(teacher_id=teacher_id).select_related('course')
     # Pass the teacher object to the template
     return render(request, 'teacher_dashboard.html', {
         'first_name': teacher.first_name,
-        'last_name': teacher.last_name
+        'last_name': teacher.last_name,
+        'teacher_courses': teacher_courses
     })
 
 def parent_dashboard(request):
@@ -1009,7 +1018,7 @@ def edit_class(request):
 
 from django.contrib import messages # type: ignore
 from django.shortcuts import redirect, render # type: ignore
-from .models import ClassSchedule, CustomUser
+from .models import ClassSchedule, CustomUser,Enrollment
 from django.utils import timezone # type: ignore
 from django.db.models import Q # type: ignore
 
@@ -1027,10 +1036,10 @@ def view_scheduled_classes(request):
     except CustomUser.DoesNotExist:
         messages.error(request, "Student not found.")
         return redirect('login')
+# Fetch the enrolled courses for the student
+    enrolled_courses = Enrollment.objects.filter(student=student)
 
-    # Check if the student is registered for a course
-    registered_course = student.course_id
-    if not registered_course:
+    if not enrolled_courses.exists():
         messages.error(request, "You are not registered for any course.")
         return redirect('student_dashboard')
 
@@ -1042,7 +1051,7 @@ def view_scheduled_classes(request):
 
     # Fetch ongoing and future classes for the registered course
     ongoing_future_classes = ClassSchedule.objects.filter(
-        course_name=registered_course  # Filter classes based on the student's registered course
+       course_name__in=enrolled_courses.values_list('course', flat=True)  # Correct field name here
     ).filter( 
         Q(date=current_datetime.date(), end_time__gt=current_datetime.time()) |  # Ongoing classes today that haven't ended
         Q(date__gt=current_datetime.date())  # Future classes (after today)
@@ -1237,8 +1246,8 @@ def parent_update_profile(request):
 
     context = {'parent': parent}
     return render(request, 'parent_update_profile.html', context)
-
 from django.shortcuts import render, redirect, get_object_or_404  # type: ignore
+from django.contrib import messages  # For displaying messages
 from .models import Material, Course, Teacher, TeacherCourse  # Import the TeacherCourse model
 
 def upload_material(request):
@@ -1254,18 +1263,29 @@ def upload_material(request):
             # Fetch the courses assigned to the teacher
             assigned_courses = TeacherCourse.objects.filter(teacher_id=teacher_id).values_list('course_id', flat=True)
 
-            if course_id in assigned_courses:  # Ensure the selected course is assigned to the teacher
+            if int(course_id) in assigned_courses:  # Ensure the selected course is assigned to the teacher
                 if file:
                     course = get_object_or_404(Course, id=course_id)
                     teacher = get_object_or_404(Teacher, id=teacher_id)  
 
-                    Material.objects.create(
-                        teacher=teacher,  # Use the logged-in teacher from session
-                        course=course,
-                        file=file,
-                        description=description
-                    )
-                    return redirect('teacher_dashboard')  # Redirect to dashboard after upload
+                    # Attempt to create the Material object
+                    try:
+                        material = Material.objects.create(
+                            teacher=teacher,  # Use the logged-in teacher from session
+                            course=course,
+                            file=file,
+                            description=description
+                        )
+                        messages.success(request, 'Material uploaded successfully!')  # Success message
+                        return redirect('teacher_dashboard')  # Redirect to dashboard after upload
+                    except Exception as e:
+                        messages.error(request, f'Error saving material: {str(e)}')  # Log the error
+                else:
+                    messages.error(request, 'Please upload a file.')  # Error for missing file
+            else:
+                messages.error(request, 'You do not have permission to upload material for this course.')  # Unauthorized course
+        else:
+            messages.error(request, 'You are not logged in as a teacher.')  # Not logged in
 
     # Fetch the list of courses assigned to the teacher to display in the form
     teacher_id = request.session.get('teacher_id')
@@ -1276,10 +1296,15 @@ def upload_material(request):
 
 
 
-from .models import Material, CustomUser
+
+from django.shortcuts import render, redirect, get_object_or_404  # type: ignore
+from django.contrib import messages  # type: ignore
+from .models import Material, CustomUser, Enrollment
+from datetime import datetime
+from django.utils import timezone
 
 def view_materials(request):
-    # Check if a CustomUser (student) is logged in by checking session
+    # Check if a CustomUser (student) is logged in by checking the session
     custom_user_id = request.session.get('custom_user_id')
     
     if not custom_user_id:
@@ -1289,17 +1314,34 @@ def view_materials(request):
     # Fetch the CustomUser (student) object using the session ID
     custom_user = get_object_or_404(CustomUser, id=custom_user_id)
 
-    # Ensure the student is registered for a course
-    course = custom_user.course
-    if not course:
+    # Ensure the student is registered for any courses
+    enrollments = Enrollment.objects.filter(student=custom_user)
+    
+    if not enrollments:
         messages.error(request, 'You are not registered for any course.')
         return redirect('student_dashboard')  # Redirect if no course is associated
 
-    # Get materials related to the student's course
-    materials = Material.objects.filter(course=course)
+    # Prepare a list to hold materials that meet the enrollment criteria
+    materials = []
+    
+    # Loop through each enrollment to filter materials
+    for enrollment in enrollments:
+        # Combine enrollment_date and enrollment_time into a single datetime object
+        if enrollment.enrollment_time:
+            enrollment_datetime = datetime.combine(enrollment.enrollment_date, enrollment.enrollment_time)
+        else:
+            # Fallback if time is not present (you may adjust this as needed)
+            enrollment_datetime = timezone.make_aware(datetime.combine(enrollment.enrollment_date, datetime.min.time()))
+        
+        # Make the combined datetime timezone-aware
+        enrollment_datetime = timezone.make_aware(enrollment_datetime)
+        
+        # Fetch materials related to the course and filter by the enrollment datetime
+        course_materials = Material.objects.filter(course=enrollment.course, uploaded_at__gte=enrollment_datetime)
+        materials.extend(course_materials)
 
+    # Render the materials in the template
     return render(request, 'view_materials.html', {'materials': materials})
-
 
 # views.py
 from .models import Material, Parent, CustomUser
@@ -1426,7 +1468,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Q
-from .models import CustomUser, Quizs, UserAnswers
+from .models import CustomUser, Quizs, UserAnswers, Enrollment  # Ensure Enrollment is imported
 
 def available_quizzes(request):
     custom_user_id = request.session.get('custom_user_id')
@@ -1441,34 +1483,52 @@ def available_quizzes(request):
         messages.error(request, "Student not found.")
         return redirect('login')
 
-    registered_course = student.course  # Assuming there's a course field on CustomUser
+    # Fetch enrollments for the student
+    enrollments = Enrollment.objects.filter(student=student)
 
-    if not registered_course:
+    if not enrollments.exists():
         messages.error(request, "You are not registered for any course.")
         return redirect('student_dashboard')
 
     current_datetime = timezone.localtime()
 
-    # Fetch quizzes that are ongoing or upcoming and have not ended
-    available_quizzes = Quizs.objects.filter(
-        course=registered_course,
-        start_date__lte=current_datetime.date(),
-        end_date__gte=current_datetime.date(),
-    ).filter(
-        Q(start_time__lte=current_datetime.time()) | Q(start_date__gt=current_datetime.date())
-    ).exclude(
-        Q(end_date__lt=current_datetime.date()) | 
-        (Q(end_date=current_datetime.date()) & Q(end_time__lt=current_datetime.time()))
-    ).order_by('start_date', 'start_time')
+    # Create a list of enrolled courses with their enrollment dates and times
+    enrolled_courses = [
+        (enrollment.course, enrollment.enrollment_date, enrollment.enrollment_time)
+        for enrollment in enrollments
+    ]
 
-    # Filter out quizzes that the student has already attempted
-    available_quizzes = [quiz for quiz in available_quizzes if not UserAnswers.objects.filter(user=student, question__quiz=quiz).exists()]
+    available_quizzes = []
+
+    # Fetch quizzes that are ongoing or upcoming and have not ended
+    for course, enrollment_date, enrollment_time in enrolled_courses:
+        # Combine enrollment date and time to create a full datetime object
+        enrollment_datetime = timezone.make_aware(datetime.combine(enrollment_date, enrollment_time or datetime.min.time()))
+
+        # Fetch quizzes based on the course and check the date and time constraints
+        quizzes_for_course = Quizs.objects.filter(
+            course=course,
+            start_date__lte=current_datetime.date(),
+            end_date__gte=current_datetime.date(),
+        ).filter(
+            Q(start_time__lte=current_datetime.time()) | Q(start_date__gt=current_datetime.date())
+        ).exclude(
+            Q(end_date__lt=current_datetime.date()) | 
+            (Q(end_date=current_datetime.date()) & Q(end_time__lt=current_datetime.time()))
+        ).order_by('start_date', 'start_time')
+
+        # Filter out quizzes that the student has already attempted
+        quizzes_for_course = [quiz for quiz in quizzes_for_course if not UserAnswers.objects.filter(user=student, question__quiz=quiz).exists()]
+
+        # Add the filtered quizzes to the available_quizzes list
+        available_quizzes.extend(quizzes_for_course)
 
     return render(request, 'available_quizzes.html', {
         'quizzes': available_quizzes,
         'today': current_datetime.date(),
         'current_time': current_datetime.time()
     })
+
 
 
 def submit_quiz(request, quiz_id):
@@ -1660,12 +1720,11 @@ def create_assignment(request):
         'courses': courses,
     })
 
-
-
-from django.contrib import messages  # type: ignore
-from django.shortcuts import redirect, render  # type: ignore
-from django.utils import timezone # type: ignore
-from .models import Assignment, AssignmentSubmission, CustomUser  # Ensure to import your models
+from django.contrib import messages
+from django.shortcuts import redirect, render
+from django.utils import timezone
+from datetime import datetime
+from .models import Assignment, AssignmentSubmission, CustomUser, Enrollment  # Ensure to import Enrollment
 
 def assignment_submission_view(request):
     # Retrieve the custom user ID from the session
@@ -1682,38 +1741,55 @@ def assignment_submission_view(request):
         messages.error(request, "Student not found.")
         return redirect('login')
 
-    # Check the registered course for the student
-    registered_course = student.course  # Assuming there's a course_id field on CustomUser
-    if not registered_course:
+    # Fetch the enrolled courses for the student along with the enrollment date and time
+    enrollments = Enrollment.objects.filter(student=student)
+
+    if not enrollments:
         messages.error(request, "You are not registered for any course.")
         return redirect('student_dashboard')
 
-    # Fetch assignments based on the registered course only
-    assignments = Assignment.objects.filter(course_name=registered_course)
+    # Create a list to store the courses and their enrollment date and time
+    enrolled_courses_with_dates = [(enrollment.course, enrollment.enrollment_date, enrollment.enrollment_time) for enrollment in enrollments]
 
-    # Create a list to store assignment details with submission status
+    # Create a list to hold the course names and the minimum enrollment datetime
+    enrolled_courses = [course for course, _, _ in enrolled_courses_with_dates]
+    
+    # Fetch assignments based on the registered courses and filter by enrollment datetime
+    current_date = timezone.now()
     assignment_details = []
 
-    for assignment in assignments:
-       current_datetime = timezone.now()
-       assignment_end_datetime = datetime.combine(assignment.end_date, assignment.end_time)
+    for course, enrollment_date, enrollment_time in enrolled_courses_with_dates:
+        # Combine enrollment date and time to create a full datetime object
+        if enrollment_time:
+            enrollment_datetime = datetime.combine(enrollment_date, enrollment_time)
+        else:
+            enrollment_datetime = datetime.combine(enrollment_date, datetime.min.time())
 
-       assignment_end_datetime = timezone.make_aware(assignment_end_datetime)
+        # Make the combined enrollment datetime timezone-aware
+        enrollment_datetime = timezone.make_aware(enrollment_datetime)
 
+        # Get assignments for the current course, considering enrollment datetime
+        assignments = Assignment.objects.filter(course_name=course, start_date__gte=enrollment_datetime)
 
-       has_reached_deadline = assignment_end_datetime <= current_datetime
-    
-       # Check if the student has submitted the assignment
-       submission = AssignmentSubmission.objects.filter(assignment=assignment, student=student).first()
-        # Build the details for each assignment
-       assignment_detail = {
-            'assignment': assignment,
-            'submission': submission,
-            'has_reached_deadline': has_reached_deadline,
-            'can_submit': not has_reached_deadline and not submission,
-            'submission_allowed': not has_reached_deadline and submission,  # Option to re-submit before the deadline
-        }
-       assignment_details.append(assignment_detail)
+        for assignment in assignments:
+            current_datetime = timezone.now()
+            assignment_end_datetime = datetime.combine(assignment.end_date, assignment.end_time)
+            assignment_end_datetime = timezone.make_aware(assignment_end_datetime)
+
+            has_reached_deadline = assignment_end_datetime <= current_datetime
+
+            # Check if the student has submitted the assignment
+            submission = AssignmentSubmission.objects.filter(assignment=assignment, student=student).first()
+
+            # Build the details for each assignment
+            assignment_detail = {
+                'assignment': assignment,
+                'submission': submission,
+                'has_reached_deadline': has_reached_deadline,
+                'can_submit': not has_reached_deadline and not submission,
+                'submission_allowed': not has_reached_deadline and submission,  # Option to re-submit before the deadline
+            }
+            assignment_details.append(assignment_detail)
 
     # Handle the file upload if the request method is POST
     if request.method == 'POST':
@@ -1721,8 +1797,8 @@ def assignment_submission_view(request):
         file = request.FILES.get('file')
         if file and assignment_id:
             # Fetch the specific assignment based on the assignment ID
-            assignment = Assignment.objects.filter(id=assignment_id, course_name=registered_course).first()
-            
+            assignment = Assignment.objects.filter(id=assignment_id, course_name__in=enrolled_courses).first()
+
             if assignment and not has_reached_deadline and not submission:
                 # Create a new submission
                 submission = AssignmentSubmission(
@@ -1976,8 +2052,10 @@ def view_events(request):
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from .models import CalendarEvent
+from .models import CalendarEvent, Enrollment
 from django.contrib.auth import get_user_model
+from django.utils import timezone
+from datetime import datetime
 
 def student_events(request):
     CustomUser = get_user_model()  # Fetch the custom user model
@@ -1990,22 +2068,38 @@ def student_events(request):
     # Fetch the CustomUser (student) object using the session ID
     student = get_object_or_404(CustomUser, id=custom_user_id)
 
-    # Fetch the course associated with the student
-    course = student.course  # This will fetch the course if exists
+    # Fetch the enrollments for the student
+    enrollments = Enrollment.objects.filter(student=student)
 
-    if not course:
+    if not enrollments.exists():
         messages.error(request, 'You are not registered for any courses.')
-        return redirect('student_dashboard')  # Redirect if no course is associated
+        return redirect('student_dashboard')  # Redirect if no enrollments are found
 
-    # Fetch events for the course the student is enrolled in
-    events = CalendarEvent.objects.filter(course=course)
+    # Create a list of enrolled courses with their enrollment dates and times
+    enrolled_courses = [(enrollment.course, enrollment.enrollment_date, enrollment.enrollment_time) for enrollment in enrollments]
+
+    # Current date and time for filtering events
+    current_datetime = timezone.localtime()
+
+    # Fetch events for the enrolled courses
+    events = CalendarEvent.objects.filter(course__in=[course for course, _, _ in enrolled_courses])
+
+    # Further filter events based on the enrollment date and time
+    filtered_events = []
+    for course, enrollment_date, enrollment_time in enrolled_courses:
+        enrollment_datetime = timezone.make_aware(datetime.combine(enrollment_date, enrollment_time or datetime.min.time()))
+        # Fetch events that start after the enrollment date and time
+        filtered_events.extend(events.filter(course=course, start_time__gte=enrollment_datetime))
+
+    # Filter by event type if provided in the GET request
     event_type = request.GET.get('event_type', '')
     if event_type:
-        events = events.filter(event_type=event_type)  # Filter by event type
+        filtered_events = [event for event in filtered_events if event.event_type == event_type]
+
     context = {
-        'events': events,
-        'courses': course,
-    }    
+        'events': filtered_events,
+        'courses': [course for course, _, _ in enrolled_courses],  # Display course names
+    }
 
     return render(request, 'student_event.html', context)
 

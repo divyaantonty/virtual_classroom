@@ -205,6 +205,22 @@
                 </div>
             </div>
         </div>
+        <div class="site-section">
+            <div class="container">
+                <h3>Your Teaching Courses:</h3>
+                <ul>
+                    {% for teacher_course in teacher_courses %}
+                        <li>
+                            <strong>Course:</strong> {{ teacher_course.course.course_name }} <br>
+                            <strong>Teaching Area:</strong> {{ teacher_course.teaching_area }}
+                        </li>
+                    {% empty %}
+                        <p>No courses assigned yet.</p>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
 
         <div class="site-section">
             <div class="container">
