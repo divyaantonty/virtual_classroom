@@ -2313,3 +2313,38 @@ def student_list(request):
         'enrolled_students': enrolled_students,
     }
     return render(request, 'student_list.html', context)
+
+from django.shortcuts import render
+from myApp.models import TeacherCourse, Enrollment, Attendance, ClassSchedule
+
+def view_attendance(request):
+    teacher_id = request.session.get('teacher_id')
+    # Get the courses assigned to this teacher
+    teacher_courses = TeacherCourse.objects.filter(teacher_id=teacher_id).values_list('course_id', flat=True)
+
+    # Get the class schedules for the courses
+    class_schedules = ClassSchedule.objects.filter(course_name_id__in=teacher_courses)
+
+    # Get the selected class schedule ID from the form
+    selected_class_schedule_id = request.GET.get('class_schedule_id')
+
+    # Initialize variables for attendance records and course name
+    attendance_records = None
+    course_name = None
+
+    if selected_class_schedule_id:
+        # Fetch attendance records based on the selected class schedule
+        attendance_records = Attendance.objects.filter(class_schedule_id=selected_class_schedule_id)
+
+        # Fetch the course name associated with the selected class schedule
+        selected_class_schedule = ClassSchedule.objects.get(id=selected_class_schedule_id)
+        course_name = selected_class_schedule.course_name  # Assuming 'course_name' is the field that holds the course
+
+    context = {
+        'class_schedules': class_schedules,
+        'attendance_records': attendance_records,
+        'selected_class_schedule': selected_class_schedule_id,
+        'course_name': course_name,
+    }
+
+    return render(request, 'view_attendance.html', context)

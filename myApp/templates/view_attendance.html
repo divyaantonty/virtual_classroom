@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>View Attendance</title>
+</head>
+<body>
+    <h1>Attendance Records</h1>
+
+    <form method="get">
+        <label for="class_schedule_id">Select Class Schedule:</label>
+        <select name="class_schedule_id" id="class_schedule_id" onchange="this.form.submit()">
+            <option value="">-- Select Class Schedule --</option>
+            {% for schedule in class_schedules %}
+                <option value="{{ schedule.id }}" {% if schedule.id == selected_class_schedule %}selected{% endif %}>
+                    {{ schedule.class_name }}
+                </option>
+            {% endfor %}
+        </select>
+    </form>
+
+    {% if course_name %}
+        <h2>Course: {{ course_name }}</h2>
+    {% endif %}
+
+    {% if attendance_records %}
+        <table border="1">
+            <tr>
+                <th>Student</th>
+                <th>Status</th>
+                <th>Check-in Time</th>
+            </tr>
+            {% for record in attendance_records %}
+                <tr>
+                    <td>{{ record.student }}</td>
+                    <td>{{ record.status }}</td>
+                    <td>{{ record.check_in_time }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>No attendance records found for the selected class schedule.</p>
+    {% endif %}
+</body>
+</html>
