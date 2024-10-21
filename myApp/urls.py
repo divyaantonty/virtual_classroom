@@ -105,7 +105,9 @@ urlpatterns = [
     path('view_quiz_questions/', views.view_quiz_questions, name='view_quiz_questions'),
     path('view_student_answers/', views.view_student_answers, name='view_student_answers'),
     path('toggle_teacher_status/<int:teacher_id>/', views.toggle_teacher_status, name='toggle_teacher_status'),
+    path('mark_attendance/<int:schedule_id>/', views.mark_attendance, name='mark_attendance'),
 
+    path('student_list/', views.student_list, name='student_list'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

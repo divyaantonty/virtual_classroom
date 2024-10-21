@@ -2254,3 +2254,62 @@ def view_uploaded_materials(request):
     }
     return render(request, 'view_uploaded_materials.html', context)
 
+from django.shortcuts import redirect
+from django.utils import timezone
+from .models import Attendance, ClassSchedule, CustomUser
+
+def mark_attendance(request, schedule_id):
+    custom_user_id = request.session.get('custom_user_id')
+    if not custom_user_id:
+        messages.error(request, "You need to log in to join the class.")
+        return redirect('login')
+
+    try:
+        student = CustomUser.objects.get(id=custom_user_id)
+        class_schedule = ClassSchedule.objects.get(id=schedule_id)
+        current_time = timezone.localtime(timezone.now())
+        print(current_time)
+        # Check if the student is joining within the scheduled class time
+        if class_schedule.start_time <= current_time.time() <= class_schedule.end_time and current_time.date() == class_schedule.date:
+            # Mark attendance as present
+            Attendance.objects.create(
+                student=student,
+                class_schedule=class_schedule,
+                check_in_time=current_time,
+                status='present'
+            )
+        else:
+            # If the student tries to join outside the class time, mark them as absent
+            Attendance.objects.create(
+                student=student,
+                class_schedule=class_schedule,
+                check_in_time=current_time,
+                status='absent'
+            )
+
+        # Redirect to the meeting link after marking attendance
+        return redirect(class_schedule.meeting_link)
+
+    except CustomUser.DoesNotExist:
+        messages.error(request, "Student not found.")
+        return redirect('login')
+    except ClassSchedule.DoesNotExist:
+        messages.error(request, "Class schedule not found.")
+        return redirect('student_dashboard')
+
+
+from myApp.models import TeacherCourse, Enrollment, Course
+
+def student_list(request):
+    teacher_id = request.session.get('teacher_id')  # Assuming you're using session to manage teacher login
+
+    # Get the courses assigned to this teacher
+    teacher_courses = TeacherCourse.objects.filter(teacher_id=teacher_id).values_list('course_id', flat=True)
+
+    # Get students enrolled in those courses
+    enrolled_students = Enrollment.objects.filter(course_id__in=teacher_courses).select_related('student')
+
+    context = {
+        'enrolled_students': enrolled_students,
+    }
+    return render(request, 'student_list.html', context)

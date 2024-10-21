@@ -275,7 +275,8 @@
                     <td>{{ class.date }}</td>
                     <td>{{ class.start_time }}</td>
                     <td>{{ class.end_time }}</td>
-                    <td><a href="{{ class.meeting_link }}" target="_blank">Join</a></td>
+                    <td><a href="{% url 'mark_attendance' class.id %}" target="_blank">Join</a></td>
+
                 </tr>
                 {% endfor %}
             </tbody>

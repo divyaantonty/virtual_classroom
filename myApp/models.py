@@ -326,3 +326,15 @@ class CalendarEvent(models.Model):
 
     def __str__(self):
         return self.title
+    
+from django.db import models
+from django.utils import timezone
+
+class Attendance(models.Model):
+    student = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    class_schedule = models.ForeignKey(ClassSchedule, on_delete=models.CASCADE)
+    check_in_time = models.DateTimeField(default=timezone.now)
+    status = models.CharField(max_length=10, choices=[('present', 'Present'), ('absent', 'Absent')])
+
+    def __str__(self):
+        return f"{self.student} - {self.class_schedule.class_name} - {self.status}"
