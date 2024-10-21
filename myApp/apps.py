@@ -5,3 +5,4 @@ class MyAppConfig(AppConfig):
     name = 'myApp'
     def ready(self):
         import myApp.signals
+

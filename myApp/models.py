@@ -94,7 +94,7 @@ class Teacher(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')  # Track approval status
     auto_generated_username = models.CharField(max_length=150, unique=True, null=True)
     auto_generated_password = models.CharField(max_length=128, null=True)  # Store hashed passwords
-
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"

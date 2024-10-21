@@ -576,6 +576,39 @@ def manage_teachers(request):
     }
     return render(request, 'manage_teachers.html', context)
 
+# views.py
+from django.core.mail import send_mail
+from django.shortcuts import redirect, get_object_or_404
+from django.contrib import messages
+from .models import Teacher  # Import your Teacher model
+
+def toggle_teacher_status(request, teacher_id):
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+    
+    if teacher.is_active:
+        teacher.is_active = False  # Set to False to deactivate
+        email_subject = "Account Deactivated"
+        email_message = "Your account has been deactivated. Please contact support if you have any questions."
+    else:
+        teacher.is_active = True  # Set to True to activate
+        email_subject = "Account Activated"
+        email_message = "Your account has been activated. You can now log in to the platform."
+
+    teacher.save()
+
+    # Send email to the teacher
+    send_mail(
+        email_subject,
+        email_message,
+        'your_email@example.com',  # Replace with your email
+        [teacher.email],  # Send email to the teacher
+        fail_silently=False,
+    )
+
+    messages.success(request, f"Teacher '{teacher.first_name} {teacher.last_name}' status updated successfully.")
+    return redirect('manage_teachers')
+
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.mail import send_mail
 from django.utils.crypto import get_random_string
@@ -871,7 +904,7 @@ def schedule_class(request):
                 'error_message': error_message
             })
         
-         # Fetch the selected course to validate dates
+        # Fetch the selected course to validate dates
         course = Course.objects.get(id=selected_course_id)  # Fetch the course by ID
         
         # Validate that the scheduled date is within the course's start and end dates
@@ -892,16 +925,15 @@ def schedule_class(request):
                 'error_message': error_message
             })
         
-        # Overlap validation - Check if the new class conflicts with any existing scheduled classes
+        # Overlap validation - Check if the new class conflicts with any existing scheduled classes for any teacher
         overlapping_classes = ClassSchedule.objects.filter(
-            teacher=teacher,
             date=selected_date,
             start_time__lt=end_time,  # An overlap if the class starts before the new one ends
             end_time__gt=start_time   # And ends after the new one starts
         )
 
         if overlapping_classes.exists():
-            error_message = "The scheduled class overlaps with an existing class."
+            error_message = "The scheduled class overlaps with an existing class scheduled by another teacher."
             return render(request, 'schedule_class.html', {
                 'assigned_courses': assigned_courses,
                 'today': today,
@@ -909,7 +941,6 @@ def schedule_class(request):
             })
 
         # Create the class schedule record in the database
-        course = Course.objects.get(id=selected_course_id)  # Fetch the course by ID
         schedule = ClassSchedule(
             class_name=class_name,
             course_name=course,  # Use the fetched course
@@ -2222,3 +2253,4 @@ def view_uploaded_materials(request):
         'selected_course': course_id,
     }
     return render(request, 'view_uploaded_materials.html', context)
+

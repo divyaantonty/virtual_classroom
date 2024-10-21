@@ -104,6 +104,7 @@ urlpatterns = [
 
     path('view_quiz_questions/', views.view_quiz_questions, name='view_quiz_questions'),
     path('view_student_answers/', views.view_student_answers, name='view_student_answers'),
+    path('toggle_teacher_status/<int:teacher_id>/', views.toggle_teacher_status, name='toggle_teacher_status'),
 
 ]
 if settings.DEBUG:
