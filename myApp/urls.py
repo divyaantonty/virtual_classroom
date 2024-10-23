@@ -110,6 +110,8 @@ urlpatterns = [
     path('student_list/', views.student_list, name='student_list'),
 
     path('view_attendance/', views.view_attendance, name='view_attendance'),
+
+    
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

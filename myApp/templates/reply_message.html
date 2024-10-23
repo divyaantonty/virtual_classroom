@@ -1,0 +1,9 @@
+<p>Message from {{ message.sender.username }}:</p>
+<p>{{ message.message }}</p>
+
+<form method="POST">
+    {% csrf_token %}
+    <label for="reply">Reply:</label>
+    <textarea id="reply" name="reply" required></textarea>
+    <button type="submit">Send Reply</button>
+</form>

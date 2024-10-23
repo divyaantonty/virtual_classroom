@@ -384,9 +384,24 @@ def admin_login(request):
             messages.error(request, "Invalid username or password. Please try again.")
     
     return render(request, 'admin_login.html')
+# views.py
+from django.shortcuts import render
+from .models import CustomUser, Teacher, Course  # Import your models
 
-def admin_dashboard(request):   
-    return render(request, 'admin_dashboard.html')
+def admin_dashboard(request):
+    # Count the number of users, teachers, and courses
+    total_users = CustomUser.objects.count()
+    total_teachers = Teacher.objects.count()
+    total_courses = Course.objects.count()
+
+    context = {
+        'total_users': total_users,
+        'total_teachers': total_teachers,
+        'total_courses': total_courses,
+    }
+
+    return render(request, 'admin_dashboard.html', context)
+
 
 from django.shortcuts import render
 from .models import CustomUser
@@ -2348,3 +2363,4 @@ def view_attendance(request):
     }
 
     return render(request, 'view_attendance.html', context)
+

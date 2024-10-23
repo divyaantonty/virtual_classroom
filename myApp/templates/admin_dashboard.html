@@ -6,228 +6,323 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
     <script type="text/javascript">
-        function preventBack() {
-            window.history.forward(); 
-        }
-          
+        function preventBack() { window.history.forward(); }
         setTimeout("preventBack()", 0);
-          
         window.onunload = function () { null };
     </script>
     {% load static %}
-    <link href="https://fonts.googleapis.com/css?family=Muli:300,400,700,900" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'fonts/icomoon/style.css' %}">
+    <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
     <style>
         body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-        }
-
-        .container {
-            display: flex;
-            justify-content: flex-start; /* Align content to the left */
-            align-items: flex-start;
-            padding: 20px;
-            max-width: 100%;
-            gap: 20px; /* Add space between containers */
-        }
-
-        .dashboard-heading {
-            font-size: 28px;
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
             color: #333;
-            text-align: center; /* Center the text */
-            margin-bottom: 30px;
+            margin: 0;
         }
 
-        .dashboard-container {
-            width: 300px; /* Fixed width for the dashboard */
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .dashboard-options {
+        .site-wrap {
             display: flex;
-            flex-direction: column; /* Arrange dashboard boxes vertically */
-            gap: 20px; /* Add space between options */
-        }
-
-        .dashboard-box {
-            background-color: #007bff;
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            text-decoration: none;
-            font-size: 18px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .dashboard-box:hover {
-            background-color: #0056b3;
-            cursor: pointer;
+            flex-direction: column;
+            min-height: 100vh;
         }
 
         .site-navbar {
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            background-color: white;
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 10px 20px;
         }
 
         .header-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px;
-            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
 
-        .center-heading {
-            flex: 1;
-            text-align: center; /* Center the heading text */
+        .site-logo img {
+            height: 40px;
+        }
+
+        .dashboard-heading {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
         }
 
         .profile-dropdown {
             position: relative;
-            display: inline-block;
         }
 
         .profile-dropdown-content {
             display: none;
             position: absolute;
+            top: 40px;
             right: 0;
-            background-color: #f8f9fa;
-            min-width: 160px;
-            box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             z-index: 1;
-        }
-
-        .profile-dropdown-content a {
-            color: black;
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
-            text-align: left;
-        }
-
-        .profile-dropdown-content a:hover {
-            background-color: #ddd;
         }
 
         .profile-dropdown:hover .profile-dropdown-content {
             display: block;
         }
-        
-        .dropdown {
-            position: relative;
-            display: inline-block;
-            width: 100%;
+
+        .profile-dropdown-content a {
+            display: block;
+            padding: 10px 20px;
+            color: #333;
+            transition: background-color 0.3s;
+            text-decoration: none;
         }
-        
-        .dropdown-btn {
-            background-color: #007bff;
+
+        .profile-dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+
+        .main-content {
+            display: flex;
+            flex-grow: 1;
+        }
+
+        .dashboard-sidebar {
+            width: 300px;
+            background-color: #ffffff;
+            padding: 80px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .dashboard-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .dashboard-box {
+            background-color: #3498db;
             color: white;
-            border: none;
-            padding: 20px;
-            width: 100%;
+            padding: 15px;
+            border-radius: 10px;
             text-align: center;
             text-decoration: none;
-            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
             cursor: pointer;
-            font-size: 18px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-        
-        .dropdown-btn:hover {
-            background-color: #0056b3;
+
+        .dashboard-box:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
-        
+
+        .dropdown {
+            position: relative;
+        }
+
+        .dropdown-btn {
+            background-color: #3498db;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+        }
+
         .dropdown-content {
             display: none;
             position: absolute;
-            background-color: white;
-            min-width: 100%;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
             z-index: 1;
-            border-radius: 10px;
+            width: 100%;
+            top: 60px;
         }
-        
-        .dropdown-content a {
-            color: black;
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
-            text-align: left;
-            border-radius: 10px;
-        }
-        
-        .dropdown-content a:hover {
-            background-color: #ddd;
-        }
-        
+
         .dropdown:hover .dropdown-content {
             display: block;
         }
-        
-        
 
-        
+        .dropdown-content a {
+            padding: 12px;
+            color: #333;
+            display: block;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dashboard-content {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .stats-container {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        .stat-box {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+            width: 180px;
+            height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-number {
+            font-size: 42px;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 16px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+
+            .dashboard-sidebar {
+                width: 100%;
+                order: 2;
+            }
+
+            .dashboard-content {
+                order: 1;
+            }
+
+            .stats-container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .stat-box {
+                width: 100%;
+                max-width: 200px;
+            }
+
+            .header-container {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .profile-dropdown {
+                margin-top: 10px;
+            }
+        }
     </style>
 </head>
 
 <body>
     <div class="site-wrap">
         <!-- Navbar -->
-        <header class="site-navbar py-4 js-sticky-header site-navbar-target" role="banner">
-            <div class="container header-container">
+        <header class="site-navbar js-sticky-header site-navbar-target" role="banner">
+            <div class="header-container">
                 <div class="site-logo">
                     <a href="{% url 'index' %}" class="d-block">
-                        <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid" style="height: 50px;">
+                        <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid">
                     </a>
                 </div>
-
-                <!-- Centered Admin Dashboard Heading -->
-                <div class="center-heading">
-                    <h2 class="dashboard-heading mb-0">Admin Dashboard</h2>
-                </div>
-
+                <h2 class="dashboard-heading">Admin Dashboard</h2>
                 <div class="profile-dropdown">
-                    <span class="icon-user mr-2"></span>
-                    <a href="#" class="nav-link text-right" style="color: black;">Profile</a>
+                    <a href="#" class="nav-link text-right d-flex align-items-center">
+                        <i class="fas fa-user-circle mr-2"></i>
+                        <span>admin</span>
+                    </a>
                     <div class="profile-dropdown-content">
-                        <a href="{% url 'logout' %}">Logout</a>
+                        <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
                     </div>
                 </div>
             </div>
         </header>
 
-        <div class="container">
-            <!-- Dashboard Content -->
-            <div class="dashboard-container">
+        <div class="main-content">
+            <!-- Sidebar (now on the left) -->
+            <div class="dashboard-sidebar">
                 <div class="dashboard-options">
-                    <a href="{% url 'manage_students' %}" class="dashboard-box">Manage Students</a>
-                    <a href="{% url 'manage_teachers' %}" class="dashboard-box">Manage Teachers</a>
-                    <div class="dropdown dashboard-box">
-                        <button class="dropdown-btn">Add Courses</button>
+                    <a href="{% url 'manage_students' %}" class="dashboard-box">
+                        <i class="fas fa-user-graduate mr-2"></i>Manage Students
+                    </a>
+                    <a href="{% url 'manage_teachers' %}" class="dashboard-box">
+                        <i class="fas fa-chalkboard-teacher mr-2"></i>Manage Teachers
+                    </a>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-book mr-2"></i>Add Courses
+                        </button>
                         <div class="dropdown-content">
-                            <a href="{% url 'add_courses' %}">Add New Course</a>
-                            <a href="{% url 'course_list' %}">View Added Courses</a>
+                            <a href="{% url 'add_courses' %}"><i class="fas fa-plus mr-2"></i>Add New Course</a>
+                            <a href="{% url 'course_list' %}"><i class="fas fa-list mr-2"></i>View Added Courses</a>
                         </div>
                     </div>
-                    <a href="{% url 'view_messages' %}" class="dashboard-box">View Messages</a>
-                    <div class="dropdown dashboard-box">
-                        <button class="dropdown-btn">Send Feedback</button>
+                    <a href="{% url 'view_messages' %}" class="dashboard-box">
+                        <i class="fas fa-envelope mr-2"></i>View Messages
+                    </a>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-comment mr-2"></i>Send Feedback
+                        </button>
                         <div class="dropdown-content">
-                            <a href="{% url 'add_feedback_question' %}">Feedback to Student</a>
-                            <a href="{% url 'view_feedback_responses' %}">Response</a>
+                            <a href="{% url 'add_feedback_question' %}"><i class="fas fa-question mr-2"></i>Feedback to Student</a>
+                            <a href="{% url 'view_feedback_responses' %}"><i class="fas fa-reply mr-2"></i>Response</a>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="dashboard-content">
+                <div class="stats-container">
+                    <div class="stat-box">
+                        <div class="stat-number">{{ total_users }}</div>
+                        <div class="stat-label">Users</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">{{ total_teachers }}</div>
+                        <div class="stat-label">Teachers</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">{{ total_courses }}</div>
+                        <div class="stat-label">Courses</div>
                     </div>
                 </div>
             </div>
