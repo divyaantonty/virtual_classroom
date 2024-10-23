@@ -977,6 +977,8 @@ def schedule_class(request):
     )
 
     return render(request, 'schedule_class.html', {
+        'first_name': teacher.first_name,
+        'last_name': teacher.last_name,
         'assigned_courses': assigned_courses,
         'today': today,
         'scheduled_classes': scheduled_classes,
@@ -1024,7 +1026,9 @@ def view_teacher_schedule_class(request):
 
     # Prepare the context for rendering
     context = {
-        'future_classes': future_classes,  # Ongoing and future classes
+        'future_classes': future_classes,
+        'first_name': teacher.first_name,
+        'last_name': teacher.last_name,  # Ongoing and future classes
     }
 
     return render(request, 'view_teacher_schedule_class.html', context)
@@ -1265,7 +1269,10 @@ def teacher_updateprofile(request):
         messages.success(request, 'Profile updated successfully.')
         return redirect('view_profile')  
 
-    context = {'teacher': teacher}
+    context = {'teacher': teacher,
+               'first_name': teacher.first_name,
+            'last_name': teacher.last_name,
+        }
     return render(request, 'teacher_updateprofile.html', context)
 
 
@@ -1764,6 +1771,8 @@ def create_assignment(request):
 
     return render(request, 'create_assignment.html', {
         'courses': courses,
+        'first_name': teacher.first_name,
+        'last_name': teacher.last_name,
     })
 
 from django.contrib import messages
@@ -1901,7 +1910,9 @@ def view_assignment(request):
         return render(request, 'view_assignment.html', {
             'assignments': assignments,
             'courses': courses,
+            
             'selected_course_id': selected_course_id,
+            
         })
     else:
         return redirect('login')
