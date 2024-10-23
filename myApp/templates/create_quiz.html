@@ -1,217 +1,465 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Quiz</title>
-    <script type="text/javascript">
-        function preventBack() {
-            window.history.forward(); 
-        }
-          
-        setTimeout("preventBack()", 0);
-          
-        window.onunload = function () { null };
-    </script>
+
+    {% load static %}
+
+    <link href="https://fonts.googleapis.com/css?family=Muli:300,400,700,900" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'fonts/icomoon/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/jquery-ui.css' %}">
+    <link rel="stylesheet" href="{% static 'css/owl.carousel.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/owl.theme.default.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/jquery.fancybox.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/bootstrap-datepicker.css' %}">
+    <link rel="stylesheet" href="{% static 'fonts/flaticon/font/flaticon.css' %}">
+    <link rel="stylesheet" href="{% static 'css/aos.css' %}">
+    <link rel="stylesheet" href="{% static 'css/jquery.mb.YTPlayer.min.css' %}" media="all">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #eef2f5;
+            font-family: 'Poppins', sans-serif;
+            color: #333;
             margin: 0;
-            padding: 0;
+            background-image: url("{% static 'images/bk.jpg' %}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        .site-wrap {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .site-navbar {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 10px 0;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .site-logo img {
+            height: 40px;
+        }
+
+        .dashboard-heading {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .profile-dropdown {
+            position: relative;
+        }
+
+        .profile-dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: #ffffff;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+
+        .profile-dropdown:hover .profile-dropdown-content {
+            display: block;
+        }
+
+        .profile-dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .profile-dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+
+        .main-content {
+            display: flex;
+            flex-grow: 1;
+            height: calc(100vh - 60px);
+            overflow: hidden;
+        }
+
+        .dashboard-sidebar {
+            width: 400px;
+            background-color: #ffffff;
+            padding: 80px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .dashboard-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .dashboard-box, .dropdown-btn {
+            background-color: #3498db;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+        }
+
+        .dashboard-box:hover, .dropdown-btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .dropdown {
+            position: relative;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            z-index: 1;
+            width: 100%;
+            top: 60px;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dashboard-content {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
         }
-        .card {
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-            width: 700px;
-            max-width: 90%;
-            padding: 30px;
-            transition: transform 0.2s;
+
+        .content-wrapper {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 80px;
+            max-width: 1000px;
+            width: 90%;
+            margin: 0 auto;
         }
-        .card:hover {
-            transform: translateY(-5px);
-        }
+
         h1 {
-            text-align: center;
-            color: #333;
-            font-size: 28px;
-            margin-bottom: 20px;
-            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 30px;
         }
+
         .form-group {
-            display: flex;
-            justify-content: space-between;
             margin-bottom: 20px;
         }
-        .form-group label {
-            font-size: 16px;
-            width: 150px;
-            font-weight: bold;
-            color: #555;
-            align-self: center;
-        }
-        .form-group input, .form-group select {
-            flex-grow: 1;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 14px;
-            transition: border-color 0.3s ease;
-        }
-        .form-group input:focus, .form-group select:focus {
-            border-color: #28a745;
-            outline: none;
-        }
-        .form-group select {
-            background-color: #fff;
-            cursor: pointer;
-        }
-        button {
+
+        label {
             display: block;
+            margin-bottom: 5px;
+            color: #34495e;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="time"],
+        select {
             width: 100%;
-            padding: 14px;
-            background-color: #28a745;
-            color: #fff;
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button[type="submit"] {
+            background-color: #2ecc71;
+            color: white;
+            padding: 12px 20px;
             border: none;
             border-radius: 5px;
-            font-size: 16px;
             cursor: pointer;
-            margin-top: 10px;
-            transition: background-color 0.3s ease, transform 0.2s;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
         }
-        button:hover {
-            background-color: #218838;
-            transform: translateY(-2px);
+
+        button[type="submit"]:hover {
+            background-color: #27ae60;
         }
+
         .error {
-            color: red;
+            color: #e74c3c;
+            font-size: 14px;
             margin-top: 5px;
-            font-size: 12px;
         }
-        @media (max-width: 768px) {
-            .form-group {
-                flex-direction: column;
-            }
-            .form-group label {
-                margin-bottom: 8px;
-                width: auto;
-            }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
+
 <body>
+    <div class="site-wrap">
+        <header class="site-navbar js-sticky-header site-navbar-target" role="banner">
+            <div class="header-container">
+                <div class="site-logo">
+                    <a href="{% url 'index' %}" class="d-block">
+                        <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid">
+                    </a>
+                </div>
+                <h1 class="dashboard-heading">Teacher Dashboard</h1>
+                <div class="profile-dropdown">
+                    <a href="#" class="d-flex align-items-center">
+                        <i class="fas fa-user-circle mr-2"></i>
+                        <span>{{ first_name }} {{ last_name }}</span>
+                    </a>
+                    <div class="profile-dropdown-content">
+                        <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+                    </div>
+                </div>
+            </div>
+        </header>
 
-<div class="card">
-    <a href="{% url 'teacher_dashboard' %}" class="back-button">Back</a>
-    <h1>Create Quiz</h1>
+        <div class="main-content">
+            <!-- Sidebar -->
+            <div class="dashboard-sidebar">
+                <div class="dashboard-options">
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-chalkboard-teacher mr-2"></i>Manage Classes
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'schedule_class' %}"><i class="fas fa-plus mr-2"></i>Schedule Class</a>
+                            <a href="{% url 'view_teacher_schedule_class' %}"><i class="fas fa-list mr-2"></i>View Classes</a>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-tasks mr-2"></i>Manage Assignments
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'create_assignment' %}"><i class="fas fa-plus mr-2"></i>Create Assignment</a>
+                            <a href="{% url 'view_assignment' %}"><i class="fas fa-list mr-2"></i>View Assignments</a>
+                            <a href="{% url 'evaluate_assignment' %}"><i class="fas fa-check mr-2"></i>Evaluate Assignments</a>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-book mr-2"></i>Study Materials
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'upload_material' %}"><i class="fas fa-upload mr-2"></i>Upload Materials</a>
+                            <a href="{% url 'view_uploaded_materials' %}"><i class="fas fa-list mr-2"></i>View Materials</a>
+                        </div>
+                    </div>
+                    <a href="#" class="dashboard-box">
+                        <i class="fas fa-comments mr-2"></i>Discussion Forum
+                    </a>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-question-circle mr-2"></i>Manage Quizzes
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'create_quiz' %}"><i class="fas fa-plus mr-2"></i>Create Quiz</a>
+                            <a href="{% url 'view_quiz_questions' %}"><i class="fas fa-list mr-2"></i>View Questions</a>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-calendar-alt mr-2"></i>Manage Events
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'add_event' %}"><i class="fas fa-plus mr-2"></i>Create Event</a>
+                            <a href="{% url 'view_events' %}"><i class="fas fa-list mr-2"></i>View Events</a>
+                        </div>
+                    </div>
+                    <a href="{% url 'view_profile' %}" class="dashboard-box">
+                        <i class="fas fa-user mr-2"></i>View Profile
+                    </a>
+                    <a href="{% url 'student_list' %}" class="dashboard-box">
+                        <i class="fas fa-users mr-2"></i>Student List
+                    </a>
+                    <a href="{% url 'view_attendance' %}" class="dashboard-box">
+                        <i class="fas fa-clipboard-check mr-2"></i>Attendance
+                    </a>
+                    <a href="{% url 'logout' %}" class="dashboard-box">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </a>
+                </div>
+            </div>
 
-    <form method="POST" id="quizForm">
-        {% csrf_token %}
-        <div class="form-group">
-            <label for="course">Course:</label>
-            <select name="course" id="course" required>
-                {% for course in courses %}
-                    <option value="{{ course.id }}">{{ course.course_name }}</option>
-                {% endfor %}
-            </select>
+            <!-- Main Content -->
+            <div class="dashboard-content">
+                <div class="content-wrapper">
+                    <h1>Create Quiz</h1>
+                    <form method="POST" id="quizForm">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="course">Course:</label>
+                            <select name="course" id="course" required>
+                                {% for course in courses %}
+                                    <option value="{{ course.id }}">{{ course.course_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="title">Quiz Title:</label>
+                            <input type="text" name="title" id="title" required>
+                            <div class="error" id="titleError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="start_date">Start Date:</label>
+                            <input type="date" name="start_date" id="start_date" required>
+                            <div class="error" id="startDateError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="end_date">End Date:</label>
+                            <input type="date" name="end_date" id="end_date" required>
+                            <div class="error" id="endDateError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="start_time">Start Time:</label>
+                            <input type="time" name="start_time" id="start_time" required>
+                            <div class="error" id="startTimeError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="end_time">End Time:</label>
+                            <input type="time" name="end_time" id="end_time" required>
+                            <div class="error" id="endTimeError"></div>
+                        </div>
+
+                        <button type="submit">Create Quiz</button>
+                    </form>
+                    <a href="{% url 'teacher_dashboard' %}" class="back-link">Back to Teacher Dashboard</a>
+                </div>
+            </div>
         </div>
+    </div>
 
-        <div class="form-group">
-            <label for="title">Quiz Title:</label>
-            <input type="text" name="title" id="title" required>
-            <div class="error" id="titleError"></div>
-        </div>
+    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/jquery-migrate-3.0.1.min.js' %}"></script>
+    <script src="{% static 'js/jquery-ui.js' %}"></script>
+    <script src="{% static 'js/popper.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'js/owl.carousel.min.js' %}"></script>
+    <script src="{% static 'js/jquery.stellar.min.js' %}"></script>
+    <script src="{% static 'js/jquery.countdown.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap-datepicker.min.js' %}"></script>
+    <script src="{% static 'js/jquery.easing.1.3.js' %}"></script>
+    <script src="{% static 'js/aos.js' %}"></script>
+    <script src="{% static 'js/jquery.fancybox.min.js' %}"></script>
+    <script src="{% static 'js/jquery.sticky.js' %}"></script>
+    <script src="{% static 'js/main.js' %}"></script>
 
-        <div class="form-group">
-            <label for="start_date">Start Date:</label>
-            <input type="date" name="start_date" id="start_date" required>
-            <div class="error" id="startDateError"></div>
-        </div>
+    <script>
+        document.getElementById('quizForm').addEventListener('submit', function(event) {
+            let isValid = true;
 
-        <div class="form-group">
-            <label for="end_date">End Date:</label>
-            <input type="date" name="end_date" id="end_date" required>
-            <div class="error" id="endDateError"></div>
-        </div>
+            // Clear previous error messages
+            document.querySelectorAll('.error').forEach(function(error) {
+                error.textContent = '';
+            });
 
-        <div class="form-group">
-            <label for="start_time">Start Time:</label>
-            <input type="time" name="start_time" id="start_time" required>
-            <div class="error" id="startTimeError"></div>
-        </div>
+            // Validate Quiz Title: first character should be uppercase
+            const titleInput = document.getElementById('title');
+            const titleValue = titleInput.value.trim();
+            if (titleValue === '' || titleValue.charAt(0) !== titleValue.charAt(0).toUpperCase()) {
+                document.getElementById('titleError').textContent = 'Title must start with a capital letter.';
+                isValid = false;
+            }
 
-        <div class="form-group">
-            <label for="end_time">End Time:</label>
-            <input type="time" name="end_time" id="end_time" required>
-            <div class="error" id="endTimeError"></div>
-        </div>
+            // Validate Start Date: must be in the future
+            const startDateInput = document.getElementById('start_date');
+            const startDateValue = new Date(startDateInput.value);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (startDateValue <= today) {
+                document.getElementById('startDateError').textContent = 'Start date must be in the future.';
+                isValid = false;
+            }
 
-        <button type="submit">Create Quiz</button>
-    </form>
-</div>
+            // Validate End Date: must be after Start Date
+            const endDateInput = document.getElementById('end_date');
+            const endDateValue = new Date(endDateInput.value);
+            if (endDateValue < startDateValue) {
+                document.getElementById('endDateError').textContent = 'End date must be after Start date.';
+                isValid = false;
+            }
 
-<script>
-    document.getElementById('quizForm').addEventListener('submit', function(event) {
-        let isValid = true;
+            // Validate Start Time: must be in the future
+            const startTimeInput = document.getElementById('start_time');
+            const startTimeValue = new Date(startDateInput.value + 'T' + startTimeInput.value);
+            if (startTimeValue <= today) {
+                document.getElementById('startTimeError').textContent = 'Start time must be in the future.';
+                isValid = false;
+            }
 
-        // Clear previous error messages
-        document.querySelectorAll('.error').forEach(function(error) {
-            error.textContent = '';
+            // Validate End Time: must be after Start Time
+            const endTimeInput = document.getElementById('end_time');
+            const endTimeValue = new Date(endDateInput.value + 'T' + endTimeInput.value);
+            if (endTimeValue <= startTimeValue) {
+                document.getElementById('endTimeError').textContent = 'End time must be after Start time.';
+                isValid = false;
+            }
+
+            // Prevent form submission if validation fails
+            if (!isValid) {
+                event.preventDefault();
+            }
         });
-
-        // Validate Quiz Title: first character should be uppercase
-        const titleInput = document.getElementById('title');
-        const titleValue = titleInput.value.trim();
-        if (titleValue === '' || titleValue.charAt(0) !== titleValue.charAt(0).toUpperCase()) {
-            document.getElementById('titleError').textContent = 'Title must start with a capital letter.';
-            isValid = false;
-        }
-
-        // Validate Start Date: must be in the future
-        const startDateInput = document.getElementById('start_date');
-        const startDateValue = new Date(startDateInput.value);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        if (startDateValue <= today) {
-            document.getElementById('startDateError').textContent = 'Start date must be in the future.';
-            isValid = false;
-        }
-
-        // Validate End Date: must be after Start Date
-        const endDateInput = document.getElementById('end_date');
-        const endDateValue = new Date(endDateInput.value);
-        if (endDateValue < startDateValue) {
-            document.getElementById('endDateError').textContent = 'End date must be after Start date.';
-            isValid = false;
-        }
-
-        // Validate Start Time: must be in the future
-        const startTimeInput = document.getElementById('start_time');
-        const startTimeValue = new Date(startDateInput.value + 'T' + startTimeInput.value);
-        if (startTimeValue <= today) {
-            document.getElementById('startTimeError').textContent = 'Start time must be in the future.';
-            isValid = false;
-        }
-
-        // Validate End Time: must be after Start Time
-        const endTimeInput = document.getElementById('end_time');
-        const endTimeValue = new Date(endDateInput.value + 'T' + endTimeInput.value);
-        if (endTimeValue <= startTimeValue) {
-            document.getElementById('endTimeError').textContent = 'End time must be after Start time.';
-            isValid = false;
-        }
-
-        // Prevent form submission if validation fails
-        if (!isValid) {
-            event.preventDefault();
-        }
-    });
-</script>
-
+    </script>
 </body>
+
 </html>

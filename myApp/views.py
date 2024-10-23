@@ -1957,6 +1957,8 @@ def evaluate_assignments(request):
             'submissions': submissions,
             'courses': courses,
             'selected_course_id': selected_course_id,
+            
+            
         }
         return render(request, 'evaluate_assignment.html', context)
     else:
