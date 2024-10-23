@@ -5,90 +5,255 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Messages</title>
-    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
-    <style>
-        .site-header, .site-footer {
-            background-color: #f8f9fa;
-            padding: 20px 0;
+    <script type="text/javascript">
+        function preventBack() {
+            window.history.forward(); 
         }
-
-        .site-header img {
+        setTimeout("preventBack()", 0);
+        window.onunload = function () { null };
+    </script>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+        }
+        header img {
             height: 50px;
         }
-
-        .site-footer {
-            text-align: center;
+        .back-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
         }
-
-        .site-footer p {
-            margin: 0;
-            font-size: 14px;
-            color: #6c757d;
+        .back-btn:hover {
+            background-color: #0056b3;
+            text-decoration: none;
+            color: white;
         }
-
-        .container.mt-5 {
-            margin-top: 50px !important;
-        }
-
-        .logo-container {
+        .main-content {
             display: flex;
-            justify-content: center;
+            height: calc(100vh - 70px);
+            overflow: hidden;
+        }
+        .dashboard-sidebar {
+            background-color: #ffffff;
+            width: 300px;
+            padding: 30px 20px;
+            color: white;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+        .dashboard-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .dashboard-box, .dropdown-btn {
+            background-color: #0056b3;
+            color: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            text-decoration: none;
+            border-radius: 10px;
+            text-align: left;
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            display: flex;
             align-items: center;
+            width: 100%;
+        }
+        .dashboard-box:hover, .dropdown-btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .dropdown {
+            position: relative;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #34495e;
+            min-width: 100%;
+            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 0 0 10px 10px;
+            overflow: hidden;
+        }
+        .dropdown-content a {
+            color: white;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.3s;
+        }
+        .dropdown-content a:hover {
+            background-color: #2980b9;
+        }
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        .content-wrapper {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .message-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .message-table th, .message-table td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .message-table th {
+            background-color: #007bff;
+            color: white;
+        }
+        .message-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border: none;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            .dashboard-sidebar {
+                width: 100%;
+                order: 2;
+            }
+            .content-wrapper {
+                order: 1;
+            }
+            .dropdown-content {
+                position: static;
+                display: none;
+            }
+            .dropdown:hover .dropdown-content {
+                display: block;
+            }
         }
     </style>
 </head>
 <body>
-
-    <!-- Header -->
-    <header class="site-header">
-        <div class="container logo-container">
-            <a href="{% url 'index' %}">
+    <!-- Header with logo -->
+    <header>
+        <div>
+            <a href="{% url 'admin_dashboard' %}">
                 <img src="{% static 'images/logo.png' %}" alt="Logo">
             </a>
         </div>
-    </header>
-
-    <!-- Main Content -->
-    <div class="container mt-5">
-        <h2>Messages</h2>
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>First Name</th>
-                    <th>Last Name</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Message</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for message in messages_list %}
-                <tr>
-                    <td>{{ message.first_name }}</td>
-                    <td>{{ message.last_name }}</td>
-                    <td>{{ message.email }}</td>
-                    <td>{{ message.tel }}</td>
-                    <td>{{ message.message }}</td>
-                    <td>
-                        {% if not message.replied %}
-                        <form action="{% url 'reply_message' message.id %}" method="POST">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-primary">Reply</button>
-                        </form>
-                        {% else %}
-                        <span class="text-success">Replied</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <div class="container back-btn-container">
+        <h1>View Messages</h1>
+        <div>
             <a href="{% url 'admin_dashboard' %}" class="back-btn">Back to Admin Dashboard</a>
         </div>
-    </div>
+    </header>
 
+    <!-- Main content with sidebar -->
+    <div class="main-content">
+        <!-- Sidebar -->
+        <div class="dashboard-sidebar">
+            <div class="dashboard-options">
+                <a href="{% url 'manage_students' %}" class="dashboard-box">
+                    <i class="fas fa-user-graduate mr-2"></i>Manage Students
+                </a>
+                <a href="{% url 'manage_teachers' %}" class="dashboard-box">
+                    <i class="fas fa-chalkboard-teacher mr-2"></i>Manage Teachers
+                </a>
+                <div class="dropdown">
+                    <button class="dropdown-btn">
+                        <i class="fas fa-book mr-2"></i>Add Courses
+                    </button>
+                    <div class="dropdown-content">
+                        <a href="{% url 'add_courses' %}"><i class="fas fa-plus mr-2"></i>Add New Course</a>
+                        <a href="{% url 'course_list' %}"><i class="fas fa-list mr-2"></i>View Added Courses</a>
+                    </div>
+                </div>
+                <a href="{% url 'view_messages' %}" class="dashboard-box">
+                    <i class="fas fa-envelope mr-2"></i>View Messages
+                </a>
+                <div class="dropdown">
+                    <button class="dropdown-btn">
+                        <i class="fas fa-comment mr-2"></i>Send Feedback
+                    </button>
+                    <div class="dropdown-content">
+                        <a href="{% url 'add_feedback_question' %}"><i class="fas fa-question mr-2"></i>Feedback to Student</a>
+                        <a href="{% url 'view_feedback_responses' %}"><i class="fas fa-reply mr-2"></i>Response</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content area -->
+        <div class="content-wrapper">
+            <table class="message-table">
+                <thead>
+                    <tr>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Message</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for message in messages_list %}
+                    <tr>
+                        <td>{{ message.first_name }}</td>
+                        <td>{{ message.last_name }}</td>
+                        <td>{{ message.email }}</td>
+                        <td>{{ message.tel }}</td>
+                        <td>{{ message.message }}</td>
+                        <td>
+                            {% if not message.replied %}
+                            <form action="{% url 'reply_message' message.id %}" method="POST">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary">Reply</button>
+                            </form>
+                            {% else %}
+                            <span class="text-success">Replied</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 
     <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.min.js' %}"></script>

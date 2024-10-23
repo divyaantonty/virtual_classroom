@@ -1,73 +1,207 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <title>Add Course &mdash; Website by Colorlib</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Course</title>
     <script type="text/javascript">
         function preventBack() {
             window.history.forward(); 
         }
-          
         setTimeout("preventBack()", 0);
-          
         window.onunload = function () { null };
     </script>
-
-    {% load static %}
-
-    <link href="https://fonts.googleapis.com/css?family=Muli:300,400,700,900" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'fonts/icomoon/style.css' %}">
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
-        footer {
-            background-color: #333;
-            color: #fff;
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        h1 {
             text-align: center;
-            padding: 15px 0;
-            position: relative;
-            bottom: 0;
+            color: #333;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+        }
+        header img {
+            height: 50px;
+        }
+        .back-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+        .back-btn:hover {
+            background-color: #0056b3;
+            text-decoration: none;
+            color: white;
+        }
+        .main-content {
+            display: flex;
+            height: calc(100vh - 70px);
+            overflow: hidden;
+        }
+        .dashboard-sidebar {
+            background-color: #ffffff;
+            width: 300px;
+            padding: 30px 20px;
+            color: white;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+        .dashboard-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .dashboard-box, .dropdown-btn {
+            background-color: #0056b3;
+            color: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            text-decoration: none;
+            border-radius: 10px;
+            text-align: left;
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
             width: 100%;
         }
-    </style>
+        .dashboard-box:hover, .dropdown-btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .dropdown {
+            position: relative;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #34495e;
+            min-width: 100%;
+            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 0 0 10px 10px;
+            overflow: hidden;
+        }
+        .dropdown-content a {
+            color: white;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.3s;
+        }
+        .dropdown-content a:hover {
+            background-color: #2980b9;
+        }
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        .content-wrapper {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .form-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            .dashboard-sidebar {
+                width: 100%;
+                order: 2;
+            }
+            .content-wrapper {
+                order: 1;
+            }
+            .dropdown-content {
+                position: static;
+                display: none;
+            }
+            .dropdown:hover .dropdown-content {
+                display: block;
+            }
+        }
+    </style>    
 </head>
+<body>
+    <!-- Header with logo -->
+    <header>
+        <div>
+            <a href="{% url 'admin_dashboard' %}">
+                <img src="{% static 'images/logo.png' %}" alt="Logo">
+            </a>
+        </div>
+        <h1>Add Course</h1>
+        <div>
+            <a href="{% url 'admin_dashboard' %}" class="back-btn">Back to Admin Dashboard</a>
+        </div>
+    </header>
 
-<body data-spy="scroll" data-target=".site-navbar-target" data-offset="300">
-
-    <div class="site-wrap">
-
-        <!-- Header -->
-        <header class="site-navbar py-4 js-sticky-header site-navbar-target" role="banner">
-            <div class="container">
-                <div class="d-flex align-items-center">
-                    <div class="site-logo">
-                        <a href="{% url 'index' %}" class="d-block">
-                            <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid" style="height: 50px;">
-                        </a>
+    <!-- Main content with sidebar -->
+    <div class="main-content">
+        <!-- Sidebar -->
+        <div class="dashboard-sidebar">
+            <div class="dashboard-options">
+                <a href="{% url 'manage_students' %}" class="dashboard-box">
+                    <i class="fas fa-user-graduate mr-2"></i>Manage Students
+                </a>
+                <a href="{% url 'manage_teachers' %}" class="dashboard-box">
+                    <i class="fas fa-chalkboard-teacher mr-2"></i>Manage Teachers
+                </a>
+                <div class="dropdown">
+                    <button class="dropdown-btn">
+                        <i class="fas fa-book mr-2"></i>Add Courses
+                    </button>
+                    <div class="dropdown-content">
+                        <a href="{% url 'add_courses' %}"><i class="fas fa-plus mr-2"></i>Add New Course</a>
+                        <a href="{% url 'course_list' %}"><i class="fas fa-list mr-2"></i>View Added Courses</a>
                     </div>
-                    <div class="mr-auto">
-                        <nav class="site-navigation position-relative text-right" role="navigation">
-                            <ul class="site-menu main-menu js-clone-nav mr-auto d-none d-lg-block">
-                                <li><a href="{% url 'index' %}" class="nav-link text-left">Home</a></li>
-                                <li><a href="{% url 'about' %}" class="nav-link text-left">About Us</a></li>
-                                <li><a href="{% url 'admissions' %}" class="nav-link text-left">Admissions</a></li>
-                                <li class="active"><a href="{% url 'courses' %}" class="nav-link text-left">Courses</a></li>
-                                <li><a href="{% url 'contact' %}" class="nav-link text-left">Contact</a></li>
-                            </ul>
-                        </nav>
+                </div>
+                <a href="{% url 'view_messages' %}" class="dashboard-box">
+                    <i class="fas fa-envelope mr-2"></i>View Messages
+                </a>
+                <div class="dropdown">
+                    <button class="dropdown-btn">
+                        <i class="fas fa-comment mr-2"></i>Send Feedback
+                    </button>
+                    <div class="dropdown-content">
+                        <a href="{% url 'add_feedback_question' %}"><i class="fas fa-question mr-2"></i>Feedback to Student</a>
+                        <a href="{% url 'view_feedback_responses' %}"><i class="fas fa-reply mr-2"></i>Response</a>
                     </div>
                 </div>
             </div>
-        </header>
+        </div>
 
-        <div class="site-section">
-            <div class="container">
-                <h2 class="mb-5 text-center">Add New Course</h2>
-        
-                <form method="post" action="{% url 'add_courses' %}" class="form" enctype="multipart/form-data">
+        <!-- Content area -->
+        <div class="content-wrapper">
+            <div class="form-container">
+                <form method="post" action="{% url 'add_courses' %}" class="form" enctype="multipart/form-data" onsubmit="return validateForm()">
                     {% csrf_token %}
                     <div class="row">
                         <div class="col-md-6 form-group">
@@ -125,48 +259,35 @@
                 {% endif %}
             </div>
         </div>
-        
-                
-                <script>
-                function validateForm() {
-                    // Additional client-side validation if needed
-                    const courseName = document.getElementById('course_name').value;
-                    const duration = document.getElementById('duration').value;
-                    const description = document.getElementById('description').value;
-
-                    // Validate course name
-                    const namePattern = /^[A-Z][a-z]*$/;
-                    if (!namePattern.test(courseName)) {
-                        alert("Course name must start with an uppercase letter followed by lowercase letters.");
-                        return false;
-                    }
-
-                    // Validate duration
-                    if (duration <= 0 || duration > 99) {
-                        alert("Duration must be a positive number and can be at most 2 digits.");
-                        return false;
-                    }
-
-                    // Validate description only contains characters
-                    const descriptionPattern = /^[A-Za-z\s]+$/;
-                    if (!descriptionPattern.test(description) || description.length < 10) {
-                        alert("Description must be at least 10 characters long and can only contain alphabetic characters.");
-                        return false;
-                    }
-
-                    return true; // Form is valid
-                }
-                </script>
-                
-            </div>
-        </div>
-
-    </div><!-- .site-wrap -->
+    </div>
 
     <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.min.js' %}"></script>
-    <script src="{% static 'js/main.js' %}"></script>
+    <script>
+        function validateForm() {
+            const courseName = document.getElementById('course_name').value;
+            const duration = document.getElementById('duration').value;
+            const description = document.getElementById('description').value;
 
+            const namePattern = /^[A-Z][a-z]*$/;
+            if (!namePattern.test(courseName)) {
+                alert("Course name must start with an uppercase letter followed by lowercase letters.");
+                return false;
+            }
+
+            if (duration <= 0 || duration > 99) {
+                alert("Duration must be a positive number and can be at most 2 digits.");
+                return false;
+            }
+
+            const descriptionPattern = /^[A-Za-z\s]+$/;
+            if (!descriptionPattern.test(description) || description.length < 10) {
+                alert("Description must be at least 10 characters long and can only contain alphabetic characters.");
+                return false;
+            }
+
+            return true;
+        }
+    </script>
 </body>
-
 </html>
