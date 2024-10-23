@@ -1,4 +1,3 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -6,302 +5,366 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teacher Dashboard</title>
-
-   
-
-    <link href="https://fonts.googleapis.com/css?family=Muli:300,400,700,900" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'fonts/icomoon/style.css' %}">
+    <script type="text/javascript">
+        function preventBack() { window.history.forward(); }
+        setTimeout("preventBack()", 0);
+        window.onunload = function () { null };
+    </script>
+    {% load static %}
+    <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
-    <link rel="stylesheet" href="{% static 'css/jquery-ui.css' %}">
-    <link rel="stylesheet" href="{% static 'css/owl.carousel.min.css' %}">
-    <link rel="stylesheet" href="{% static 'css/owl.theme.default.min.css' %}">
-    <link rel="stylesheet" href="{% static 'css/jquery.fancybox.min.css' %}">
-    <link rel="stylesheet" href="{% static 'css/bootstrap-datepicker.css' %}">
-    <link rel="stylesheet" href="{% static 'fonts/flaticon/font/flaticon.css' %}">
-    <link rel="stylesheet" href="{% static 'css/aos.css' %}">
-    <link rel="stylesheet" href="{% static 'css/jquery.mb.YTPlayer.min.css' %}" media="all">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
-    <script type="text/javascript">
-        function preventBack() {
-            window.history.forward(); 
-        }
-          
-        setTimeout("preventBack()", 0);
-          
-        window.onunload = function () { null };
-
-        // Toggle dropdown menu for Create Class
-        function toggleDropdown() {
-            var dropdown = document.getElementById('classDropdown');
-            if (dropdown.style.display === "none" || dropdown.style.display === "") {
-                dropdown.style.display = "block";
-            } else {
-                dropdown.style.display = "none";
-            }
-        }
-
-        // Toggle dropdown menu for Create Assignments
-        function toggleAssignmentDropdown() {
-            var dropdown = document.getElementById('assignmentDropdown');
-            if (dropdown.style.display === "none" || dropdown.style.display === "") {
-                dropdown.style.display = "block";
-            } else {
-                dropdown.style.display = "none";
-            }
-        }
-
-        // Toggle dropdown menu for Conduct Quizzes
-        function toggleQuizDropdown() {
-            var dropdown = document.getElementById('quizDropdown');
-            if (dropdown.style.display === "none" || dropdown.style.display === "") {
-                dropdown.style.display = "block";
-            } else {
-                dropdown.style.display = "none";
-            }
-        }
-        function toggleMaterialDropdown() {
-            const dropdown = document.getElementById('materialDropdown');
-            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-        }
-        function toggleEventDropdown() {
-            const dropdown = document.getElementById("eventDropdown");
-            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
-        }
-        
-        
-        
-
-
-    </script>
-
     <style>
-        .header-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px;
-        }
-
-        .logout-container {
-            color: black;
-        }
-
-        .feature-box {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            padding: 20px;
-            margin-bottom: 10px;
-            text-align: left;
-            width: 250px;
-            position: relative; /* For dropdown positioning */
-        }
-
-        .site-section {
-            padding: 20px;
-        }
-
-        .site-section.ftco-subscribe-1 {
-            min-height: 300px;
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: #333;
+            margin: 0;
+            background-image: url("{% static 'images/bk.jpg' %}");
             background-size: cover;
             background-position: center;
+            background-attachment: fixed;
         }
 
-        .container {
-            display: flex;
-            flex-direction: row;
-            gap: 10px;
-            max-width: 100%;
-        }
-
-        .feature-boxes {
+        .site-wrap {
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
+            min-height: 100vh;
         }
 
         .site-navbar {
-            position: sticky;
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 1000;
-            background-color: white;
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 10px 20px;
         }
 
-        .dropdown-content {
-            display: none; /* Initially hidden */
-            position: absolute;
-            background-color: #f1f1f1;
-            min-width: 200px;
-            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
-            z-index: 1;
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
 
-        .dropdown-content a {
-            color: black;
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
+        .site-logo img {
+            height: 40px;
         }
 
-        .dropdown-content a:hover {
-            background-color: #ddd;
+        .dashboard-heading {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
         }
 
         .profile-dropdown {
             position: relative;
-            display: inline-block;
         }
-        
+
         .profile-dropdown-content {
             display: none;
             position: absolute;
+            top: 40px;
             right: 0;
-            background-color: #f8f9fa;
-            min-width: 160px;
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             z-index: 1;
         }
-        
+
         .profile-dropdown:hover .profile-dropdown-content {
             display: block;
         }
-        
 
+        .profile-dropdown-content a {
+            display: block;
+            padding: 10px 20px;
+            color: #333;
+            transition: background-color 0.3s;
+            text-decoration: none;
+        }
+
+        .profile-dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+
+        .main-content {
+            display: flex;
+            flex-grow: 1;
+            height: calc(100vh - 60px);
+            overflow:hidden;
+        }
+
+        .dashboard-sidebar {
+            width: 400px;
+            background-color: #ffffff;
+            padding: 80px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            height: 100%;
+        }
+
+        .dashboard-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .dashboard-box {
+            background-color: #3498db;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .dashboard-box:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .dropdown {
+            position: relative;
+        }
+
+        .dropdown-btn {
+            background-color: #3498db;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            z-index: 1;
+            width: 100%;
+            top: 60px;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.3s;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dashboard-content {
+        flex-grow: 1;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .content-wrapper {
+        padding: 30px;
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        max-width: 600px;
+        width: 100%;
+    }
+
+        .content-wrapper h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        .course-list {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .course-list h3 {
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+
+        .course-list ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .course-list li {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .course-list li strong {
+            color: #2c3e50;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+
+            .dashboard-sidebar {
+                width: 100%;
+                height: auto;
+                order: 2;
+            }
+            .dashboard-content {
+                width: 100%;
+                order: 1;
+            }
+
+            .header-container {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .profile-dropdown {
+                margin-top: 10px;
+            }
+        }
     </style>
 </head>
 
-<body data-spy="scroll" data-target=".site-navbar-target" data-offset="300">
-
+<body>
     <div class="site-wrap">
-        <header class="site-navbar py-4 js-sticky-header site-navbar-target" role="banner">
-            <div class="container header-container">
+        <!-- Navbar -->
+        <header class="site-navbar js-sticky-header site-navbar-target" role="banner">
+            <div class="header-container">
                 <div class="site-logo">
                     <a href="{% url 'index' %}" class="d-block">
-                        <img src="{% static 'images/logo.png' %}" alt="Image" class="img-fluid">
-                        <h2 class="mb-0">Teacher Dashboard</h2>
-                        <p>Welcome {{ first_name }} {{ last_name }}</p> <!-- Display teacher's name here -->
+                        <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid">
                     </a>
                 </div>
+                <h2 class="dashboard-heading">Teacher Dashboard</h2>
                 <div class="profile-dropdown">
-                    <a href="#" class="nav-link text-right" style="color: black;">
-                        {{ first_name }} {{ last_name }} 
+                    <a href="#" class="nav-link text-right d-flex align-items-center">
+                        <i class="fas fa-user-circle mr-2"></i>
+                        <span>{{ first_name }} {{ last_name }}</span>
                     </a>
                     <div class="profile-dropdown-content">
-                        <a href="{% url 'logout' %}" style="color: black;">Logout</a>
+                        <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
                     </div>
                 </div>
-                
             </div>
         </header>
 
-        <div class="site-section ftco-subscribe-1 site-blocks-cover pb-4" style="background-image: url('{% static 'images/bg_1.jpg' %}')">
-            <div class="container">
-                <div class="row align-items-end">
-                    <div class="col-lg-12">
-                        <!-- Content can be added here if needed -->
+        <div class="main-content">
+            <!-- Sidebar -->
+            <div class="dashboard-sidebar">
+                <div class="dashboard-options">
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-chalkboard-teacher mr-2"></i>Manage Classes
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'schedule_class' %}"><i class="fas fa-plus mr-2"></i>Schedule Class</a>
+                            <a href="{% url 'view_teacher_schedule_class' %}"><i class="fas fa-list mr-2"></i>View Classes</a>
+                        </div>
                     </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-tasks mr-2"></i>Manage Assignments
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'create_assignment' %}"><i class="fas fa-plus mr-2"></i>Create Assignment</a>
+                            <a href="{% url 'view_assignment' %}"><i class="fas fa-list mr-2"></i>View Assignments</a>
+                            <a href="{% url 'evaluate_assignment' %}"><i class="fas fa-check mr-2"></i>Evaluate Assignments</a>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-book mr-2"></i>Study Materials
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'upload_material' %}"><i class="fas fa-upload mr-2"></i>Upload Materials</a>
+                            <a href="{% url 'view_uploaded_materials' %}"><i class="fas fa-list mr-2"></i>View Materials</a>
+                        </div>
+                    </div>
+                    <a href="#" class="dashboard-box">
+                        <i class="fas fa-comments mr-2"></i>Discussion Forum
+                    </a>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-question-circle mr-2"></i>Manage Quizzes
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'create_quiz' %}"><i class="fas fa-plus mr-2"></i>Create Quiz</a>
+                            <a href="{% url 'view_quiz_questions' %}"><i class="fas fa-list mr-2"></i>View Questions</a>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-calendar-alt mr-2"></i>Manage Events
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'add_event' %}"><i class="fas fa-plus mr-2"></i>Create Event</a>
+                            <a href="{% url 'view_events' %}"><i class="fas fa-list mr-2"></i>View Events</a>
+                        </div>
+                    </div>
+                    <a href="{% url 'view_profile' %}" class="dashboard-box">
+                        <i class="fas fa-user mr-2"></i>View Profile
+                    </a>
+                    <a href="{% url 'student_list' %}" class="dashboard-box">
+                        <i class="fas fa-users mr-2"></i>Student List
+                    </a>
+                    <a href="{% url 'view_attendance' %}" class="dashboard-box">
+                        <i class="fas fa-clipboard-check mr-2"></i>Attendance
+                    </a>
                 </div>
             </div>
-        </div>
-        <div class="site-section">
-            <div class="container">
-                <h3>Your Teaching Courses:</h3>
-                <ul>
-                    {% for teacher_course in teacher_courses %}
-                        <li>
-                            <strong>Course:</strong> {{ teacher_course.course.course_name }} <br>
-                            <strong>Teaching Area:</strong> {{ teacher_course.teaching_area }}
-                        </li>
-                    {% empty %}
-                        <p>No courses assigned yet.</p>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-    </div>
 
-        <div class="site-section">
-            <div class="container">
-                <div class="feature-boxes">
-                    <div class="feature-box" onclick="toggleDropdown()">
-                        <a href="#">Create Class</a>
-                        <!-- Dropdown menu for scheduling and viewing classes -->
-                        <div class="dropdown-content" id="classDropdown">
-                            <a href="{% url 'schedule_class' %}">Schedule Class</a>
-                            <a href="{% url 'view_teacher_schedule_class' %}">View Classes</a>
-                        </div>
+            <!-- Main Content -->
+            <div class="dashboard-content">
+                <div class="content-wrapper">
+                    <h2>Welcome, {{ first_name }} {{ last_name }}</h2>
+                    <div class="course-list">
+                        <h3>Your Teaching Courses:</h3>
+                        <ul>
+                            {% for teacher_course in teacher_courses %}
+                                <li>
+                                    <strong>Course:</strong> {{ teacher_course.course.course_name }} <br>
+                                    <strong>Teaching Area:</strong> {{ teacher_course.teaching_area }}
+                                </li>
+                            {% empty %}
+                                <p>No courses assigned yet.</p>
+                            {% endfor %}
+                        </ul>
                     </div>
-                    <div class="feature-box" onclick="toggleAssignmentDropdown()">
-                        <a href="#">Create Assignments</a>
-                        
-                        <div class="dropdown-content" id="assignmentDropdown">
-                            <a href="{% url 'create_assignment' %}">Create Assignment</a>
-                            <a href="{% url 'view_assignment' %}">View Assignments</a>
-                            <a href="{% url 'evaluate_assignment' %}">Evaluate Assignments</a>
-                        </div>
-                    </div>
-                    <div class="feature-box" onclick="toggleMaterialDropdown()">
-                        <a href="#">Study Materials</a>
-                        <div class="dropdown-content" id="materialDropdown">
-                            <a href="{% url 'upload_material' %}">Upload Study Materials</a>
-                            <a href="{% url 'view_uploaded_materials' %}">View Uploaded Materials</a>
-                        </div>
-                    </div>
-                    
-                    <div class="feature-box">
-                        <a href="{% url 'reply_message'}">Make Discussion Forum</a>
-                    </div>
-                    <div class="feature-box" onclick="toggleQuizDropdown()">
-                        <a href="#">Conduct Quizzes</a>
-                        <!-- Dropdown menu for quiz-related actions -->
-                        <div class="dropdown-content" id="quizDropdown">
-                            <a href="{% url 'create_quiz' %}">Create Quiz</a>
-                            <a href="{% url 'view_quiz_questions' %}">View Questions</a>
-                            {% comment %} <a href="{% url 'view_student_answers' %}">View Student Answers</a> {% endcomment %}
-                        </div>
-                    </div>
-                    
-                    <div class="feature-box" onclick="toggleEventDropdown()">
-                        <a href="#">Manage Events</a>
-                        <!-- Dropdown menu for event-related actions -->
-                        <div class="dropdown-content" id="eventDropdown">
-                            <a href="{% url 'add_event' %}">Create Event</a>
-                            <a href="{% url 'view_events' %}">View Events</a>
-                        </div>
-                    </div>
-                    
-                    <div class="feature-box">
-                        <a href="{% url 'view_profile' %}">View Profile</a>
-                    </div>
-                    <div class="feature-box">
-                        <a href="{% url 'student_list' %}">Student List</a>
-                    </div>
-                    <div class="feature-box">
-                        <a href="{% url 'view_attendance' %}">Attendence</a>
-                    </div>
+                    <!-- You can add more content or sections here as needed -->
                 </div>
             </div>
         </div>
     </div>
 
     <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
-    <script src="{% static 'js/jquery-migrate-3.0.1.min.js' %}"></script>
-    <script src="{% static 'js/jquery-ui.js' %}"></script>
-    <script src="{% static 'js/popper.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.min.js' %}"></script>
-    <script src="{% static 'js/owl.carousel.min.js' %}"></script>
-    <script src="{% static 'js/jquery.stellar.min.js' %}"></script>
-    <script src="{% static 'js/jquery.countdown.min.js' %}"></script>
-    <script src="{% static 'js/bootstrap-datepicker.min.js' %}"></script>
-    <script src="{% static 'js/jquery.easing.1.3.js' %}"></script>
-    <script src="{% static 'js/aos.js' %}"></script>
-    <script src="{% static 'js/jquery.fancybox.min.js' %}"></script>
-    <script src="{% static 'js/jquery.sticky.js' %}"></script>
-    <script src="{% static 'js/jquery.mb.YTPlayer.min.js' %}"></script>
-    <script src="{% static 'js/main.js' %}"></script>
-
 </body>
 
 </html>
