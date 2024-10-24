@@ -1,3 +1,4 @@
+import json
 import uuid
 import re
 from django.shortcuts import render, redirect
@@ -8,6 +9,7 @@ from django.contrib import messages
 from django.utils.crypto import get_random_string
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
+import requests
 from .models import CustomUser, Course, Parent
 
 def register(request):
@@ -2377,3 +2379,32 @@ def view_attendance(request):
 
     return render(request, 'view_attendance.html', context)
 
+def create_zoom_meeting(request):
+    access_token = "eyJzdiI6IjAwMDAwMSIsImFsZyI6IkhTNTEyIiwidiI6IjIuMCIsImtpZCI6IjI5NGNjYjIwLWY3MDQtNDJhYS1iNzEyLTAxNGE0M2EyMzg2YyJ9.eyJhdWQiOiJodHRwczovL29hdXRoLnpvb20udXMiLCJ1aWQiOiJPR3pzdVV4M1M2aXBWblZPbS1QTF9RIiwidmVyIjoxMCwiYXVpZCI6IjEyYTlhY2Q5NDZlMTZlZDAxY2M3MjI5NGIyM2M2ZGQ5OGQxNGYwNTcwNWJjZjVjMjk4MjJlODJiY2ExMzRkNDQiLCJuYmYiOjE3Mjk3ODg0NjAsImNvZGUiOiJoem9vNXlGSFMxMnAtTktSd18yc0d3ejhOWDM4Z0pGRHQiLCJpc3MiOiJ6bTpjaWQ6OTV3MVQybmxTcE9XeXV4dTVHamg0dyIsImdubyI6MCwiZXhwIjoxNzI5NzkyMDYwLCJ0eXBlIjozLCJpYXQiOjE3Mjk3ODg0NjAsImFpZCI6ImJzNGhzUTZHUnRlOE8tRUhtRzh1RFEifQ.t3InXC_J95euY8WDhxopJeMnGmYCR9CHbqG7-my5stlGSaagaiX8AEh1YO5t24ZBzAMQ1l5Gd48C7OEibY8UaQ"
+    url = "https://api.zoom.us/v2/users/me/meetings"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "topic": "class_name",
+        "type": 2,
+        "start_time": "start_time.strftime('%Y-%m-%dT%H:%M:%SZ'),",
+        "duration": 60,
+        "timezone": "UTC",
+        "settings": {
+            "host_video": True,
+            "participant_video": True,
+            "join_before_host": True,  # Optional
+            "mute_upon_entry": False
+        }
+    }
+
+    response = requests.post(url, headers=headers, data=json.dumps(payload))
+
+    if response.status_code == 201:
+        meeting_info = response.json()
+        return render(request, 'zoom_meeting_created.html', {'meeting_info': meeting_info})
+    else:
+        return render(request, 'error.html', {'error': response.text})

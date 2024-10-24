@@ -111,7 +111,7 @@ urlpatterns = [
 
     path('view_attendance/', views.view_attendance, name='view_attendance'),
 
-    
+    path('create_meeting/', views.create_zoom_meeting, name='create_meeting'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

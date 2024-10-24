@@ -1,0 +1,5 @@
+<h1>Schedule a Zoom Meeting</h1>
+<form method="POST" action="{% url 'create_zoom_meeting' %}">
+    {% csrf_token %}
+    <button type="submit">Create Zoom Meeting</button>
+</form>

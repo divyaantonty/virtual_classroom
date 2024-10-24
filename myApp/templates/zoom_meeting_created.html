@@ -1,0 +1,10 @@
+<h1>Zoom Meeting Created Successfully</h1>
+<p>Topic: {{ meeting_info.topic }}</p>
+<p>Join URL: <a href="{{ meeting_info.join_url }}">{{ meeting_info.join_url }}</a></p>
+
+<table>
+    <tr>
+        <td><label for="meeting_link">Meeting Link:</label></td>
+        <td><input type="url" id="meeting_link" name="meeting_link" value="{{ meeting_info.join_url }}" required></td>
+    </tr>
+</table>

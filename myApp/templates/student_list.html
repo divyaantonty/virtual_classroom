@@ -42,7 +42,7 @@
         .site-navbar {
             background-color: #ffffff;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 10px 0;
+            padding: 10px 20px;
         }
 
         .header-container {
@@ -72,10 +72,12 @@
         .profile-dropdown-content {
             display: none;
             position: absolute;
+            top: 40px;
             right: 0;
-            background-color: #ffffff;
-            min-width: 160px;
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             z-index: 1;
         }
 
@@ -84,10 +86,11 @@
         }
 
         .profile-dropdown-content a {
-            color: #333;
-            padding: 12px 16px;
-            text-decoration: none;
             display: block;
+            padding: 10px 20px;
+            color: #333;
+            transition: background-color 0.3s;
+            text-decoration: none;
         }
 
         .profile-dropdown-content a:hover {
@@ -107,7 +110,6 @@
             padding: 80px;
             box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
             height: 100%;
-            overflow-y: auto;
         }
 
         .dashboard-options {
@@ -116,21 +118,19 @@
             gap: 15px;
         }
 
-        .dashboard-box, .dropdown-btn {
+        .dashboard-box {
             background-color: #3498db;
             color: white;
-            padding: 15px;
+            padding: 20px;
             border-radius: 10px;
             text-align: center;
             text-decoration: none;
             font-size: 16px;
             transition: all 0.3s ease;
             cursor: pointer;
-            border: none;
-            width: 100%;
         }
 
-        .dashboard-box:hover, .dropdown-btn:hover {
+        .dashboard-box:hover {
             background-color: #2980b9;
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -140,15 +140,27 @@
             position: relative;
         }
 
+        .dropdown-btn {
+            background-color: #3498db;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+        }
+
         .dropdown-content {
             display: none;
             position: absolute;
             background-color: #ffffff;
-            min-width: 160px;
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
             z-index: 1;
-            left: 100%;
-            top: 0;
+            width: 100%;
+            top: 60px;
         }
 
         .dropdown:hover .dropdown-content {
@@ -169,57 +181,81 @@
 
         .dashboard-content {
             flex-grow: 1;
-            padding: 80px;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             overflow-y: auto;
+
         }
 
-        .content-wrapper {
+        /* Existing styles for profile content */
+        .profile-container {
             background-color: #ffffff;
-            border-radius: 10px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
             padding: 30px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 50px;
             max-width: 800px;
-            margin: 0 auto;
-        }
-
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-
-        table {
             width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
         }
-
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #e0e0e0;
+        .profile-header {
+            text-align: center;
+            margin-bottom: 30px;
         }
-
-        th {
-            background-color: #f8f9fa;
-            font-weight: 600;
-            color: #2c3e50;
+        .profile-header h1 {
+            color: #007bff;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
         }
-
-        tr:hover {
-            background-color: #f5f5f5;
+        .profile-header p {
+            color: #6c757d;
+            font-size: 1.2rem;
         }
-
-        .back-link {
-            display: inline-block;
-            margin-top: 20px;
-            color: #3498db;
+        .profile-section {
+            margin-bottom: 30px;
+        }
+        .profile-section h2 {
+            color: #343a40;
+            font-size: 1.8rem;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .profile-info {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .info-item {
+            flex: 0 0 50%;
+            margin-bottom: 15px;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .info-value {
+            color: #6c757d;
+        }
+        .certificate-link {
+            color: #007bff;
             text-decoration: none;
-            font-weight: 600;
         }
-
-        .back-link:hover {
+        .certificate-link:hover {
             text-decoration: underline;
+        }
+        .btn-profile {
+            background-color: #007bff;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            margin-right: 10px;
+        }
+        .btn-profile:hover {
+            background-color: #0056b3;
         }
 
         @media (max-width: 768px) {
@@ -230,15 +266,31 @@
             .dashboard-sidebar {
                 width: 100%;
                 height: auto;
+                order: 2;
             }
-
             .dashboard-content {
-                padding: 20px 10px;
+                width: 100%;
+                order: 1;
             }
 
-            .content-wrapper {
-                padding: 20px;
+            .header-container {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
             }
+
+            .profile-dropdown {
+                margin-top: 10px;
+            }
+        }
+        .content-wrapper {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
         }
     </style>
 </head>
