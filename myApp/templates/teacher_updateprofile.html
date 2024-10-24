@@ -1,201 +1,693 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Update Profile</title>
-    <script type="text/javascript">
-        function preventBack() {
-            window.history.forward(); 
+    {% load static %}
+    <link href="https://fonts.googleapis.com/css?family=Muli:300,400,700,900" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'fonts/icomoon/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/jquery-ui.css' %}">
+    <link rel="stylesheet" href="{% static 'css/owl.carousel.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/owl.theme.default.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/jquery.fancybox.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/bootstrap-datepicker.css' %}">
+    <link rel="stylesheet" href="{% static 'fonts/flaticon/font/flaticon.css' %}">
+    <link rel="stylesheet" href="{% static 'css/aos.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+            background-image: url("{% static 'images/bk.jpg' %}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
         }
-          
+        .update-profile-container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-top: 50px;
+        }
+        .update-profile-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .update-profile-header h1 {
+            color: #007bff;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        .form-group label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .btn-update {
+            background-color: #007bff;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .btn-update:hover {
+            background-color: #0056b3;
+        }
+        .error-message {
+            color: #dc3545;
+            font-size: 0.875em;
+            margin-top: 0.25rem;
+        }
+        .is-invalid {
+            border-color: #dc3545;
+        }
+        .is-valid {
+            border-color: #28a745;
+        }
+        .site-wrap {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .site-navbar {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 10px 20px;
+        }
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        .site-logo img {
+            height: 40px;
+        }
+        .dashboard-heading {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+        .profile-dropdown {
+            position: relative;
+        }
+        .profile-dropdown-content {
+            display: none;
+            position: absolute;
+            top: 40px;
+            right: 0;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+        .profile-dropdown:hover .profile-dropdown-content {
+            display: block;
+        }
+        .profile-dropdown-content a {
+            display: block;
+            padding: 10px 20px;
+            color: #333;
+            transition: background-color 0.3s;
+            text-decoration: none;
+        }
+        .profile-dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+        .main-content {
+            display: flex;
+            flex-grow: 1;
+            height: calc(100vh - 60px);
+            overflow: hidden;
+        }
+        .dashboard-sidebar {
+            width: 400px;
+            background-color: #ffffff;
+            padding: 80px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            height: 100%;
+        }
+        .dashboard-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .dashboard-box {
+            background-color: #3498db;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .dashboard-box:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .dropdown {
+            position: relative;
+        }
+        .dropdown-btn {
+            background-color: #3498db;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            z-index: 1;
+            width: 100%;
+            top: 60px;
+        }
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        .dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.3s;
+        }
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+        .dashboard-content {
+            flex-grow: 1;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-y: auto;
+        }
+        .content-wrapper {
+            padding: 30px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 800px;
+            width: 100%;
+        }
+        .content-wrapper h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            .dashboard-sidebar {
+                width: 100%;
+                height: auto;
+                order: 2;
+            }
+            .dashboard-content {
+                width: 100%;
+                order: 1;
+            }
+            .header-container {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            .profile-dropdown {
+                margin-top: 10px;
+            }
+        }
+    </style>
+    <script type="text/javascript">
+        function preventBack() { window.history.forward(); }
         setTimeout("preventBack()", 0);
-          
         window.onunload = function () { null };
     </script>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
+
 <body>
-    <div class="container mt-5">
-        <h2>Update Profile</h2>
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-        <form method="POST">
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="first_name">First Name</label>
-                <input type="text" class="form-control" id="first_name" name="first_name" value="{{ teacher.first_name }}" required>
+    <div class="site-wrap">
+        <!-- Navbar -->
+        <header class="site-navbar js-sticky-header site-navbar-target" role="banner">
+            <div class="header-container">
+                <div class="site-logo">
+                    <a href="{% url 'index' %}" class="d-block">
+                        <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid">
+                    </a>
+                </div>
+                <h2 class="dashboard-heading">Update Profile</h2>
+                <div class="profile-dropdown">
+                    <a href="#" class="nav-link text-right d-flex align-items-center">
+                        <i class="fas fa-user-circle mr-2"></i>
+                        <span>{{ first_name }} {{ last_name }}</span>
+                    </a>
+                    <div class="profile-dropdown-content">
+                        <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="last_name">Last Name</label>
-                <input type="text" class="form-control" id="last_name" name="last_name" value="{{ teacher.last_name }}" required>
+        </header>
+
+        <div class="main-content">
+            <!-- Sidebar -->
+            <div class="dashboard-sidebar">
+                <div class="dashboard-options">
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-chalkboard-teacher mr-2"></i>Manage Classes
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'schedule_class' %}"><i class="fas fa-plus mr-2"></i>Schedule Class</a>
+                            <a href="{% url 'view_teacher_schedule_class' %}"><i class="fas fa-list mr-2"></i>View Classes</a>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-tasks mr-2"></i>Manage Assignments
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'create_assignment' %}"><i class="fas fa-plus mr-2"></i>Create Assignment</a>
+                            <a href="{% url 'view_assignment' %}"><i class="fas fa-list mr-2"></i>View Assignments</a>
+                            <a href="{% url 'evaluate_assignment' %}"><i class="fas fa-check mr-2"></i>Evaluate Assignments</a>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-book mr-2"></i>Study Materials
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'upload_material' %}"><i class="fas fa-upload mr-2"></i>Upload Materials</a>
+                            <a href="{% url 'view_uploaded_materials' %}"><i class="fas fa-list mr-2"></i>View Materials</a>
+                        </div>
+                    </div>
+                    <a href="#" class="dashboard-box">
+                        <i class="fas fa-comments mr-2"></i>Discussion Forum
+                    </a>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-question-circle mr-2"></i>Manage Quizzes
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'create_quiz' %}"><i class="fas fa-plus mr-2"></i>Create Quiz</a>
+                            <a href="{% url 'view_quiz_questions' %}"><i class="fas fa-list mr-2"></i>View Questions</a>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-calendar-alt mr-2"></i>Manage Events
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'add_event' %}"><i class="fas fa-plus mr-2"></i>Create Event</a>
+                            <a href="{% url 'view_events' %}"><i class="fas fa-list mr-2"></i>View Events</a>
+                        </div>
+                    </div>
+                    <a href="{% url 'view_profile' %}" class="dashboard-box">
+                        <i class="fas fa-user mr-2"></i>View Profile
+                    </a>
+                    <a href="{% url 'student_list' %}" class="dashboard-box">
+                        <i class="fas fa-users mr-2"></i>Student List
+                    </a>
+                    <a href="{% url 'view_attendance' %}" class="dashboard-box">
+                        <i class="fas fa-clipboard-check mr-2"></i>Attendance
+                    </a>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="gender">Gender</label>
-                <select class="form-control" id="gender" name="gender" required>
-                    <option value="male" {% if teacher.gender == "male" %}selected{% endif %}>Male</option>
-                    <option value="female" {% if teacher.gender == "female" %}selected{% endif %}>Female</option>
-                    <option value="other" {% if teacher.gender == "other" %}selected{% endif %}>Other</option>
-                </select>
+
+            <!-- Main Content -->
+            <div class="dashboard-content">
+                <div class="content-wrapper">
+                    <div class="update-profile-container">
+                        <div class="update-profile-header">
+                            <h1>Update Profile</h1>
+                        </div>
+                        <form method="post" enctype="multipart/form-data" id="updateProfileForm">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="first_name">First Name:</label>
+                                        <input type="text" class="form-control" id="first_name" name="first_name" value="{{ teacher.first_name }}" required>
+                                        <div class="error-message"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="last_name">Last Name:</label>
+                                        <input type="text" class="form-control" id="last_name" name="last_name" value="{{ teacher.last_name }}" required>
+                                        <div class="error-message"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="gender">Gender:</label>
+                                        <select class="form-control" id="gender" name="gender" required>
+                                            <option value="male" {% if teacher.gender == 'male' %}selected{% endif %}>Male</option>
+                                            <option value="female" {% if teacher.gender == 'female' %}selected{% endif %}>Female</option>
+                                            <option value="other" {% if teacher.gender == 'other' %}selected{% endif %}>Other</option>
+                                        </select>
+                                        <div class="error-message"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="date_of_birth">Date of Birth:</label>
+                                        <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" value="{{ teacher.date_of_birth|date:'Y-m-d' }}" required>
+                                        <div class="error-message"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="email">Email:</label>
+                                        <input type="email" class="form-control" id="email" name="email" value="{{ teacher.email }}" required>
+                                        <div class="error-message"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="contact">Contact:</label>
+                                        <input type="tel" class="form-control" id="contact" name="contact" value="{{ teacher.contact }}" required>
+                                        <div class="error-message"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="address_line1">Address Line 1:</label>
+                                <input type="text" class="form-control" id="address_line1" name="address_line1" value="{{ teacher.address_line1 }}" required>
+                                <div class="error-message"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="address_line2">Address Line 2:</label>
+                                <input type="text" class="form-control" id="address_line2" name="address_line2" value="{{ teacher.address_line2 }}">
+                                <div class="error-message"></div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="city">City:</label>
+                                        <input type="text" class="form-control" id="city" name="city" value="{{ teacher.city }}" required>
+                                        <div class="error-message"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="state">State:</label>
+                                        <input type="text" class="form-control" id="state" name="state" value="{{ teacher.state }}" required>
+                                        <div class="error-message"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="zip_code">Zip Code:</label>
+                                        <input type="text" class="form-control" id="zip_code" name="zip_code" value="{{ teacher.zip_code }}" required>
+                                        <div class="error-message"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="qualification">Qualification:</label>
+                                <input type="text" class="form-control" id="qualification" name="qualification" value="{{ teacher.qualification }}">
+                                <div class="error-message"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="qualification_certificate">Qualification Certificate:</label>
+                                <input type="file" class="form-control-file" id="qualification_certificate" name="qualification_certificate">
+                                <div class="error-message"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="experience">Experience:</label>
+                                <select id="experience" name="experience" class="form-control" required>
+                                    <option value="">Select Experience</option>
+                                    <option value="0" {% if teacher.experience == '0' %}selected{% endif %}>0 years</option>
+                                    <option value="0-2" {% if teacher.experience == '0-2' %}selected{% endif %}>0-2 years</option>
+                                    <option value="2-5" {% if teacher.experience == '2-5' %}selected{% endif %}>2-5 years</option>
+                                    <option value="5+" {% if teacher.experience == '5+' %}selected{% endif %}>5+ years</option>
+                                </select>
+                                <div class="error-message"></div>
+                            </div>
+                            <div class="form-group" id="experience_certificate_group" style="display: {% if teacher.experience != '0' %}block{% else %}none{% endif %};">
+                                <label for="experience_certificate">Experience Certificate:</label>
+                                <input type="file" class="form-control-file" id="experience_certificate" name="experience_certificate">
+                                <div class="error-message"></div>
+                            </div>
+                            <div class="text-center mt-4">
+                                <button type="submit" class="btn btn-update">Update Profile</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="age">Age</label>
-                <input type="number" class="form-control" id="age" name="age" value="{{ teacher.age }}" required>
-            </div>
-            <div class="form-group">
-                <label for="auto_generated_username">Username</label>
-                <input type="text" class="form-control" id="auto_generated_username" name="auto_generated_username" value="{{ teacher.auto_generated_username }}" required>
-            </div>
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" class="form-control" id="email" name="email" value="{{ teacher.email }}" required>
-            </div>
-            <div class="form-group">
-                <label for="contact">Contact</label>
-                <input type="text" class="form-control" id="contact" name="contact" value="{{ teacher.contact }}" required>
-            </div>
-            <div class="form-group">
-                <label for="address_line1">Address Line 1</label>
-                <input type="text" class="form-control" id="address_line1" name="address_line1" value="{{ teacher.address_line1 }}" required>
-            </div>
-            <div class="form-group">
-                <label for="address_line2">Address Line 2</label>
-                <input type="text" class="form-control" id="address_line2" name="address_line2" value="{{ teacher.address_line2 }}">
-            </div>
-            <div class="form-group">
-                <label for="city">City</label>
-                <input type="text" class="form-control" id="city" name="city" value="{{ teacher.city }}" required>
-            </div>
-            <div class="form-group">
-                <label for="state">State</label>
-                <input type="text" class="form-control" id="state" name="state" value="{{ teacher.state }}" required>
-            </div>
-            <div class="form-group">
-                <label for="zip_code">Zip Code</label>
-                <input type="text" class="form-control" id="zip_code" name="zip_code" value="{{ teacher.zip_code }}" required>
-            </div>
-            <div class="form-group">
-                <label for="qualification">Qualification</label>
-                <input type="text" class="form-control" id="qualification" name="qualification" value="{{ teacher.qualification }}">
-            </div>
-            <div class="form-group">
-                <label for="teaching_area">Teaching Area</label>
-                <input type="text" class="form-control" id="teaching_area" name="teaching_area" value="{{ teacher.teaching_area }}">
-            </div>
-            <div class="form-group">
-                <label for="classes">Classes</label>
-                <input type="text" class="form-control" id="classes" name="classes" value="{{ teacher.classes }}">
-            </div>
-            <div class="form-group">
-                <label for="subjects">Subjects</label>
-                <input type="text" class="form-control" id="subjects" name="subjects" value="{{ teacher.subjects }}">
-            </div>
-            <div class="form-group">
-                <label for="experience">Experience</label>
-                <textarea class="form-control" id="experience" name="experience">{{ teacher.experience }}</textarea>
-            </div>
-            <div class="form-group">
-                <label for="referral">Referral</label>
-                <input type="text" class="form-control" id="referral" name="referral" value="{{ teacher.referral }}">
-            </div>
-            <button type="submit" class="btn btn-primary">Update Profile</button>
-        </form>
+        </div>
     </div>
 
-    <!-- Validation Script -->
+    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/jquery-migrate-3.0.1.min.js' %}"></script>
+    <script src="{% static 'js/jquery-ui.js' %}"></script>
+    <script src="{% static 'js/popper.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'js/owl.carousel.min.js' %}"></script>
+    <script src="{% static 'js/jquery.stellar.min.js' %}"></script>
+    <script src="{% static 'js/jquery.countdown.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap-datepicker.min.js' %}"></script>
+    <script src="{% static 'js/jquery.easing.1.3.js' %}"></script>
+    <script src="{% static 'js/aos.js' %}"></script>
+    <script src="{% static 'js/jquery.fancybox.min.js' %}"></script>
+    <script src="{% static 'js/jquery.sticky.js' %}"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const form = document.querySelector("form");
+            const form = document.getElementById("updateProfileForm");
+            const experienceSelect = document.getElementById("experience");
+            const experienceCertificateGroup = document.getElementById("experience_certificate_group");
 
-            form.addEventListener("submit", function (event) {
-                let valid = true;
-                const errorMessages = document.querySelectorAll(".error-message");
-                errorMessages.forEach(msg => msg.remove());
+            // Validation functions
+            function showError(input, message) {
+                const errorElement = input.nextElementSibling;
+                errorElement.textContent = message;
+                input.classList.add("is-invalid");
+                input.classList.remove("is-valid");
+            }
 
-                // Validation functions
-                function showError(fieldId, message) {
-                    const field = document.getElementById(fieldId);
-                    const errorMessage = document.createElement("div");
-                    errorMessage.className = "error-message text-danger";
-                    errorMessage.textContent = message;
-                    field.parentElement.appendChild(errorMessage);
-                }
+            function clearError(input) {
+                const errorElement = input.nextElementSibling;
+                errorElement.textContent = "";
+                input.classList.remove("is-invalid");
+                input.classList.add("is-valid");
+            }
 
-                function validateText(fieldId, pattern, message) {
-                    const field = document.getElementById(fieldId).value;
-                    if (!pattern.test(field)) {
-                        showError(fieldId, message);
-                        return false;
-                    }
-                    return true;
-                }
-
-                // First Name and Last Name Validation
+            // Validate functions
+            function validateName(input) {
                 const namePattern = /^[A-Z][a-z]{2,}$/;
-                valid = valid && validateText("first_name", namePattern, "First name must start with a capital letter and have at least 3 characters.");
-                valid = valid && validateText("last_name", namePattern, "Last name must start with a capital letter and have at least 3 characters.");
-
-                // Gender Validation
-                const gender = document.getElementById("gender").value;
-                if (gender === "") {
-                    showError("gender", "Gender must be selected.");
-                    valid = false;
+                if (!namePattern.test(input.value)) {
+                    showError(input, "Name must start with a capital letter, have at least 3 characters, and no spaces.");
+                } else {
+                    clearError(input);
                 }
+            }
 
-                // Age Validation
-                const age = parseInt(document.getElementById("age").value);
-                if (age <= 0) {
-                    showError("age", "Age must be a positive number.");
-                    valid = false;
-                } else if (age < 23 || age > 56) {
-                    showError("age", "Age must be between 23 and 56.");
-                    valid = false;
+            function validateDOB(input) {
+                const dob = new Date(input.value);
+                const today = new Date();
+                const age = today.getFullYear() - dob.getFullYear();
+                if (age < 23 || age > 56) {
+                    showError(input, "Age must be between 23 and 56 years old.");
+                } else {
+                    clearError(input);
                 }
+            }
 
-                // Contact Validation
-                const contact = document.getElementById("contact").value;
+            function validateEmail(input) {
+                const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                if (!emailPattern.test(input.value)) {
+                    showError(input, "Please enter a valid email address.");
+                } else {
+                    clearError(input);
+                }
+            }
+
+            function validateContact(input) {
                 const contactPattern = /^[6-9]\d{9}$/;
-                if (!contactPattern.test(contact)) {
-                    showError("contact", "Mobile number must start with 6-9 and be 10 digits long.");
-                    valid = false;
+                if (!contactPattern.test(input.value)) {
+                    showError(input, "Contact must start with 6-9 and be exactly 10 digits.");
+                } else {
+                    clearError(input);
+                }
+            }
+
+            function validateZip(input) {
+                const zipPattern = /^\d{6}$/;
+                if (!zipPattern.test(input.value)) {
+                    showError(input, "Zip code must be exactly 6 digits.");
+                } else {
+                    clearError(input);
+                }
+            }
+
+            function validateQualification(input) {
+                const qualificationPattern = /^[A-Z][a-zA-Z\s]{2,}$/;
+                if (!qualificationPattern.test(input.value)) {
+                    showError(input, "Qualification must start with a capital letter and have at least 3 characters.");
+                } else {
+                    clearError(input);
+                }
+            }
+
+            function validateFile(input) {
+                if (input.files.length > 0) {
+                    const fileName = input.files[0].name;
+                    const fileExtension = fileName.split('.').pop().toLowerCase();
+                    if (fileExtension !== 'pdf') {
+                        showError(input, "Please upload a PDF file.");
+                    } else {
+                        clearError(input);
+                    }
+                } else {
+                    showError(input, "This field is required.");
+                }
+            }
+
+            function validateAddress(input) {
+                if (input.value.trim().length < 5) {
+                    showError(input, "Address should be at least 5 characters long.");
+                } else {
+                    clearError(input);
+                }
+            }
+
+            function validateCity(input) {
+                const cityPattern = /^[a-zA-Z\s]{2,}$/;
+                if (!cityPattern.test(input.value)) {
+                    showError(input, "City name should contain only letters and spaces, and be at least 2 characters long.");
+                } else {
+                    clearError(input);
+                }
+            }
+
+            function validateState(input) {
+                const statePattern = /^[a-zA-Z\s]{2,}$/;
+                if (!statePattern.test(input.value)) {
+                    showError(input, "State name should contain only letters and spaces, and be at least 2 characters long.");
+                } else {
+                    clearError(input);
+                }
+            }
+
+            // Add event listeners for real-time validation
+            document.getElementById("first_name").addEventListener("input", function() { validateName(this); });
+            document.getElementById("last_name").addEventListener("input", function() { validateName(this); });
+            document.getElementById("date_of_birth").addEventListener("change", function() { validateDOB(this); });
+            document.getElementById("email").addEventListener("input", function() { validateEmail(this); });
+            document.getElementById("contact").addEventListener("input", function() { validateContact(this); });
+            document.getElementById("zip_code").addEventListener("input", function() { validateZip(this); });
+            document.getElementById("qualification").addEventListener("input", function() { validateQualification(this); });
+            document.getElementById("qualification_certificate").addEventListener("change", function() { validateFile(this); });
+            document.getElementById("experience_certificate").addEventListener("change", function() { validateFile(this); });
+            document.getElementById("address_line1").addEventListener("input", function() { validateAddress(this); });
+            document.getElementById("city").addEventListener("input", function() { validateCity(this); });
+            document.getElementById("state").addEventListener("input", function() { validateState(this); });
+
+            experienceSelect.addEventListener("change", function() {
+                if (this.value !== "0") {
+                    experienceCertificateGroup.style.display = "block";
+                    document.getElementById("experience_certificate").required = true;
+                } else {
+                    experienceCertificateGroup.style.display = "none";
+                    clearError(document.getElementById("experience_certificate"));
+                    document.getElementById("experience_certificate").required = false;
+                }
+            });
+
+            // Validate all fields on form submission
+            form.addEventListener("submit", function(event) {
+                const inputs = [
+                    "first_name", "last_name", "date_of_birth", "email", "contact", 
+                    "qualification", "zip_code", "gender", "experience", "address_line1", "city", "state"
+                ];
+                let isValid = true;
+                inputs.forEach(id => {
+                    const input = document.getElementById(id);
+                    if (input.value.trim() === "") {
+                        showError(input, "This field is required.");
+                        isValid = false;
+                    } else {
+                        switch(id) {
+                            case "first_name":
+                            case "last_name":
+                                validateName(input);
+                                break;
+                            case "date_of_birth":
+                                validateDOB(input);
+                                break;
+                            case "email":
+                                validateEmail(input);
+                                break;
+                            case "contact":
+                                validateContact(input);
+                                break;
+                            case "zip_code":
+                                validateZip(input);
+                                break;
+                            case "qualification":
+                                validateQualification(input);
+                                break;
+                            case "address_line1":
+                                validateAddress(input);
+                                break;
+                            case "city":
+                                validateCity(input);
+                                break;
+                            case "state":
+                                validateState(input);
+                                break;
+                        }
+                        if (input.classList.contains("is-invalid")) {
+                            isValid = false;
+                        }
+                    }
+                });
+
+                if (experienceSelect.value !== "0") {
+                    validateFile(document.getElementById("experience_certificate"));
+                    if (document.getElementById("experience_certificate").classList.contains("is-invalid")) {
+                        isValid = false;
+                    }
                 }
 
-                // Email Validation
-                const email = document.getElementById("email").value;
-                const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
-                if (!emailPattern.test(email)) {
-                    showError("email", "Email must be in Gmail format (e.g., example@gmail.com).");
-                    valid = false;
+                validateFile(document.getElementById("qualification_certificate"));
+                if (document.getElementById("qualification_certificate").classList.contains("is-invalid")) {
+                    isValid = false;
                 }
 
-                // Address, City, State, Qualification, Teaching Area, and Referral Validation
-                const addressPattern = /^[a-zA-Z\s,'-]{3,}$/; // Minimum 3 characters, allows letters, spaces, commas, and special characters
-                valid = valid && validateText("address_line1", addressPattern, "Address Line 1 must be at least 3 characters long and cannot contain numbers.");
-                valid = valid && validateText("address_line2", addressPattern, "Address Line 2 must be at least 3 characters long and cannot contain numbers.");
-                valid = valid && validateText("city", addressPattern, "City must be at least 3 characters long and cannot contain numbers.");
-                valid = valid && validateText("state", addressPattern, "State must be at least 3 characters long and cannot contain numbers.");
-                valid = valid && validateText("qualification", addressPattern, "Qualification must be at least 3 characters long and cannot contain numbers.");
-                valid = valid && validateText("teaching_area", addressPattern, "Teaching Area must be at least 3 characters long and cannot contain numbers.");
-                valid = valid && validateText("referral", addressPattern, "Referral must be at least 3 characters long and cannot contain numbers.");
-
-                // Zip Code Validation (5-digit)
-                const zipCodePattern = /^\d{6}$/;
-                valid = valid && validateText("zip_code", zipCodePattern, "Zip Code must be exactly 5 digits.");
-
-                // Experience Validation (letters and up to 2 digits)
-                const experiencePattern = /^[a-zA-Z ]*(\d{1,2})?$/; // Allows letters and a number up to 2 digits
-                valid = valid && validateText("experience", experiencePattern, "Experience can contain letters and a number up to 2 digits.");
-
-                if (!valid) {
+                if (!isValid) {
                     event.preventDefault();
                 }
             });
         });
     </script>
 </body>
+
 </html>

@@ -1,129 +1,406 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Event</title>
+    {% load static %}
+    <link href="https://fonts.googleapis.com/css?family=Muli:300,400,700,900" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'fonts/icomoon/style.css' %}">
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/jquery-ui.css' %}">
+    <link rel="stylesheet" href="{% static 'css/owl.carousel.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/owl.theme.default.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/jquery.fancybox.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/bootstrap-datepicker.css' %}">
+    <link rel="stylesheet" href="{% static 'fonts/flaticon/font/flaticon.css' %}">
+    <link rel="stylesheet" href="{% static 'css/aos.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
         body {
-            background-color: #f8f9fa; /* Light background color */
-            font-family: Arial, sans-serif; /* Change font family */
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+            background-image: url("{% static 'images/bk.jpg' %}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
         }
-
-        .container {
-            background: #ffffff; /* White background for the form */
-            border-radius: 8px; /* Rounded corners */
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Soft shadow */
-            padding: 20px; /* Padding around the content */
-            margin-top: 50px; /* Space from the top */
+        .site-wrap {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
-
-        h1 {
-            color: #007bff; /* Primary color for the header */
-            text-align: center; /* Center the title */
+        .site-navbar {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 10px 20px;
         }
-
-        .form-label {
-            font-weight: bold; /* Bold labels */
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
-
-        .back-button {
-            display: inline-block; /* Make it inline-block */
-            margin-bottom: 20px; /* Space below the button */
-            text-decoration: none; /* Remove underline */
-            color: #007bff; /* Bootstrap primary color */
+        .site-logo img {
+            height: 40px;
         }
-
-        .back-button:hover {
-            text-decoration: underline; /* Underline on hover */
+        .dashboard-heading {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
         }
-
+        .profile-dropdown {
+            position: relative;
+        }
+        .profile-dropdown-content {
+            display: none;
+            position: absolute;
+            top: 40px;
+            right: 0;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+        .profile-dropdown:hover .profile-dropdown-content {
+            display: block;
+        }
+        .profile-dropdown-content a {
+            display: block;
+            padding: 10px 20px;
+            color: #333;
+            transition: background-color 0.3s;
+            text-decoration: none;
+        }
+        .profile-dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+        .main-content {
+            display: flex;
+            flex-grow: 1;
+            height: calc(100vh - 60px);
+            overflow: hidden;
+        }
+        .dashboard-sidebar {
+            width: 400px;
+            background-color: #ffffff;
+            padding: 80px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            height: 100%;
+        }
+        .dashboard-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .dashboard-box {
+            background-color: #3498db;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .dashboard-box:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .dropdown {
+            position: relative;
+        }
+        .dropdown-btn {
+            background-color: #3498db;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            z-index: 1;
+            width: 100%;
+            top: 60px;
+        }
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        .dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.3s;
+        }
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+        .dashboard-content {
+            flex-grow: 1;
+            padding: 20px;
+            justify-content: center;
+            display: flex;
+            align-items: flex-start; /* Changed from center to flex-start */
+            overflow-y: auto;
+        }
+        .content-wrapper {
+            padding: 30px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .content-wrapper h2 {
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        form {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        .form-control:focus {
+            border-color: #80bdff;
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
         .btn-primary {
-            width: 100%; /* Full width for the button */
-            background-color: #007bff; /* Primary color */
-            border-color: #007bff; /* Same color for the border */
+            background-color: #007bff;
+            border-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.15s ease-in-out;
         }
-
         .btn-primary:hover {
-            background-color: #0056b3; /* Darker shade on hover */
-            border-color: #0056b3; /* Darker border on hover */
+            background-color: #0056b3;
+            border-color: #0056b3;
         }
-
-        .alert {
-            margin-top: 20px; /* Space above the alert */
+        .error-message {
+            color: #dc3545;
+            font-size: 0.875em;
+            margin-top: 0.25rem;
+        }
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            .dashboard-sidebar {
+                width: 100%;
+                height: auto;
+                order: 2;
+            }
+            .dashboard-content {
+                width: 100%;
+                order: 1;
+            }
+            .header-container {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            .profile-dropdown {
+                margin-top: 10px;
+            }
         }
     </style>
     <script type="text/javascript">
-        function preventBack() {
-            window.history.forward(); 
-        }
-          
+        function preventBack() { window.history.forward(); }
         setTimeout("preventBack()", 0);
-          
         window.onunload = function () { null };
     </script>
 </head>
 
 <body>
-    <a href="{% url 'teacher_dashboard' %}" class="back-button">Back</a>
-    <div class="container">
-        <h1 class="mt-4">Add Event</h1>
-
-        <!-- Your Form Here -->
-        <form method="POST" action="{% url 'add_event' %}" class="mt-4" onsubmit="return validateForm()">
-            {% csrf_token %}
-            <div class="mb-3">
-                <label for="course_id" class="form-label">Course:</label>
-                <select name="course_id" class="form-select" required>
-                    <option value="">Select a course</option>
-                    {% for course in courses %}
-                        <option value="{{ course.id }}">{{ course.course_name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="mb-3">
-                <label for="title" class="form-label">Title:</label>
-                <input type="text" name="title" id="title" class="form-control" required>
-            </div>
-            
-            <div class="mb-3">
-                <label for="start_time" class="form-label">Start Time:</label>
-                <input type="datetime-local" name="start_time" id="start_time" class="form-control" required>
-            </div>
-            
-            <div class="mb-3">
-                <label for="end_time" class="form-label">End Time:</label>
-                <input type="datetime-local" name="end_time" id="end_time" class="form-control" required>
-            </div>
-            
-            <div class="mb-3">
-                <label for="description" class="form-label">Description:</label>
-                <textarea name="description" id="description" class="form-control"></textarea>
-            </div>
-            
-            <div class="mb-3">
-                <label for="event_type" class="form-label">Event Type:</label>
-                <select name="event_type" id="event_type" class="form-control" required>
-                    <option value="">Select Event Type</option>
-                    <option value="class_schedule">Class Schedule</option>
-                    <option value="exam">Exam</option>
-                    <option value="assignment">Assignment</option>
-                </select>
-            </div>
-            
-            <button type="submit" class="btn btn-primary">Add Event</button>
-            
-            {% if error %}
-                <div class="alert alert-danger mt-3" role="alert">
-                    {{ error }}
+    <div class="site-wrap">
+        <!-- Navbar -->
+        <header class="site-navbar js-sticky-header site-navbar-target" role="banner">
+            <div class="header-container">
+                <div class="site-logo">
+                    <a href="{% url 'index' %}" class="d-block">
+                        <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid">
+                    </a>
                 </div>
-            {% endif %}
-        </form>
+                <h2 class="dashboard-heading">Teacher Dashboard</h2>
+                <div class="profile-dropdown">
+                    <a href="#" class="nav-link text-right d-flex align-items-center">
+                        <i class="fas fa-user-circle mr-2"></i>
+                        <span>{{ first_name }} {{ last_name }}</span>
+                    </a>
+                    <div class="profile-dropdown-content">
+                        <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Sidebar -->
+            <div class="dashboard-sidebar">
+                <div class="dashboard-options">
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-chalkboard-teacher mr-2"></i>Manage Classes
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'schedule_class' %}"><i class="fas fa-plus mr-2"></i>Schedule Class</a>
+                            <a href="{% url 'view_teacher_schedule_class' %}"><i class="fas fa-list mr-2"></i>View Classes</a>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-tasks mr-2"></i>Manage Assignments
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'create_assignment' %}"><i class="fas fa-plus mr-2"></i>Create Assignment</a>
+                            <a href="{% url 'view_assignment' %}"><i class="fas fa-list mr-2"></i>View Assignments</a>
+                            <a href="{% url 'evaluate_assignment' %}"><i class="fas fa-check mr-2"></i>Evaluate Assignments</a>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-book mr-2"></i>Study Materials
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'upload_material' %}"><i class="fas fa-upload mr-2"></i>Upload Materials</a>
+                            <a href="{% url 'view_uploaded_materials' %}"><i class="fas fa-list mr-2"></i>View Materials</a>
+                        </div>
+                    </div>
+                    <a href="#" class="dashboard-box">
+                        <i class="fas fa-comments mr-2"></i>Discussion Forum
+                    </a>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-question-circle mr-2"></i>Manage Quizzes
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'create_quiz' %}"><i class="fas fa-plus mr-2"></i>Create Quiz</a>
+                            <a href="{% url 'view_quiz_questions' %}"><i class="fas fa-list mr-2"></i>View Questions</a>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-calendar-alt mr-2"></i>Manage Events
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'add_event' %}"><i class="fas fa-plus mr-2"></i>Create Event</a>
+                            <a href="{% url 'view_events' %}"><i class="fas fa-list mr-2"></i>View Events</a>
+                        </div>
+                    </div>
+                    <a href="{% url 'view_profile' %}" class="dashboard-box">
+                        <i class="fas fa-user mr-2"></i>View Profile
+                    </a>
+                    <a href="{% url 'student_list' %}" class="dashboard-box">
+                        <i class="fas fa-users mr-2"></i>Student List
+                    </a>
+                    <a href="{% url 'view_attendance' %}" class="dashboard-box">
+                        <i class="fas fa-clipboard-check mr-2"></i>Attendance
+                    </a>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="dashboard-content">
+                <div class="content-wrapper">
+                    <h2>Add Event</h2>
+                    <form method="POST" action="{% url 'add_event' %}" onsubmit="return validateForm()">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="course_id">Course:</label>
+                            <select name="course_id" id="course_id" class="form-control" required>
+                                <option value="">Select a course</option>
+                                {% for course in courses %}
+                                    <option value="{{ course.id }}">{{ course.course_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="title">Title:</label>
+                            <input type="text" name="title" id="title" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="start_time">Start Time:</label>
+                            <input type="datetime-local" name="start_time" id="start_time" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="end_time">End Time:</label>
+                            <input type="datetime-local" name="end_time" id="end_time" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="description">Description:</label>
+                            <textarea name="description" id="description" class="form-control"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="event_type">Event Type:</label>
+                            <select name="event_type" id="event_type" class="form-control" required>
+                                <option value="">Select Event Type</option>
+                                <option value="class_schedule">Class Schedule</option>
+                                <option value="exam">Exam</option>
+                                <option value="assignment">Assignment</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Event</button>
+                        {% if error %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-    
+
+    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/jquery-migrate-3.0.1.min.js' %}"></script>
+    <script src="{% static 'js/jquery-ui.js' %}"></script>
+    <script src="{% static 'js/popper.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'js/owl.carousel.min.js' %}"></script>
+    <script src="{% static 'js/jquery.stellar.min.js' %}"></script>
+    <script src="{% static 'js/jquery.countdown.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap-datepicker.min.js' %}"></script>
+    <script src="{% static 'js/jquery.easing.1.3.js' %}"></script>
+    <script src="{% static 'js/aos.js' %}"></script>
+    <script src="{% static 'js/jquery.fancybox.min.js' %}"></script>
+    <script src="{% static 'js/jquery.sticky.js' %}"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+
     <script>
         function validateForm() {
             const title = document.getElementById('title').value;
@@ -132,7 +409,7 @@
             const description = document.getElementById('description').value;
 
             // Validate title: first letter capital and at least 3 characters
-            const titleRegex = /^[A-Z][a-zA-Z\s]{2,}$/; // First letter capital, at least 3 characters
+            const titleRegex = /^[A-Z][a-zA-Z\s]{2,}$/;
             if (!titleRegex.test(title)) {
                 alert("Title must start with a capital letter and have at least 3 characters.");
                 return false;
@@ -146,7 +423,7 @@
             }
 
             // Validate description: only characters
-            const descriptionRegex = /^[a-zA-Z\s]*$/; // Only letters and spaces
+            const descriptionRegex = /^[a-zA-Z\s]*$/;
             if (!descriptionRegex.test(description)) {
                 alert("Description can only contain letters.");
                 return false;
@@ -155,8 +432,6 @@
             return true; // If all validations pass
         }
     </script>
-
-    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
-    <script src="{% static 'js/bootstrap.min.js' %}"></script>
 </body>
+
 </html>

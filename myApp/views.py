@@ -1248,8 +1248,7 @@ def teacher_updateprofile(request):
         teacher.first_name = request.POST.get('first_name')
         teacher.last_name = request.POST.get('last_name')
         teacher.gender = request.POST.get('gender')
-        teacher.age = request.POST.get('age')
-        teacher.auto_generated_username = request.POST.get('auto_generated_username')
+        teacher.date_of_birth = datetime.strptime(request.POST.get('date_of_birth'), '%Y-%m-%d').date()
         teacher.email = request.POST.get('email')
         teacher.contact = request.POST.get('contact')
         teacher.address_line1 = request.POST.get('address_line1')
@@ -1258,12 +1257,13 @@ def teacher_updateprofile(request):
         teacher.state = request.POST.get('state')
         teacher.zip_code = request.POST.get('zip_code')
         teacher.qualification = request.POST.get('qualification')
-        teacher.teaching_area = request.POST.get('teaching_area')
-        teacher.classes = request.POST.get('classes')
-        teacher.subjects = request.POST.get('subjects')
         teacher.experience = request.POST.get('experience')
-        teacher.referral = request.POST.get('referral')
 
+        # Handle file uploads
+        if 'qualification_certificate' in request.FILES:
+            teacher.qualification_certificate = request.FILES['qualification_certificate']
+        if 'experience_certificate' in request.FILES:
+            teacher.experience_certificate = request.FILES['experience_certificate']
         # Save the updated teacher details
         teacher.save()
         messages.success(request, 'Profile updated successfully.')
@@ -1271,7 +1271,7 @@ def teacher_updateprofile(request):
 
     context = {'teacher': teacher,
                'first_name': teacher.first_name,
-            'last_name': teacher.last_name,
+               'last_name': teacher.last_name,
         }
     return render(request, 'teacher_updateprofile.html', context)
 
