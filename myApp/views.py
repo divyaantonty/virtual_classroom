@@ -166,11 +166,29 @@ def available_courses(request):
     # Get the logged-in user's ID from the session
     custom_user_id = request.session['custom_user_id']
 
-    # Fetch all courses
     courses = Course.objects.all()
 
-    # Get the current date
     current_date = timezone.now().date()
+
+    price_range = request.GET.get('price_range')
+    if price_range:
+        if price_range == 'all':
+            pass
+        elif price_range == '0-500':
+            courses = courses.filter(price__lt=500)
+        elif price_range == '1000-2000':
+            courses = courses.filter(price__gte=1000, price__lt=2000)
+        elif price_range == '2000-3000':
+            courses = courses.filter(price__gte=2000, price__lt=3000)
+        elif price_range == '3000-4000':
+            courses = courses.filter(price__gte=3000, price__lt=4000)
+        elif price_range == '4000-5000':
+            courses = courses.filter(price__gte=4000, price__lt=5000)
+        elif price_range == '5000+':
+            courses = courses.filter(price__gte=5000)
+
+    # Get the current date
+  
 
     # Prepare a list to hold course data along with enrollment status
     course_data = []
@@ -188,8 +206,10 @@ def available_courses(request):
 
     # Pass the course data and current date to the template
     return render(request, 'available_courses.html', {
+        'custom_user': custom_user_id,
         'course_data': course_data,
-        'current_date': current_date
+        'current_date': current_date,
+        'selected_price_range':price_range
     })
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -234,7 +254,7 @@ def student_dashboard(request):
             return redirect('login')
     except CustomUser.DoesNotExist:
         return redirect('login')  # Redirect if the user doesn't exist
-
+    enrolled_courses = Course.objects.filter(enrollments__student_id=custom_user_id)
     # Check for unanswered feedback questions for the logged-in user
     feedback_questions = FeedbackQuestion.objects.all()
     answered_questions = Feedback.objects.filter(user=custom_user_id).values_list('question_id', flat=True)
@@ -245,6 +265,7 @@ def student_dashboard(request):
 
     # Pass the CustomUser object and feedback status to the template
     return render(request, 'student_dashboard.html', {
+        'enrolled_courses': enrolled_courses,
         'custom_user': custom_user,
         'new_feedback_questions': new_feedback_questions,  # This will contain unanswered questions
     })

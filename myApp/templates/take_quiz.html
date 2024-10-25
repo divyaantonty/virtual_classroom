@@ -1,25 +1,324 @@
-<form method="POST" action="{% url 'submit_quiz' quiz.id %}">
-    {% csrf_token %}
-    {% for question in questions %}
-        <div class="question">
-            <p>{{ question.text }}</p>
-            <label>
-                <input type="radio" name="question_{{ question.id }}" value="A"> {{ question.option_a }}
-            </label>
-            <br>
-            <label>
-                <input type="radio" name="question_{{ question.id }}" value="B"> {{ question.option_b }}
-            </label>
-            <br>
-            <label>
-                <input type="radio" name="question_{{ question.id }}" value="C"> {{ question.option_c }}
-            </label>
-            <br>
-            <label>
-                <input type="radio" name="question_{{ question.id }}" value="D"> {{ question.option_d }}
-            </label>
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Take Quiz</title>
+    <script type="text/javascript">
+        function preventBack() {
+            window.history.forward(); 
+        }
+        setTimeout("preventBack()", 0);
+        window.onunload = function () { null };
+    </script>
+    <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: #333;
+            margin: 0;
+            background-image: url("{% static 'images/bk.jpg' %}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        .site-wrap {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .site-navbar {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 10px 20px;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .site-logo img {
+            height: 40px;
+        }
+
+        .dashboard-heading {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .profile-dropdown {
+            position: relative;
+        }
+
+        .profile-dropdown-content {
+            display: none;
+            position: absolute;
+            top: 40px;
+            right: 0;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+
+        .profile-dropdown:hover .profile-dropdown-content {
+            display: block;
+        }
+
+        .profile-dropdown-content a {
+            display: block;
+            padding: 10px 20px;
+            color: #333;
+            transition: background-color 0.3s;
+            text-decoration: none;
+        }
+
+        .profile-dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+
+        .main-content {
+            display: flex;
+            flex-grow: 1;
+            height: calc(100vh - 60px);
+            overflow: hidden;
+        }
+
+        .dashboard-sidebar {
+            width: 400px;
+            background-color: #ffffff;
+            padding: 80px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            height: 100%;
+        }
+
+        .dashboard-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .dashboard-box {
+            background-color: #3498db;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .dashboard-box:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .dashboard-content {
+            flex-grow: 1;
+            padding: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            overflow-y: auto;
+        }
+
+        .content-wrapper {
+            padding: 30px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .content-wrapper h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        .question {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .question p {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        input[type="radio"] {
+            margin-right: 10px;
+        }
+
+        button[type="submit"] {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #2980b9;
+        }
+
+        hr {
+            margin: 20px 0;
+            border: 0;
+            border-top: 1px solid #ddd;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+
+            .dashboard-sidebar {
+                width: 100%;
+                height: auto;
+                order: 2;
+                padding: 20px;
+            }
+
+            .dashboard-content {
+                width: 100%;
+                order: 1;
+            }
+
+            .header-container {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .profile-dropdown {
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="site-wrap">
+        <header class="site-navbar js-sticky-header site-navbar-target" role="banner">
+            <div class="header-container">
+                <div class="site-logo">
+                    <a href="{% url 'index' %}" class="d-block">
+                        <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid">
+                    </a>
+                </div>
+                <h2 class="dashboard-heading">Student Dashboard</h2>
+                <div class="profile-dropdown">
+                    <a href="#" class="nav-link text-right d-flex align-items-center">
+                        <i class="fas fa-user-circle mr-2"></i>
+                        <span>{{ custom_user.username }}</span>
+                    </a>
+                    <div class="profile-dropdown-content">
+                        <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="dashboard-sidebar">
+                <div class="dashboard-options">
+                    <a href="{% url 'view_scheduled_classes' %}" class="dashboard-box">
+                        <i class="fas fa-chalkboard-teacher mr-2"></i>Join Classes
+                    </a>
+                    <a href="{% url 'assignment_detail' %}" class="dashboard-box">
+                        <i class="fas fa-tasks mr-2"></i>Submit Assignments
+                    </a>
+                    <a href="{% url 'view_materials' %}" class="dashboard-box">
+                        <i class="fas fa-book mr-2"></i>Study Materials
+                    </a>
+                    <a href="#" class="dashboard-box">
+                        <i class="fas fa-comments mr-2"></i>Discussion Forum
+                    </a>
+                    <a href="{% url 'available_quizzes' %}" class="dashboard-box">
+                        <i class="fas fa-question-circle mr-2"></i>View Quizzes
+                    </a>
+                    <a href="{% url 'feedback_form' %}" class="dashboard-box">
+                        <i class="fas fa-comment-alt mr-2"></i>Feedback
+                    </a>
+                    <a href="{% url 'student_event' %}" class="dashboard-box">
+                        <i class="fas fa-calendar-alt mr-2"></i>Events
+                    </a>
+                    <a href="{% url 'student_dashboard' %}" class="dashboard-box">
+                        <i class="fas fa-tachometer-alt mr-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <div class="dashboard-content">
+                <div class="content-wrapper">
+                    <h2>{{ quiz.title }}</h2>
+                    <form method="POST" action="{% url 'submit_quiz' quiz.id %}">
+                        {% csrf_token %}
+                        {% for question in questions %}
+                            <div class="question">
+                                <p>{{ question.text }}</p>
+                                <label>
+                                    <input type="radio" name="question_{{ question.id }}" value="A"> {{ question.option_a }}
+                                </label>
+                                <br>
+                                <label>
+                                    <input type="radio" name="question_{{ question.id }}" value="B"> {{ question.option_b }}
+                                </label>
+                                <br>
+                                <label>
+                                    <input type="radio" name="question_{{ question.id }}" value="C"> {{ question.option_c }}
+                                </label>
+                                <br>
+                                <label>
+                                    <input type="radio" name="question_{{ question.id }}" value="D"> {{ question.option_d }}
+                                </label>
+                            </div>
+                            <hr>
+                        {% endfor %}
+                        <button type="submit">Submit Quiz</button>
+                    </form>
+                </div>
+            </div>
         </div>
-        <hr>  <!-- Add a horizontal line for better separation -->
-    {% endfor %}
-    <button type="submit">Submit Quiz</button>
-</form>
+    </div>
+
+    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script type="text/javascript">
+        window.history.forward();
+        function noBack() {
+            window.history.forward();
+        }
+    </script>
+</body>
+
+</html>

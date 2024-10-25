@@ -1,136 +1,274 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your Events</title>
+    <script type="text/javascript">
+        function preventBack() {
+            window.history.forward(); 
+        }
+        setTimeout("preventBack()", 0);
+        window.onunload = function () { null };
+    </script>
+    <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link href='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css' rel='stylesheet' />
     <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js'></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js'></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js'></script>
     <style>
         body {
-            display: flex; /* Use flexbox to align sidebar and main content */
-        }
-        
-        /* Sidebar styling */
-        .sidebar {
-            width: 250px; /* Fixed width for sidebar */
-            background-color: black; /* Sidebar color */
-            padding: 20px;
-            color: white;
-            height: 100vh; /* Full height of the viewport */
-            position: sticky; /* Keeps the sidebar fixed on scroll */
-            top: 0; /* Aligns sidebar to the top */
+            font-family: 'Poppins', sans-serif;
+            color: #333;
+            margin: 0;
+            background-image: url("{% static 'images/bk.jpg' %}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
         }
 
-        .feature-box {
-            margin-bottom: 15px; /* Space between links */
+        .site-wrap {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
 
-        .feature-box a {
-            color: white;
+        .site-navbar {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 10px 20px;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .site-logo img {
+            height: 40px;
+        }
+
+        .dashboard-heading {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .profile-dropdown {
+            position: relative;
+        }
+
+        .profile-dropdown-content {
+            display: none;
+            position: absolute;
+            top: 40px;
+            right: 0;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+
+        .profile-dropdown:hover .profile-dropdown-content {
+            display: block;
+        }
+
+        .profile-dropdown-content a {
+            display: block;
+            padding: 10px 20px;
+            color: #333;
+            transition: background-color 0.3s;
             text-decoration: none;
-            padding: 10px;
-            display: block; /* Makes links fill the entire box */
-            transition: background-color 0.3s; /* Smooth transition */
         }
 
-        .feature-box a:hover {
-            background-color: #0056b3; /* Darker blue on hover */
+        .profile-dropdown-content a:hover {
+            background-color: #f1f1f1;
         }
 
-        /* Main content styling */
-        .container {
-            flex: 1; /* Allow container to take remaining space */
-            max-width: 900px;
-            margin: 40px auto; /* Center the container */
+        .main-content {
+            display: flex;
+            flex-grow: 1;
+            height: calc(100vh - 60px);
+            overflow: hidden;
+        }
+
+        .dashboard-sidebar {
+            width: 400px;
+            background-color: #ffffff;
+            padding: 80px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            height: 100%;
+        }
+
+        .dashboard-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .dashboard-box {
+            background-color: #3498db;
+            color: white;
             padding: 20px;
-            background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            position: relative; /* Needed for positioning the back button */
+            border-radius: 10px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .dashboard-box:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .dashboard-content {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .content-wrapper {
+            background-color: white;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 0 auto;
         }
 
         h1 {
             text-align: center;
             color: #333;
+            margin-bottom: 20px;
         }
 
-        /* Back button styling */
-        .back-button {
-            position: absolute; /* Positioning it relative to the container */
-            top: 20px; /* Distance from the top */
-            right: 20px; /* Distance from the right */
-            padding: 10px 15px; /* Padding around the button */
-            background-color: #007bff; /* Blue color */
-            color: white; /* Text color */
-            text-decoration: none; /* No underline */
-            border-radius: 5px; /* Rounded corners */
-            transition: background-color 0.3s; /* Smooth transition */
+        #calendar {
+            margin-top: 20px;
         }
 
-        .back-button:hover {
-            background-color: #0056b3; /* Darker blue on hover */
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+
+            .dashboard-sidebar {
+                width: 100%;
+                height: auto;
+                order: 2;
+                padding: 20px;
+            }
+
+            .dashboard-content {
+                width: 100%;
+                order: 1;
+            }
+
+            .header-container {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .profile-dropdown {
+                margin-top: 10px;
+            }
         }
     </style>
 </head>
+
 <body>
-
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="feature-box">
-            <a href="{% url 'view_scheduled_classes' %}">View and Join Classes</a>
-        </div>
-        <div class="feature-box">
-            <a href="{% url 'assignment_detail' %}">Submit Assignments</a>
-        </div>
-        <div class="feature-box">
-            <a href="{% url 'view_materials' %}">Access Study Materials</a>
-        </div>
-        <div class="feature-box">
-            <a href="#">Discussion Forum</a>
-        </div>
-        <div class="feature-box">
-            <a href="{% url 'available_quizzes' %}">View Available Quizzes</a>
-        </div>
-        <div class="feature-box">
-            <a href="{% url 'feedback_form' %}">Feedback</a>
-        </div>
-        <div class="feature-box">
-            <a href="{% url 'student_event' %}">Events</a>
-        </div>
-        <div class="feature-box">
-            <a href="{% url 'logout' %}">Logout</a> <!-- Logout link -->
-        </div>
-    </div>
-
-    <!-- Main Content -->
-    <div class="container">
-        <a href="{% url 'student_dashboard' %}" class="back-button">Back</a> <!-- Replace 'previous_page_url' with the correct URL -->
-        <h1>Your Upcoming Events</h1>
-
-        <!-- Filter Form for Event Type -->
-        <form method="GET" class="mb-3">
-            <div class="form-row">
-                <div class="col">
-                    <select name="event_type" class="form-control" onchange="this.form.submit()">
-                        <option value="">All Events</option>
-                        <option value="assignment" {% if request.GET.event_type == 'assignment' %}selected{% endif %}>Assignments</option>
-                        <option value="exam" {% if request.GET.event_type == 'exam' %}selected{% endif %}>Exams</option>
-                        <option value="class" {% if request.GET.event_type == 'class' %}selected{% endif %}>Class Schedule</option>
-                    </select>
+    <div class="site-wrap">
+        <header class="site-navbar js-sticky-header site-navbar-target" role="banner">
+            <div class="header-container">
+                <div class="site-logo">
+                    <a href="{% url 'index' %}" class="d-block">
+                        <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid">
+                    </a>
                 </div>
-                <div class="col">
-                    <button type="submit" class="btn btn-primary">Filter</button>
+                <h2 class="dashboard-heading">Student Dashboard</h2>
+                <div class="profile-dropdown">
+                    <a href="#" class="nav-link text-right d-flex align-items-center">
+                        <i class="fas fa-user-circle mr-2"></i>
+                        <span>{{ custom_user.username }}</span>
+                    </a>
+                    <div class="profile-dropdown-content">
+                        <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+                    </div>
                 </div>
             </div>
-        </form>
+        </header>
 
-        <div id="calendar"></div>
+        <div class="main-content">
+            <div class="dashboard-sidebar">
+                <div class="dashboard-options">
+                    <a href="{% url 'view_scheduled_classes' %}" class="dashboard-box">
+                        <i class="fas fa-chalkboard-teacher mr-2"></i>Join Classes
+                    </a>
+                    <a href="{% url 'assignment_detail' %}" class="dashboard-box">
+                        <i class="fas fa-tasks mr-2"></i>Submit Assignments
+                    </a>
+                    <a href="{% url 'view_materials' %}" class="dashboard-box">
+                        <i class="fas fa-book mr-2"></i>Study Materials
+                    </a>
+                    <a href="#" class="dashboard-box">
+                        <i class="fas fa-comments mr-2"></i>Discussion Forum
+                    </a>
+                    <a href="{% url 'available_quizzes' %}" class="dashboard-box">
+                        <i class="fas fa-question-circle mr-2"></i>View Quizzes
+                    </a>
+                    <a href="{% url 'feedback_form' %}" class="dashboard-box">
+                        <i class="fas fa-comment-alt mr-2"></i>Feedback
+                    </a>
+                    <a href="{% url 'student_event' %}" class="dashboard-box">
+                        <i class="fas fa-calendar-alt mr-2"></i>Events
+                    </a>
+                    <a href="{% url 'student_dashboard' %}" class="dashboard-box">
+                        <i class="fas fa-tachometer-alt mr-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <div class="dashboard-content">
+                <div class="content-wrapper">
+                    <h1>Your Upcoming Events</h1>
+
+                    <!-- Filter Form for Event Type -->
+                    <form method="GET" class="mb-3">
+                        <div class="form-row">
+                            <div class="col">
+                                <select name="event_type" class="form-control" onchange="this.form.submit()">
+                                    <option value="">All Events</option>
+                                    <option value="assignment" {% if request.GET.event_type == 'assignment' %}selected{% endif %}>Assignments</option>
+                                    <option value="exam" {% if request.GET.event_type == 'exam' %}selected{% endif %}>Exams</option>
+                                    <option value="class" {% if request.GET.event_type == 'class' %}selected{% endif %}>Class Schedule</option>
+                                </select>
+                            </div>
+                            <div class="col">
+                                <button type="submit" class="btn btn-primary">Filter</button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div id="calendar"></div>
+                </div>
+            </div>
+        </div>
     </div>
-    
+
     <script>
         $(document).ready(function() {
             $('#calendar').fullCalendar({
@@ -158,5 +296,12 @@
     </script>
 
     <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script type="text/javascript">
+        window.history.forward();
+        function noBack() {
+            window.history.forward();
+        }
+    </script>
 </body>
+
 </html>

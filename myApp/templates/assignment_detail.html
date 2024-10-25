@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,107 +9,152 @@
         function preventBack() {
             window.history.forward(); 
         }
-          
         setTimeout("preventBack()", 0);
-          
         window.onunload = function () { null };
     </script>
+    <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <style>
         body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #f8f9fa;
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        .container {
-            width: 80%;
-            margin-left: 220px; /* Adjusted to make space for the sidebar */
-            padding: 20px;
-        }
-
-        h1 {
-            text-align: center;
+            font-family: 'Poppins', sans-serif;
             color: #333;
-            margin-bottom: 20px;
-        }
-        
-        .back-to-dashboard {
-            text-align: right;
-            margin-bottom: 20px;
-        }
-
-        .back-to-dashboard a {
-            text-decoration: none;
-            color: #fff;
-            background-color: #007bff;
-            padding: 10px 20px;
-            border-radius: 4px;
-            transition: background-color 0.3s;
-            font-weight: bold;
+            margin: 0;
+            background-image: url("{% static 'images/bk.jpg' %}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
         }
 
-        .back-to-dashboard a:hover {
-            background-color: #0056b3;
-        }
-
-        .sidebar {
-            position: fixed;
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: 200px;
-            background-color: black; /* Changed to black */
-            padding-top: 20px;
-            color: white;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        .site-wrap {
             display: flex;
             flex-direction: column;
-            justify-content: space-between; /* Space between items and logout */
+            min-height: 100vh;
         }
 
-        .sidebar a {
-            display: block;
-            color: white;
-            text-decoration: none;
-            padding: 15px 20px;
-            font-size: 16px;
-            transition: background-color 0.3s ease;
+        .site-navbar {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 10px 20px;
         }
 
-        .sidebar a:hover {
-            background-color: #495057;
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
 
-        /* Profile Dropdown Styles */
+        .site-logo img {
+            height: 40px;
+        }
+
+        .dashboard-heading {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+
         .profile-dropdown {
-            position: relative; /* Relative positioning to handle dropdown */
-            margin: 15px 20px; /* Spacing for the dropdown */
+            position: relative;
         }
 
         .profile-dropdown-content {
-            display: none; /* Hide by default */
-            position: absolute; /* Position it below the link */
-            left: 0; /* Align to the left */
-            background-color: #f9f9f9;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            display: none;
+            position: absolute;
+            top: 40px;
+            right: 0;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             z-index: 1;
         }
 
-        .profile-dropdown-content a {
-            padding: 10px 15px;
-            text-decoration: none;
+        .profile-dropdown:hover .profile-dropdown-content {
             display: block;
-            color: black;
+        }
+
+        .profile-dropdown-content a {
+            display: block;
+            padding: 10px 20px;
+            color: #333;
+            transition: background-color 0.3s;
+            text-decoration: none;
         }
 
         .profile-dropdown-content a:hover {
-            background-color: #f1f1f1; /* Highlight on hover */
+            background-color: #f1f1f1;
+        }
+
+        .main-content {
+            display: flex;
+            flex-grow: 1;
+            height: calc(100vh - 60px);
+            overflow: hidden;
+        }
+
+        .dashboard-sidebar {
+            width: 400px;
+            background-color: #ffffff;
+            padding: 80px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            height: 100%;
+        }
+
+        .dashboard-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .dashboard-box {
+            background-color: #3498db;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .dashboard-box:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .dashboard-content {
+            flex-grow: 1;
+            padding: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            overflow-y: auto;
+        }
+
+        .content-wrapper {
+            padding: 30px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 1500px;
+            width: 500%;
+        }
+
+        .content-wrapper h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
         }
 
         table {
-            width: 100%;
+            width: 50%;
             border-collapse: collapse;
             background-color: #fff;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -121,7 +167,7 @@
         }
 
         th {
-            background-color: #007bff;
+            background-color: #3498db;
             color: white;
         }
 
@@ -130,13 +176,13 @@
         }
 
         td a {
-            color: #007bff;
+            color: #3498db;
             text-decoration: none;
             transition: color 0.3s ease;
         }
 
         td a:hover {
-            color: #0056b3;
+            color: #2980b9;
         }
 
         form {
@@ -150,7 +196,7 @@
 
         button {
             padding: 8px 12px;
-            background-color: #28a745;
+            background-color: #2ecc71;
             border: none;
             color: white;
             cursor: pointer;
@@ -159,173 +205,185 @@
         }
 
         button:hover {
-            background-color: #218838;
+            background-color: #27ae60;
         }
 
-        /* Responsive for smaller devices */
         @media (max-width: 768px) {
-            .container {
-                width: 100%;
-                margin-left: 0; /* Remove left margin for mobile */
-                padding: 10px;
+            .main-content {
+                flex-direction: column;
             }
 
-            table {
-                font-size: 14px;
-            }
-
-            th, td {
-                padding: 8px;
-            }
-
-            .sidebar {
+            .dashboard-sidebar {
                 width: 100%;
                 height: auto;
-                position: relative;
+                order: 2;
+                padding: 20px;
             }
 
-            .sidebar a {
+            .dashboard-content {
+                width: 100%;
+                order: 1;
+            }
+
+            .header-container {
+                flex-direction: column;
+                align-items: center;
                 text-align: center;
-                float: none;
+            }
+
+            .profile-dropdown {
+                margin-top: 10px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-links">
-            <a href="{% url 'view_scheduled_classes' %}">Join Classes</a>
-            <a href="{% url 'assignment_detail' %}">View Assignments</a>
-            <a href="{% url 'view_materials' %}">Access Study Materials</a>
-            <a href="#">Discussion Forum</a>
-            <a href="{% url 'available_quizzes' %}">View Quiz</a>
-            <a href="{% url 'feedback_form' %}">Feedback</a>
-            <a href="{% url 'student_event' %}">Events</a>
+    <div class="site-wrap">
+        <header class="site-navbar js-sticky-header site-navbar-target" role="banner">
+            <div class="header-container">
+                <div class="site-logo">
+                    <a href="{% url 'index' %}" class="d-block">
+                        <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid">
+                    </a>
+                </div>
+                <h2 class="dashboard-heading">Student Dashboard</h2>
+                <div class="profile-dropdown">
+                    <a href="#" class="nav-link text-right d-flex align-items-center">
+                        <i class="fas fa-user-circle mr-2"></i>
+                        <span>{{ custom_user.username }}</span>
+                    </a>
+                    <div class="profile-dropdown-content">
+                        <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+                    </div>
+                </div>
+            </div>
+        </header>
 
-            <!-- Profile Dropdown -->
-            <div class="profile-dropdown">
-                <a href="#" class="nav-link text-right" style="color: white;" id="profileLink">
-                    {{ custom_user.username }}
-                </a>
-                <div class="profile-dropdown-content" id="profileDropdownContent">
-                    <a href="#" style="color: black;">Profile</a> 
-                    <a href="#" style="color: black;">Logout</a>
+        <div class="main-content">
+            <div class="dashboard-sidebar">
+                <div class="dashboard-options">
+                    <a href="{% url 'view_scheduled_classes' %}" class="dashboard-box">
+                        <i class="fas fa-chalkboard-teacher mr-2"></i>Join Classes
+                    </a>
+                    <a href="{% url 'assignment_detail' %}" class="dashboard-box">
+                        <i class="fas fa-tasks mr-2"></i>Submit Assignments
+                    </a>
+                    <a href="{% url 'view_materials' %}" class="dashboard-box">
+                        <i class="fas fa-book mr-2"></i>Study Materials
+                    </a>
+                    <a href="#" class="dashboard-box">
+                        <i class="fas fa-comments mr-2"></i>Discussion Forum
+                    </a>
+                    <a href="{% url 'available_quizzes' %}" class="dashboard-box">
+                        <i class="fas fa-question-circle mr-2"></i>View Quizzes
+                    </a>
+                    <a href="{% url 'feedback_form' %}" class="dashboard-box">
+                        <i class="fas fa-comment-alt mr-2"></i>Feedback
+                    </a>
+                    <a href="{% url 'student_event' %}" class="dashboard-box">
+                        <i class="fas fa-calendar-alt mr-2"></i>Events
+                    </a>
+                    <a href="{% url 'student_dashboard' %}" class="dashboard-box">
+                        <i class="fas fa-tachometer-alt mr-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <div class="dashboard-content">
+                <div class="content-wrapper">
+                    <h2>Assignment Details</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Assignment Title</th>
+                                <th>Description</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Start Time</th>
+                                <th>End Time</th>
+                                <th>Course</th>
+                                <th>Teacher</th>
+                                <th>Status</th>
+                                <th>Grade</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for detail in assignment_details %}
+                            <tr>
+                                <td>{{ detail.assignment.title }}</td>
+                                <td>{{ detail.assignment.description }}</td>
+                                <td>{{ detail.assignment.start_date }}</td>
+                                <td>{{ detail.assignment.end_date }}</td>
+                                <td>{{ detail.assignment.start_time }}</td>
+                                <td>{{ detail.assignment.end_time }}</td>
+                                <td>{{ detail.assignment.course_name }}</td>
+                                <td>{{ detail.assignment.teacher }}</td>
+                                <td>
+                                    {% if detail.submission %}
+                                        <span style="color: green;">Submitted</span>
+                                    {% else %}
+                                        {% if detail.has_reached_deadline %}
+                                            <span style="color: red;">Not submitted before the deadline</span>
+                                        {% else %}
+                                            <span style="color: orange;">Pending</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if detail.submission and detail.submission.grade %}
+                                        <span style="color: blue;">Grade: {{ detail.submission.grade }}</span>
+                                    {% else %}
+                                        <span style="color: gray;">Not graded yet</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if detail.assignment.file %}
+                                        <a href="{{ detail.assignment.file.url }}" download>Download Question</a>
+                                    {% else %}
+                                        <span>No question file available</span>
+                                    {% endif %}
+                                    <br><br>
+                                    {% if detail.submission %}
+                                        <a href="{{ detail.submission.file.url }}" download>Download your submission</a>
+                                        {% if detail.submission_allowed %}
+                                            <p>You can still update your submission before the deadline.</p>
+                                            <form method="post" enctype="multipart/form-data">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="assignment_id" value="{{ detail.assignment.id }}">
+                                                <input type="file" name="file" required>
+                                                <button type="submit">Update Submission</button>
+                                            </form>
+                                        {% endif %}
+                                    {% else %}
+                                        {% if not detail.has_reached_deadline %}
+                                            <form method="post" enctype="multipart/form-data">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="assignment_id" value="{{ detail.assignment.id }}">
+                                                <input type="file" name="file" required>
+                                                <button type="submit">Submit Assignment</button>
+                                            </form>
+                                        {% else %}
+                                            <span>Submission is closed.</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
-
-        <!-- Logout Link at the Bottom -->
-        <a href="{% url 'logout' %}" style="color: white; margin: 20px 20px;">Logout</a>
     </div>
 
-    <!-- Main content -->
-    <div class="container">
-        <!-- Assignment details heading -->
-        <h1>Assignment Details</h1>
-        <div class="back-to-dashboard">
-            <a href="{% url 'student_dashboard' %}">Back to Dashboard</a>
-        </div>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>Assignment Title</th>
-                    <th>Description</th>
-                    <th>Start Date</th>
-                    <th>End Date</th>
-                    <th>Start Time</th>
-                    <th>End Time</th>
-                    <th>Course</th>
-                    <th>Teacher</th>
-                    <th>Status</th>
-                    <th>Grade</th> <!-- New column for Grade -->
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for detail in assignment_details %}
-                <tr>
-                    <td>{{ detail.assignment.title }}</td>
-                    <td>{{ detail.assignment.description }}</td>
-                    <td>{{ detail.assignment.start_date }}</td>
-                    <td>{{ detail.assignment.end_date }}</td>
-                    <td>{{ detail.assignment.start_time }}</td>
-                    <td>{{ detail.assignment.end_time }}</td>
-                    <td>{{ detail.assignment.course_name }}</td>
-                    <td>{{ detail.assignment.teacher }}</td>
-                    <td>
-                        {% if detail.submission %}
-                            <span style="color: green;">Submitted</span>
-                        {% else %}
-                            {% if detail.has_reached_deadline %}
-                                <span style="color: red;">Not submitted before the deadline</span>
-                            {% else %}
-                                <span style="color: orange;">Pending</span>
-                            {% endif %}
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if detail.submission and detail.submission.grade %}
-                            <span style="color: blue;">Grade: {{ detail.submission.grade }}</span> <!-- Display the grade -->
-                        {% else %}
-                            <span style="color: gray;">Not graded yet</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if detail.assignment.file %}
-                            <a href="{{ detail.assignment.file.url }}" download>Download Question</a>
-                        {% else %}
-                            <span>No question file available</span>
-                        {% endif %}
-                        <br><br>
-                        {% if detail.submission %}
-                            <a href="{{ detail.submission.file.url }}" download>Download your submission</a>
-                            {% if detail.submission_allowed %}
-                                <p>You can still update your submission before the deadline.</p>
-                                <form method="post" enctype="multipart/form-data">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="assignment_id" value="{{ detail.assignment.id }}">
-                                    <input type="file" name="file" required>
-                                    <button type="submit">Update Submission</button>
-                                </form>
-                            {% endif %}
-                        {% else %}
-                            {% if not detail.has_reached_deadline %}
-                                <form method="post" enctype="multipart/form-data">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="assignment_id" value="{{ detail.assignment.id }}">
-                                    <input type="file" name="file" required>
-                                    <button type="submit">Submit Assignment</button>
-                                </form>
-                            {% else %}
-                                <span>Submission is closed.</span>
-                            {% endif %}
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <script>
-        // Profile dropdown functionality
-        document.getElementById('profileLink').onclick = function(event) {
-            event.preventDefault(); // Prevent default anchor click behavior
-            var dropdown = document.getElementById('profileDropdownContent');
-            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block'; // Toggle visibility
-        };
-
-        // Hide dropdown if clicked outside
-        window.onclick = function(event) {
-            if (!event.target.matches('#profileLink')) {
-                var dropdown = document.getElementById('profileDropdownContent');
-                if (dropdown.style.display === 'block') {
-                    dropdown.style.display = 'none';
-                }
-            }
-        };
+    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script type="text/javascript">
+        window.history.forward();
+        function noBack() {
+            window.history.forward();
+        }
     </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-{% block content %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -10,83 +10,148 @@
         function preventBack() {
             window.history.forward(); 
         }
-          
         setTimeout("preventBack()", 0);
-          
         window.onunload = function () { null };
     </script>
+    <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <style>
         body {
-            font-family: 'Arial', sans-serif;
-            background-color: #eef2f3;
-            margin: 0;
-            padding: 0;
-            display: flex; /* Use flexbox for layout */
-        }
-
-        /* Sidebar styling */
-        .sidebar {
-            width: 250px; /* Fixed width for sidebar */
-            background-color: black; /* Black background for sidebar */
-            padding: 20px;
-            color: white;
-            height: 100vh; /* Full height of the viewport */
-            position: sticky; /* Keeps the sidebar fixed on scroll */
-            top: 0; /* Aligns sidebar to the top */
-        }
-
-        .feature-box {
-            margin-bottom: 15px; /* Space between links */
-        }
-
-        .feature-box a {
-            color: white;
-            text-decoration: none;
-            padding: 10px;
-            display: block; /* Makes links fill the entire box */
-            transition: background-color 0.3s; /* Smooth transition */
-        }
-
-        .feature-box a:hover {
-            background-color: #0056b3; /* Darker blue on hover */
-        }
-
-        .container {
-            flex: 1; /* Allow main content to take remaining space */
-            max-width: 800px;
-            margin: 50px auto; /* Center content */
-            background-color: #ffffff;
-            border-radius: 8px;
-            padding: 30px;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-            border: 1px solid #ddd;
-        }
-
-        h2 {
-            text-align: center;
+            font-family: 'Poppins', sans-serif;
             color: #333;
-            margin-bottom: 30px;
-            font-size: 28px;
-            font-weight: 600;
+            margin: 0;
+            background-image: url("{% static 'images/bk.jpg' %}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
         }
 
-        .back-to-dashboard {
-            text-align: right;
-            margin-bottom: 20px;
+        .site-wrap {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
 
-        .back-to-dashboard a {
-            text-decoration: none;
-            color: #fff;
-            background-color: #007bff;
+        .site-navbar {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             padding: 10px 20px;
-            border-radius: 4px;
-            transition: background-color 0.3s;
-            font-weight: bold;
         }
 
-        .back-to-dashboard a:hover {
-            background-color: #0056b3;
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .site-logo img {
+            height: 40px;
+        }
+
+        .dashboard-heading {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .profile-dropdown {
+            position: relative;
+        }
+
+        .profile-dropdown-content {
+            display: none;
+            position: absolute;
+            top: 40px;
+            right: 0;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+
+        .profile-dropdown:hover .profile-dropdown-content {
+            display: block;
+        }
+
+        .profile-dropdown-content a {
+            display: block;
+            padding: 10px 20px;
+            color: #333;
+            transition: background-color 0.3s;
+            text-decoration: none;
+        }
+
+        .profile-dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+
+        .main-content {
+            display: flex;
+            flex-grow: 1;
+            height: calc(100vh - 60px);
+            overflow: hidden;
+        }
+
+        .dashboard-sidebar {
+            width: 400px;
+            background-color: #ffffff;
+            padding: 80px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            height: 100%;
+        }
+
+        .dashboard-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .dashboard-box {
+            background-color: #3498db;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .dashboard-box:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .dashboard-content {
+            flex-grow: 1;
+            padding: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            overflow-y: auto;
+        }
+
+        .content-wrapper {
+            padding: 30px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .content-wrapper h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
         }
 
         .materials-table {
@@ -98,155 +163,159 @@
         .materials-table th,
         .materials-table td {
             padding: 15px;
-            border: 1px solid #ccc;
+            border: 1px solid #ddd;
             text-align: left;
-            font-size: 16px;
         }
 
         .materials-table th {
-            background-color: #007bff;
+            background-color: #3498db;
             color: white;
-            font-weight: bold;
         }
 
-        .materials-table td {
+        .materials-table tr:nth-child(even) {
             background-color: #f8f9fa;
-            transition: background-color 0.3s;
         }
 
-        .materials-table td:hover {
-            background-color: #e9ecef; /* Lighten on hover */
+        .materials-table tr:hover {
+            background-color: #e9ecef;
         }
 
         .btn-download {
             display: inline-block;
-            padding: 10px 15px;
+            padding: 8px 15px;
             background-color: #28a745;
             color: white;
             border: none;
             border-radius: 4px;
             text-decoration: none;
             transition: background-color 0.3s;
-            font-size: 14px;
         }
 
         .btn-download:hover {
             background-color: #218838;
         }
 
-        p.no-materials {
-            text-align: center;
-            color: #777;
-            font-size: 18px;
-            margin-top: 20px;
-        }
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
 
-        /* Logout link styling */
-        .logout-link {
-            position: absolute; /* Position at the bottom */
-            bottom: 20px; /* Space from the bottom */
-            left: 20px; /* Align to the left */
-            color: white; /* White text */
-            text-decoration: none; /* No underline */
-            padding: 10px;
-            border-radius: 4px; /* Rounded corners */
-            background-color: #dc3545; /* Bootstrap danger color */
-            transition: background-color 0.3s; /* Smooth transition */
-        }
-
-        .logout-link:hover {
-            background-color: #c82333; /* Darker red on hover */
-        }
-
-        /* Responsive design */
-        @media (max-width: 600px) {
-            .container {
+            .dashboard-sidebar {
+                width: 100%;
+                height: auto;
+                order: 2;
                 padding: 20px;
             }
 
-            h2 {
-                font-size: 24px;
+            .dashboard-content {
+                width: 100%;
+                order: 1;
             }
 
-            .materials-table th,
-            .materials-table td {
-                font-size: 14px;
-                padding: 10px;
+            .header-container {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
             }
 
-            .btn-download {
-                padding: 8px 12px;
-                font-size: 12px;
-            }
-
-            .sidebar {
-                width: 100%; /* Full width on small screens */
-                height: auto; /* Auto height on small screens */
+            .profile-dropdown {
+                margin-top: 10px;
             }
         }
     </style>
 </head>
 
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="feature-box">
-            <a href="{% url 'view_scheduled_classes' %}">View and Join Classes</a>
+    <div class="site-wrap">
+        <header class="site-navbar js-sticky-header site-navbar-target" role="banner">
+            <div class="header-container">
+                <div class="site-logo">
+                    <a href="{% url 'index' %}" class="d-block">
+                        <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid">
+                    </a>
+                </div>
+                <h2 class="dashboard-heading">Study Materials</h2>
+                <div class="profile-dropdown">
+                    <a href="#" class="nav-link text-right d-flex align-items-center">
+                        <i class="fas fa-user-circle mr-2"></i>
+                        <span>{{ custom_user.username }}</span>
+                    </a>
+                    <div class="profile-dropdown-content">
+                        <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="dashboard-sidebar">
+                <div class="dashboard-options">
+                    <a href="{% url 'view_scheduled_classes' %}" class="dashboard-box">
+                        <i class="fas fa-chalkboard-teacher mr-2"></i>Join Classes
+                    </a>
+                    <a href="{% url 'assignment_detail' %}" class="dashboard-box">
+                        <i class="fas fa-tasks mr-2"></i>Submit Assignments
+                    </a>
+                    <a href="{% url 'view_materials' %}" class="dashboard-box">
+                        <i class="fas fa-book mr-2"></i>Study Materials
+                    </a>
+                    <a href="#" class="dashboard-box">
+                        <i class="fas fa-comments mr-2"></i>Discussion Forum
+                    </a>
+                    <a href="{% url 'available_quizzes' %}" class="dashboard-box">
+                        <i class="fas fa-question-circle mr-2"></i>View Quizzes
+                    </a>
+                    <a href="{% url 'feedback_form' %}" class="dashboard-box">
+                        <i class="fas fa-comment-alt mr-2"></i>Feedback
+                    </a>
+                    <a href="{% url 'student_event' %}" class="dashboard-box">
+                        <i class="fas fa-calendar-alt mr-2"></i>Events
+                    </a>
+                    <a href="{% url 'student_dashboard' %}" class="dashboard-box">
+                        <i class="fas fa-tachometer-alt mr-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <div class="dashboard-content">
+                <div class="content-wrapper">
+                    <h2>Available Study Materials</h2>
+
+                    {% if materials %}
+                    <table class="materials-table">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>Uploaded At</th>
+                                <th>Download</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for material in materials %}
+                            <tr>
+                                <td>{{ material.description }}</td>
+                                <td>{{ material.uploaded_at|date:"F d, Y H:i" }}</td>
+                                <td><a href="{{ material.file.url }}" class="btn-download" download>Download PDF</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                        <p class="no-materials">No materials available for your selected course.</p>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-        <div class="feature-box">
-            <a href="{% url 'assignment_detail' %}">Submit Assignments</a>
-        </div>
-        <div class="feature-box">
-            <a href="{% url 'view_materials' %}">Access Study Materials</a>
-        </div>
-        <div class="feature-box">
-            <a href="#">Discussion Forum</a>
-        </div>
-        <div class="feature-box">
-            <a href="{% url 'available_quizzes' %}">View Available Quizzes</a>
-        </div>
-        <div class="feature-box">
-            <a href="{% url 'feedback_form' %}">Feedback</a>
-        </div>
-        <div class="feature-box">
-            <a href="{% url 'student_event' %}">Events</a>
-        </div>
-        <!-- Logout Link -->
-        <a href="{% url 'logout' %}" class="logout-link">Logout</a>
     </div>
 
-    <!-- Main Content -->
-    <div class="container">
-        <h2>Available Study Materials</h2>
-
-        <div class="back-to-dashboard">
-            <a href="{% url 'student_dashboard' %}">Back to Dashboard</a>
-        </div>
-
-        {% if materials %}
-        <table class="materials-table">
-            <thead>
-                <tr>
-                    <th>Description</th>
-                    <th>Uploaded At</th>
-                    <th>Download</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for material in materials %}
-                <tr>
-                    <td>{{ material.description }}</td>
-                    <td>{{ material.uploaded_at|date:"F d, Y H:i" }}</td>
-                    <td><a href="{{ material.file.url }}" class="btn-download" download>Download PDF</a></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-            <p class="no-materials">No materials available for your selected course.</p>
-        {% endif %}
-    </div>
+    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script type="text/javascript">
+        window.history.forward();
+        function noBack() {
+            window.history.forward();
+        }
+    </script>
 </body>
 
 </html>
-{% endblock %}
