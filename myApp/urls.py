@@ -112,6 +112,16 @@ urlpatterns = [
     path('view_attendance/', views.view_attendance, name='view_attendance'),
 
     path('create_meeting/', views.create_zoom_meeting, name='create_meeting'),
+
+    path('apply-leave/', views.apply_leave, name='apply_leave'),
+    path('manage_leave/', views.manage_leave_requests, name='manage_leave'),
+    path('update-leave-status/<int:leave_id>/<str:status>/', views.update_leave_status, name='update_leave_status'),
+
+    path('student_leave_requests/', views.student_leave_requests, name='student_leave_requests'),
+    path('course/<int:course_id>/group-chat/', views.group_chat_view, name='group_chat'),
+    path('discussion_forum/', views.discussion_forum, name='discussion_forum'),
+
+
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

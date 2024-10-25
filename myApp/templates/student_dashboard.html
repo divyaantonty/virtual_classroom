@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 
     <style>
         body {
@@ -233,6 +234,27 @@
                 margin-top: 10px;
             }
         }
+
+        .dropdown-menu {
+            width: 100%;
+            padding: 0;
+            margin-top: 5px;
+            border: none;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .dropdown-item {
+            padding: 15px 20px;
+            color: white;
+            background-color: #3498db;
+            transition: all 0.3s ease;
+        }
+
+        .dropdown-item:hover {
+            background-color: #2980b9;
+            color: white;
+        }
     </style>
 </head>
 
@@ -271,7 +293,7 @@
                     <a href="{% url 'view_materials' %}" class="dashboard-box">
                         <i class="fas fa-book mr-2"></i>Study Materials
                     </a>
-                    <a href="#" class="dashboard-box">
+                    <a href="{% url 'discussion_forum' %}" class="dashboard-box">
                         <i class="fas fa-comments mr-2"></i>Discussion Forum
                     </a>
                     <a href="{% url 'available_quizzes' %}" class="dashboard-box">
@@ -283,6 +305,20 @@
                     <a href="{% url 'student_event' %}" class="dashboard-box">
                         <i class="fas fa-calendar-alt mr-2"></i>Events
                     </a>
+                    <div class="dropdown dashboard-box">
+                        <a href="#" class="btn btn-secondary dropdown-toggle" id="leaveDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-calendar-alt mr-2"></i>Leave
+                        </a>
+                    
+                        <div class="dropdown-menu" aria-labelledby="leaveDropdown">
+                            <!-- Option to apply for leave -->
+                            <a class="dropdown-item" href="{% url 'apply_leave' %}">Apply for Leave</a>
+                    
+                            <!-- Option to view leave status -->
+                            <a class="dropdown-item" href="{% url 'student_leave_requests' %}">View Leave Status</a>
+                        </div>
+                    </div>
+                    
                     <a href="{% url 'available_courses' %}" class="dashboard-box">
                         <i class="fas fa-graduation-cap mr-2"></i>Available Courses
                     </a>
@@ -314,7 +350,7 @@
                                     <h3>{{ course.course_name }}</h3>
                                     <p>{{ course.description|truncatewords:50 }}</p>
                                     <p>Start Date: {{ course.starting_date }}</p>
-                                    <p>Price: ${{ course.price }}</p>
+                                    <p>Price: {{ course.price }}</p>
                                 </div>
                             {% endfor %}
                         {% else %}
@@ -328,6 +364,8 @@
 
     <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
     <script type="text/javascript">
         window.history.forward();
         function noBack() {

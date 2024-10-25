@@ -2201,8 +2201,8 @@ def filtered_events(request):
 
     event_list = [{
         'title': event.title,
-        'start': event.start_time.isoformat(),
-        'end': event.end_time.isoformat(),
+        'start_time': event.start_time.isoformat(),
+        'end_time': event.end_time.isoformat(),
         'description': event.description,
         'event_type': event.event_type,
         'color': get_event_color(event.event_type),
@@ -2219,7 +2219,6 @@ def get_event_color(event_type):
         'personal_event': '#6c757d'   # Gray for personal events
     }
     return color_map.get(event_type, '#007bff')  # Default to Bootstrap primary color
-
 
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -2429,3 +2428,102 @@ def create_zoom_meeting(request):
         return render(request, 'zoom_meeting_created.html', {'meeting_info': meeting_info})
     else:
         return render(request, 'error.html', {'error': response.text})
+
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import LeaveRequest, Course, CustomUser
+
+def apply_leave(request):
+    custom_user_id = request.session.get('custom_user_id')
+    
+    if not custom_user_id:
+        messages.error(request, 'You need to log in to apply for leave.')
+        return redirect('login')  # Redirect to login if session doesn't have a custom_user_id
+
+    student = CustomUser.objects.get(id=custom_user_id)  # Fetch the CustomUser instance
+
+    if request.method == 'POST':
+        leave_type = request.POST.get('leave_type')
+        reason = request.POST.get('reason')
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
+        course_id = request.POST.get('course_id')
+        
+        course = Course.objects.get(id=course_id)
+        leave_request = LeaveRequest.objects.create(
+            student=student,  # Using the CustomUser instance from the session
+            course=course,
+            leave_type=leave_type,
+            reason=reason,
+            start_date=start_date,
+            end_date=end_date
+        )
+        messages.success(request, 'Leave request submitted successfully!')
+        return redirect('student_dashboard')
+    
+    courses = Course.objects.all()  # Assuming students can select a course
+    return render(request, 'apply_leave.html', {'courses': courses})
+
+
+from django.shortcuts import render, get_object_or_404
+from .models import LeaveRequest
+
+def manage_leave_requests(request):
+    leave_requests = LeaveRequest.objects.filter(status='pending')
+    return render(request, 'manage_leave.html', {'leave_requests': leave_requests})
+
+def update_leave_status(request, leave_id, status):
+    leave_request = get_object_or_404(LeaveRequest, id=leave_id)
+    leave_request.status = status
+    leave_request.save()
+    return redirect('teacher_dashboard')
+
+def student_leave_requests(request):
+    custom_user_id = request.session.get('custom_user_id')
+    student = CustomUser.objects.get(id=custom_user_id)
+    leave_requests = LeaveRequest.objects.filter(student=student)
+
+    return render(request, 'student_leave_requests.html', {
+        'leave_requests': leave_requests
+    })
+
+from .models import Group, Message, Course, CustomUser, Teacher
+
+def group_chat_view(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+    
+    # Fetch the user based on the session variable custom_user_id (Assumes teachers also log in with custom_user_id)
+    custom_user_id = request.session.get('custom_user_id') 
+    if not custom_user_id:
+        return redirect('login')  # Redirect to login if not authenticated via session
+
+    user = get_object_or_404(CustomUser, id=custom_user_id)
+
+    # Get or create the group for the course
+    group, created = Group.objects.get_or_create(course=course)
+
+    # Check if the user is a student or a teacher, and add them to the respective group if not already added
+    if user:  # Assuming CustomUser has a field to differentiate between students and teachers
+        if not group.students.filter(id=user.id).exists():
+            group.students.add(user)
+
+    # Handle new message submission
+    if request.method == 'POST':
+        content = request.POST.get('message')
+        if content:
+            Message.objects.create(group=group, sender=user, content=content)
+            return redirect('group_chat', course_id=course_id)
+
+    # Get all messages related to the group
+    messages = group.messages.all().order_by('timestamp')
+
+    return render(request, 'group_chat.html', {'group': group, 'messages': messages})
+
+
+def discussion_forum(request):
+    custom_user_id = request.session.get('custom_user_id')
+    enrolled_courses = Course.objects.filter(enrollments__student_id=custom_user_id)
+    
+
+    return render(request,'discussion_forum.html',{'enrolled_courses':enrolled_courses})

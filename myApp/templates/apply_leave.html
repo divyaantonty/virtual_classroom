@@ -1,0 +1,46 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apply for Leave</title>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Apply for Leave</h1>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="course">Select Course:</label>
+                <select name="course_id" class="form-control" required>
+                    {% for course in courses %}
+                    <option value="{{ course.id }}">{{ course.course_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="leave_type">Leave Type:</label>
+                <select name="leave_type" class="form-control" required>
+                    <option value="sick">Sick</option>
+                    <option value="personal">Personal</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="reason">Reason for Leave:</label>
+                <textarea name="reason" class="form-control" rows="4" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="start_date">Start Date:</label>
+                <input type="date" name="start_date" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="end_date">End Date:</label>
+                <input type="date" name="end_date" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit Leave Request</button>
+        </form>
+    </div>
+</body>
+</html>

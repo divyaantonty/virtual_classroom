@@ -339,3 +339,45 @@ class Attendance(models.Model):
     def __str__(self):
         return f"{self.student} - {self.class_schedule.class_name} - {self.status}"
 
+from django.db import models
+from django.utils import timezone
+
+class LeaveRequest(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    )
+
+    student = models.ForeignKey('CustomUser', on_delete=models.CASCADE)
+    course = models.ForeignKey('Course', on_delete=models.CASCADE, null=True, blank=True)
+    leave_type = models.CharField(max_length=100, choices=(('sick', 'Sick'), ('personal', 'Personal')))
+    reason = models.TextField()
+    start_date = models.DateField()
+    end_date = models.DateField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    applied_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"{self.student.username}'s leave from {self.start_date} to {self.end_date}"
+    
+
+
+class Group(models.Model):
+    course = models.OneToOneField(Course, on_delete=models.CASCADE, related_name='group')
+    students = models.ManyToManyField(CustomUser, related_name='student_groups')  # For students only
+    teachers = models.ManyToManyField(Teacher, related_name='teacher_groups')    # For teachers only
+
+    def __str__(self):
+        return f"Group for {self.course.course_name}"
+
+
+
+class Message(models.Model):
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    content = models.TextField()
+    timestamp = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"Message by {self.sender.username} in {self.group.course.course_name}"
