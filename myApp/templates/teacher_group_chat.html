@@ -1,68 +1,430 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ group.course.course_name }} - Group Chat</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+    {% load static %}
+
+    <link href="https://fonts.googleapis.com/css?family=Muli:300,400,700,900" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'fonts/icomoon/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/jquery-ui.css' %}">
+    <link rel="stylesheet" href="{% static 'css/owl.carousel.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/owl.theme.default.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/jquery.fancybox.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/bootstrap-datepicker.css' %}">
+    <link rel="stylesheet" href="{% static 'fonts/flaticon/font/flaticon.css' %}">
+    <link rel="stylesheet" href="{% static 'css/aos.css' %}">
+    <link rel="stylesheet" href="{% static 'css/jquery.mb.YTPlayer.min.css' %}" media="all">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
     <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: #333;
+            margin: 0;
+            background-image: url("{% static 'images/bk.jpg' %}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        .site-wrap {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .site-navbar {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 10px 20px;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .site-logo img {
+            height: 40px;
+        }
+
+        .dashboard-heading {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .profile-dropdown {
+            position: relative;
+        }
+
+        .profile-dropdown-content {
+            display: none;
+            position: absolute;
+            top: 40px;
+            right: 0;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+
+        .profile-dropdown:hover .profile-dropdown-content {
+            display: block;
+        }
+
+        .profile-dropdown-content a {
+            display: block;
+            padding: 10px 20px;
+            color: #333;
+            transition: background-color 0.3s;
+            text-decoration: none;
+        }
+
+        .profile-dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+
+        .main-content {
+            display: flex;
+            flex-grow: 1;
+            height: calc(100vh - 60px);
+            overflow: hidden;
+        }
+
+        .dashboard-sidebar {
+            width: 400px;
+            background-color: #ffffff;
+            padding: 80px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            height: 100%;
+        }
+
+        .dashboard-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .dashboard-box {
+            background-color: #3498db;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .dashboard-box:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .dropdown {
+            position: relative;
+        }
+
+        .dropdown-btn {
+            background-color: #3498db;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            z-index: 1;
+            width: 100%;
+            top: 60px;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.3s;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dashboard-content {
+            flex-grow: 1;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .content-wrapper {
+            padding: 30px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .content-wrapper h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
         .chat-box {
             height: 400px;
             overflow-y: scroll;
-            border: 1px solid #ccc;
-            padding: 10px;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
             margin-bottom: 20px;
-            background-color: #f9f9f9;
+            background-color: #ffffff;
         }
+
         .message {
             margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 10px;
         }
+
         .message .sender {
             font-weight: bold;
+            margin-bottom: 5px;
         }
+
         .message .timestamp {
             font-size: 0.8em;
-            color: #888;
+            color: #6c757d;
+        }
+
+        .student-message {
+            background-color: #e0f7fa;
+        }
+
+        .teacher-message {
+            background-color: #ffecb3;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background-color: #545b62;
+            border-color: #545b62;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+
+            .dashboard-sidebar {
+                width: 100%;
+                height: auto;
+                order: 2;
+            }
+            .dashboard-content {
+                width: 100%;
+                order: 1;
+            }
+
+            .header-container {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .profile-dropdown {
+                margin-top: 10px;
+            }
         }
     </style>
+
+    <script type="text/javascript">
+        function preventBack() { window.history.forward(); }
+        setTimeout("preventBack()", 0);
+        window.onunload = function () { null };
+    </script>
 </head>
+
 <body>
-    <div class="container">
-        <h1>{{ group.course.course_name }} - Group Chat</h1>
-
-        <div class="chat-box">
-            <!-- Display student messages -->
-            {% for message in student_messages %}
-            <div class="message">
-                <p class="sender">
-                    {{ message.sender.username }}:
-                </p>
-                <p>{{ message.content }}</p>
-                <p class="timestamp">{{ message.timestamp }}</p>
+    <div class="site-wrap">
+        <!-- Navbar -->
+        <header class="site-navbar js-sticky-header site-navbar-target" role="banner">
+            <div class="header-container">
+                <div class="site-logo">
+                    <a href="{% url 'index' %}" class="d-block">
+                        <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid">
+                    </a>
+                </div>
+                <h2 class="dashboard-heading">Teacher Dashboard</h2>
+                <div class="profile-dropdown">
+                    <a href="#" class="nav-link text-right d-flex align-items-center">
+                        <i class="fas fa-user-circle mr-2"></i>
+                        <span>{{ first_name }} {{ last_name }}</span>
+                    </a>
+                    <div class="profile-dropdown-content">
+                        <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+                    </div>
+                </div>
             </div>
-            {% endfor %}
+        </header>
 
-            <!-- Display teacher messages -->
-            {% for message in teacher_messages %}
-            <div class="message">
-                <p class="sender">
-                    <strong>Teacher {{ message.teacher.first_name }} {{ message.teacher.last_name }}:</strong>
-                </p>
-                <p>{{ message.content }}</p>
-                <p class="timestamp">{{ message.timestamp }}</p>
+        <div class="main-content">
+            <!-- Sidebar -->
+            <div class="dashboard-sidebar">
+                <div class="dashboard-options">
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-chalkboard-teacher mr-2"></i>Manage Classes
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'schedule_class' %}"><i class="fas fa-plus mr-2"></i>Schedule Class</a>
+                            <a href="{% url 'view_teacher_schedule_class' %}"><i class="fas fa-list mr-2"></i>View Classes</a>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-tasks mr-2"></i>Manage Assignments
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'create_assignment' %}"><i class="fas fa-plus mr-2"></i>Create Assignment</a>
+                            <a href="{% url 'view_assignment' %}"><i class="fas fa-list mr-2"></i>View Assignments</a>
+                            <a href="{% url 'evaluate_assignment' %}"><i class="fas fa-check mr-2"></i>Evaluate Assignments</a>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-book mr-2"></i>Study Materials
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'upload_material' %}"><i class="fas fa-upload mr-2"></i>Upload Materials</a>
+                            <a href="{% url 'view_uploaded_materials' %}"><i class="fas fa-list mr-2"></i>View Materials</a>
+                        </div>
+                    </div>
+                    <a href="#" class="dashboard-box">
+                        <i class="fas fa-comments mr-2"></i>Discussion Forum
+                    </a>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-question-circle mr-2"></i>Manage Quizzes
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'create_quiz' %}"><i class="fas fa-plus mr-2"></i>Create Quiz</a>
+                            <a href="{% url 'view_quiz_questions' %}"><i class="fas fa-list mr-2"></i>View Questions</a>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-calendar-alt mr-2"></i>Manage Events
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'add_event' %}"><i class="fas fa-plus mr-2"></i>Create Event</a>
+                            <a href="{% url 'view_events' %}"><i class="fas fa-list mr-2"></i>View Events</a>
+                        </div>
+                    </div>
+                    <a href="{% url 'view_profile' %}" class="dashboard-box">
+                        <i class="fas fa-user mr-2"></i>View Profile
+                    </a>
+                    <a href="{% url 'student_list' %}" class="dashboard-box">
+                        <i class="fas fa-users mr-2"></i>Student List
+                    </a>
+                    <a href="{% url 'view_attendance' %}" class="dashboard-box">
+                        <i class="fas fa-clipboard-check mr-2"></i>Attendance
+                    </a>
+                </div>
             </div>
-            {% endfor %}
+
+            <!-- Main Content -->
+            <div class="dashboard-content">
+                <div class="content-wrapper">
+                    <h2>{{ group.course.course_name }} - Group Chat</h2>
+                    <div class="chat-box">
+                        {% for message in messages %}
+                        <div class="message {% if message.sender %}student-message{% elif message.teacher %}teacher-message{% endif %}">
+                            <p class="sender">
+                                {% if message.sender %}
+                                    {{ message.sender.username }}:
+                                {% elif message.teacher %}
+                                    <strong>Teacher {{ message.teacher.first_name }} {{ message.teacher.last_name }}:</strong>
+                                {% endif %}
+                            </p>
+                            <p>{{ message.content }}</p>
+                            <p class="timestamp">{{ message.timestamp }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <textarea name="message" class="form-control" placeholder="Type your message here..." rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Send Message</button>
+                    </form>
+
+                    <a href="{% url 'teacher_dashboard' %}" class="btn btn-secondary mt-3">Back to Teacher Dashboard</a>
+                </div>
+            </div>
         </div>
-
-        <form method="POST">
-            {% csrf_token %}
-            <div class="form-group">
-                <textarea name="message" class="form-control" placeholder="Type your message here..." rows="3"></textarea>
-            </div>
-            <button type="submit" class="btn btn-primary">Send Message</button>
-        </form>
-
-        <a href="{% url 'teacher_dashboard' %}" class="btn btn-secondary mt-3">Back to Teacher Dashboard</a>
     </div>
+
+    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/jquery-migrate-3.0.1.min.js' %}"></script>
+    <script src="{% static 'js/jquery-ui.js' %}"></script>
+    <script src="{% static 'js/popper.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'js/owl.carousel.min.js' %}"></script>
+    <script src="{% static 'js/jquery.stellar.min.js' %}"></script>
+    <script src="{% static 'js/jquery.countdown.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap-datepicker.min.js' %}"></script>
+    <script src="{% static 'js/jquery.easing.1.3.js' %}"></script>
+    <script src="{% static 'js/aos.js' %}"></script>
+    <script src="{% static 'js/jquery.fancybox.min.js' %}"></script>
+    <script src="{% static 'js/jquery.sticky.js' %}"></script>
+    <script src="{% static 'js/main.js' %}"></script>
 </body>
+
 </html>

@@ -2539,6 +2539,9 @@ def discussion_forum(request):
     return render(request,'discussion_forum.html',{'enrolled_courses':enrolled_courses})
 
 
+from .models import Group, TeacherMessage, Course
+from django.shortcuts import render, get_object_or_404, redirect
+
 def teacher_group_chat_view(request, course_id):
     teacher_id = request.session.get('teacher_id')
 
@@ -2548,9 +2551,13 @@ def teacher_group_chat_view(request, course_id):
     course = get_object_or_404(Course, id=course_id)
     group = get_object_or_404(Group, course=course)
 
-    # Get all messages for students and teachers
-    student_messages = group.messages.all().order_by('timestamp')
-    teacher_messages = group.teacher_messages.all().order_by('timestamp')
+    # Get all messages and combine them
+    student_messages = group.messages.all()
+    teacher_messages = group.teacher_messages.all()
+
+    # Combine and sort all messages
+    all_messages = list(student_messages) + list(teacher_messages)
+    all_messages.sort(key=lambda x: x.timestamp)  # Sort by timestamp
 
     teacher = get_object_or_404(Teacher, id=teacher_id)
 
@@ -2563,8 +2570,7 @@ def teacher_group_chat_view(request, course_id):
 
     return render(request, 'teacher_group_chat.html', {
         'group': group,
-        'student_messages': student_messages,
-        'teacher_messages': teacher_messages,
+        'messages': all_messages,  # Pass the combined messages to the template
         'teacher': teacher,
     })
 
