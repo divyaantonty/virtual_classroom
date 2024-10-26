@@ -1,6 +1,6 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,43 +9,136 @@
         function preventBack() {
             window.history.forward(); 
         }
-          
         setTimeout("preventBack()", 0);
-          
         window.onunload = function () { null };
     </script>
-    {% load static %}
-    <link href="https://fonts.googleapis.com/css?family=Muli:300,400,700,900" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'fonts/icomoon/style.css' %}">
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
         body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+            overflow: hidden;
         }
-
-        .container {
-            max-width: 600px;
-            margin: 50px auto;
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+        }
+        header img {
+            height: 50px;
+        }
+        .back-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+        .back-btn:hover {
+            background-color: #0056b3;
+            text-decoration: none;
+            color: white;
+        }
+        .main-content {
+            display: flex;
+            height: calc(100vh - 70px);
+            overflow: hidden;
+        }
+        .dashboard-sidebar {
+            background-color: #ffffff;
+            width: 300px;
+            padding: 30px 20px;
+            color: white;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+        .dashboard-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .dashboard-box, .dropdown-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            text-decoration: none;
+            border-radius: 10px;
+            text-align: left;
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        .dashboard-box:hover, .dropdown-btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .dropdown {
+            position: relative;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #34495e;
+            min-width: 100%;
+            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 0 0 10px 10px;
+            overflow: hidden;
+        }
+        .dropdown-content a {
+            color: white;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.3s;
+        }
+        .dropdown-content a:hover {
+            background-color: #2980b9;
+        }
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        .content-wrapper {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .interview-form {
             background-color: white;
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin: 0 auto;
         }
-
         .form-group {
             margin-bottom: 15px;
         }
-
         .form-control {
-            height: calc(2.25rem + 2px);
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
             border-radius: 5px;
         }
-
         .submit-btn {
             background-color: #007bff;
             color: white;
@@ -53,125 +146,173 @@
             padding: 10px 20px;
             border-radius: 5px;
             cursor: pointer;
+            width: 100%;
         }
-
         .submit-btn:hover {
             background-color: #0056b3;
         }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            .dashboard-sidebar {
+                width: 100%;
+                order: 2;
+            }
+            .content-wrapper {
+                order: 1;
+            }
+            .dropdown-content {
+                position: static;
+                display: none;
+            }
+            .dropdown:hover .dropdown-content {
+                display: block;
+            }
         }
     </style>
 </head>
-
 <body>
-    <div class="container">
-        <div class="header">
-            <h2>Interview Teacher</h2>
-            <p>Fill in the details below to conduct an interview.</p>
+    <!-- Header with logo -->
+    <header>
+        <div>
+            <a href="{% url 'admin_dashboard' %}">
+                <img src="{% static 'images/logo.png' %}" alt="Logo">
+            </a>
         </div>
-        <form method="POST" action="{% url 'interview_teacher' %}" onsubmit="return validateForm()">
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="teacher_id">Select Teacher</label>
-                <select class="form-control" id="teacher_id" name="teacher_id" required onchange="updateEmail()">
-                    <option value="">-- Select Teacher --</option>
-                    {% for teacher in teachers %}
-                        <option value="{{ teacher.id }}" data-email="{{ teacher.email }}">{{ teacher.first_name }} {{ teacher.last_name }}</option>
-                    {% endfor %}
-                </select>
+        <h1>Interview Teacher</h1>
+        <div>
+            <a href="{% url 'manage_teachers' %}" class="back-btn">Back to Manage Teachers</a>
+        </div>
+    </header>
+
+    <!-- Main content with sidebar -->
+    <div class="main-content">
+        <!-- Sidebar -->
+        <div class="dashboard-sidebar">
+            <div class="dashboard-options">
+                <a href="{% url 'manage_students' %}" class="dashboard-box">
+                    <i class="fas fa-user-graduate mr-2"></i>Manage Students
+                </a>
+                <a href="{% url 'manage_teachers' %}" class="dashboard-box">
+                    <i class="fas fa-chalkboard-teacher mr-2"></i>Manage Teachers
+                </a>
+                <div class="dropdown">
+                    <button class="dropdown-btn">
+                        <i class="fas fa-book mr-2"></i>Add Courses
+                    </button>
+                    <div class="dropdown-content">
+                        <a href="{% url 'add_courses' %}"><i class="fas fa-plus mr-2"></i>Add New Course</a>
+                        <a href="{% url 'course_list' %}"><i class="fas fa-list mr-2"></i>View Added Courses</a>
+                    </div>
+                </div>
+                <a href="{% url 'view_messages' %}" class="dashboard-box">
+                    <i class="fas fa-envelope mr-2"></i>View Messages
+                </a>
+                <div class="dropdown">
+                    <button class="dropdown-btn">
+                        <i class="fas fa-comment mr-2"></i>Send Feedback
+                    </button>
+                    <div class="dropdown-content">
+                        <a href="{% url 'add_feedback_question' %}"><i class="fas fa-question mr-2"></i>Feedback to Student</a>
+                        <a href="{% url 'view_feedback_responses' %}"><i class="fas fa-reply mr-2"></i>Response</a>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="teacher_email">Email</label>
-                <input type="email" class="form-control" id="teacher_email" name="teacher_email" readonly>
-            </div>
-            <div class="form-group">
-                <label for="interview_date">Interview Date</label>
-                <input type="date" class="form-control" id="interview_date" name="interview_date" required>
-            </div>
-            <div class="form-group">
-                <label for="starting_time">Starting Time</label>
-                <input type="time" class="form-control" id="starting_time" name="starting_time" required>
-            </div>
-            <div class="form-group">
-                <label for="ending_time">Ending Time</label>
-                <input type="time" class="form-control" id="ending_time" name="ending_time" required>
-            </div>
-            <div class="form-group">
-                <label for="meeting_link">Meeting Link</label>
-                <input type="url" class="form-control" id="meeting_link" name="meeting_link" required>
-            </div>
-            <div class="form-group">
-                <label for="interviewer_name">Interviewer’s Name</label>
-                <input type="text" class="form-control" id="interviewer_name" name="interviewer_name" required>
-            </div>
-            <div class="form-group">
-                <label for="notes">Notes</label>
-                <textarea class="form-control" id="notes" name="notes" rows="4"></textarea>
-            </div>
-            <button type="submit" class="submit-btn">Schedule Interview</button>
-        </form>
-        <div style="margin-top: 20px;">
-            <a href="{% url 'manage_teachers' %}" class="btn btn-secondary">Back to Dashboard</a>
         </div>
 
-        <script>
-            function updateEmail() {
-                var selectElement = document.getElementById('teacher_id');
-                var selectedOption = selectElement.options[selectElement.selectedIndex];
-                var email = selectedOption.getAttribute('data-email');
-                document.getElementById('teacher_email').value = email;
-            }
-
-            function validateForm() {
-                // Get form values
-                var interviewDate = new Date(document.getElementById('interview_date').value);
-                var startingTime = document.getElementById('starting_time').value;
-                var endingTime = document.getElementById('ending_time').value;
-                var interviewerName = document.getElementById('interviewer_name').value;
-                var meetingLink = document.getElementById('meeting_link').value;
-
-                // Get current date to check against interview date
-                var today = new Date();
-                today.setHours(0, 0, 0, 0); // Set to midnight to only compare dates
-
-                // Interview date must be in the future
-                if (interviewDate <= today) {
-                    alert('Interview date must be a future date.');
-                    return false;
-                }
-
-                // Check if ending time is after the starting time
-                if (startingTime >= endingTime) {
-                    alert('Ending time must be after the starting time.');
-                    return false;
-                }
-
-                // Validate interviewer's name (first letter uppercase and at least 3 characters long)
-                var nameRegex = /^[A-Z][a-zA-Z\s]{2,}$/;
-                if (!nameRegex.test(interviewerName)) {
-                    alert('Interviewer’s name must start with a capital letter and be at least 3 characters long.');
-                    return false;
-                }
-
-                // Validate the meeting link format
-                var urlRegex = /^(https?:\/\/)[\w.-]+(\.[\w\.-]+)+[/#?]?.*$/;
-                if (!urlRegex.test(meetingLink)) {
-                    alert('Please enter a valid meeting link starting with http:// or https://.');
-                    return false;
-                }
-
-
-                // If all validations pass
-                return true;
-            }
-        </script>
-
-        <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
-        <script src="{% static 'js/bootstrap.min.js' %}"></script>
+        <!-- Content area -->
+        <div class="content-wrapper">
+            <div class="interview-form">
+                <form method="POST" action="{% url 'interview_teacher' %}" onsubmit="return validateForm()">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="teacher_id">Select Teacher</label>
+                        <select class="form-control" id="teacher_id" name="teacher_id" required onchange="updateEmail()">
+                            <option value="">-- Select Teacher --</option>
+                            {% for teacher in teachers %}
+                                <option value="{{ teacher.id }}" data-email="{{ teacher.email }}">{{ teacher.first_name }} {{ teacher.last_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="teacher_email">Email</label>
+                        <input type="email" class="form-control" id="teacher_email" name="teacher_email" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="interview_date">Interview Date</label>
+                        <input type="date" class="form-control" id="interview_date" name="interview_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="starting_time">Starting Time</label>
+                        <input type="time" class="form-control" id="starting_time" name="starting_time" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="ending_time">Ending Time</label>
+                        <input type="time" class="form-control" id="ending_time" name="ending_time" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="meeting_link">Meeting Link</label>
+                        <input type="url" class="form-control" id="meeting_link" name="meeting_link" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="interviewer_name">Interviewer's Name</label>
+                        <input type="text" class="form-control" id="interviewer_name" name="interviewer_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="notes">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="4"></textarea>
+                    </div>
+                    <button type="submit" class="submit-btn">Schedule Interview</button>
+                </form>
+            </div>
+        </div>
     </div>
-</body>
 
+    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script>
+        function updateEmail() {
+            var selectElement = document.getElementById('teacher_id');
+            var selectedOption = selectElement.options[selectElement.selectedIndex];
+            var email = selectedOption.getAttribute('data-email');
+            document.getElementById('teacher_email').value = email;
+        }
+
+        function validateForm() {
+            var interviewDate = new Date(document.getElementById('interview_date').value);
+            var startingTime = document.getElementById('starting_time').value;
+            var endingTime = document.getElementById('ending_time').value;
+            var interviewerName = document.getElementById('interviewer_name').value;
+            var meetingLink = document.getElementById('meeting_link').value;
+
+            var today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (interviewDate <= today) {
+                alert('Interview date must be a future date.');
+                return false;
+            }
+
+            if (startingTime >= endingTime) {
+                alert('Ending time must be after the starting time.');
+                return false;
+            }
+
+            var nameRegex = /^[A-Z][a-zA-Z\s]{2,}$/;
+            if (!nameRegex.test(interviewerName)) {
+                alert('Interviewer's name must start with a capital letter and be at least 3 characters long.');
+                return false;
+            }
+
+            var urlRegex = /^(https?:\/\/)[\w.-]+(\.[\w\.-]+)+[/#?]?.*$/;
+            if (!urlRegex.test(meetingLink)) {
+                alert('Please enter a valid meeting link starting with http:// or https://.');
+                return false;
+            }
+
+            return true;
+        }
+    </script>
+</body>
 </html>

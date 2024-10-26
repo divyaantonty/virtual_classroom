@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ group.course.name }} - Group Chat</title>
+    <title>{{ group.course.course_name }} - Group Chat</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
         .chat-box {
@@ -24,30 +24,32 @@
             font-size: 0.8em;
             color: #888;
         }
-        .teacher-message {
-            color: blue; /* Style for teacher messages */
-        }
-        .student-message {
-            color: green; /* Style for student messages */
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>{{ group.course.name }} - Group Chat</h1>
+        <h1>{{ group.course.course_name }} - Group Chat</h1>
 
         <div class="chat-box">
-            {% for message in messages %}
-            <div class="message {% if message.teacher %}teacher-message{% else %}student-message{% endif %}">
+            <!-- Display student messages -->
+            {% for message in student_messages %}
+            <div class="message">
                 <p class="sender">
-                    {% if message.teacher %}
-                        Teacher {{ message.teacher.first_name }} {{ message.teacher.last_name }}:
-                    {% else %}
-                        {{ message.sender.username }}:
-                    {% endif %}
+                    {{ message.sender.username }}:
                 </p>
                 <p>{{ message.content }}</p>
-                <p class="timestamp">{{ message.timestamp|date:"F j, Y, g:i a" }}</p>
+                <p class="timestamp">{{ message.timestamp }}</p>
+            </div>
+            {% endfor %}
+
+            <!-- Display teacher messages -->
+            {% for message in teacher_messages %}
+            <div class="message">
+                <p class="sender">
+                    <strong>Teacher {{ message.teacher.first_name }} {{ message.teacher.last_name }}:</strong>
+                </p>
+                <p>{{ message.content }}</p>
+                <p class="timestamp">{{ message.timestamp }}</p>
             </div>
             {% endfor %}
         </div>
@@ -60,7 +62,7 @@
             <button type="submit" class="btn btn-primary">Send Message</button>
         </form>
 
-        <a href="{% url 'discussion_forum' %}" class="btn btn-secondary mt-3">Back to Discussion Forum</a>
+        <a href="{% url 'teacher_dashboard' %}" class="btn btn-secondary mt-3">Back to Teacher Dashboard</a>
     </div>
 </body>
 </html>

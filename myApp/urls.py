@@ -121,6 +121,9 @@ urlpatterns = [
     path('course/<int:course_id>/group-chat/', views.group_chat_view, name='group_chat'),
     path('discussion_forum/', views.discussion_forum, name='discussion_forum'),
 
+    path('teacher/<int:course_id>/group-chat/', views.teacher_group_chat_view, name='teacher_group_chat'),
+    path('teacher_discussion_forum/', views.teacher_discussion_forum, name='teacher_discussion_forum'),
+    
 
 ]
 if settings.DEBUG:

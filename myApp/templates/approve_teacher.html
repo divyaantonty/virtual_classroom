@@ -5,39 +5,233 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Approve Teacher</title>
+    <script type="text/javascript">
+        function preventBack() {
+            window.history.forward(); 
+        }
+        setTimeout("preventBack()", 0);
+        window.onunload = function () { null };
+    </script>
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+        }
+        header img {
+            height: 50px;
+        }
+        .back-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+        .back-btn:hover {
+            background-color: #0056b3;
+            text-decoration: none;
+            color: white;
+        }
+        .main-content {
+            display: flex;
+            height: calc(100vh - 70px);
+            overflow: hidden;
+        }
+        .dashboard-sidebar {
+            background-color: #ffffff;
+            width: 300px;
+            padding: 30px 20px;
+            color: white;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+        .dashboard-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .dashboard-box, .dropdown-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            text-decoration: none;
+            border-radius: 10px;
+            text-align: left;
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        .dashboard-box:hover, .dropdown-btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .dropdown {
+            position: relative;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #34495e;
+            min-width: 100%;
+            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 0 0 10px 10px;
+            overflow: hidden;
+        }
+        .dropdown-content a {
+            color: white;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.3s;
+        }
+        .dropdown-content a:hover {
+            background-color: #2980b9;
+        }
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        .content-wrapper {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .approve-form {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .form-check {
+            margin-bottom: 10px;
+        }
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            .dashboard-sidebar {
+                width: 100%;
+                order: 2;
+            }
+            .content-wrapper {
+                order: 1;
+            }
+            .dropdown-content {
+                position: static;
+                display: none;
+            }
+            .dropdown:hover .dropdown-content {
+                display: block;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h3>Approve Teacher</h3>
-        <p>Are you sure you want to approve the teacher <strong>{{ teacher.first_name }} {{ teacher.last_name }}</strong>?</p>
-
-        <form method="POST" action="{% url 'approve_teacher' teacher.id %}">
-            {% csrf_token %}
-            {{ form.as_p }}
-
-            <!-- Dropdown to select a course -->
-            <div class="form-group">
-                <label>Assign Courses to Teach</label><br>
-                {% for course in courses %}
-                    <div class="form-check">
-                        <input type="checkbox" name="courses" id="course_{{ course.id }}" value="{{ course.id }}" class="form-check-input" onclick="toggleTeachingAreaInput(this, '{{ course.id }}')">
-                        <label class="form-check-label" for="course_{{ course.id }}">{{ course.course_name }}</label>
-                        <!-- Input field for teaching area, hidden by default -->
-                        <input type="text" name="teaching_area_{{ course.id }}" id="teaching_area_{{ course.id }}" class="form-control mt-2" placeholder="Enter Teaching Area" style="display: none;">
-                    </div>
-                {% endfor %}
-            </div>
-            <button type="submit" class="btn btn-success" {% if teacher.status == 'approved' %}disabled{% endif %}>Yes, Approve</button>
-            <a href="{% url 'manage_teachers' %}" class="btn btn-secondary">Cancel</a>
-        </form>
-
-        <!-- Check if the teacher is approved and display a message -->
-        {% if teacher.status == 'approved' %}
-        <div class="alert alert-success mt-3">
-            Teacher Approved!
+    <!-- Header with logo -->
+    <header>
+        <div>
+            <a href="{% url 'admin_dashboard' %}">
+                <img src="{% static 'images/logo.png' %}" alt="Logo">
+            </a>
         </div>
-        {% endif %}
+        <h1>Approve Teacher</h1>
+        <div>
+            <a href="{% url 'manage_teachers' %}" class="back-btn">Back to Manage Teachers</a>
+        </div>
+    </header>
+
+    <!-- Main content with sidebar -->
+    <div class="main-content">
+        <!-- Sidebar -->
+        <div class="dashboard-sidebar">
+            <div class="dashboard-options">
+                <a href="{% url 'manage_students' %}" class="dashboard-box">
+                    <i class="fas fa-user-graduate mr-2"></i>Manage Students
+                </a>
+                <a href="{% url 'manage_teachers' %}" class="dashboard-box">
+                    <i class="fas fa-chalkboard-teacher mr-2"></i>Manage Teachers
+                </a>
+                <div class="dropdown">
+                    <button class="dropdown-btn">
+                        <i class="fas fa-book mr-2"></i>Add Courses
+                    </button>
+                    <div class="dropdown-content">
+                        <a href="{% url 'add_courses' %}"><i class="fas fa-plus mr-2"></i>Add New Course</a>
+                        <a href="{% url 'course_list' %}"><i class="fas fa-list mr-2"></i>View Added Courses</a>
+                    </div>
+                </div>
+                <a href="{% url 'view_messages' %}" class="dashboard-box">
+                    <i class="fas fa-envelope mr-2"></i>View Messages
+                </a>
+                <div class="dropdown">
+                    <button class="dropdown-btn">
+                        <i class="fas fa-comment mr-2"></i>Send Feedback
+                    </button>
+                    <div class="dropdown-content">
+                        <a href="{% url 'add_feedback_question' %}"><i class="fas fa-question mr-2"></i>Feedback to Student</a>
+                        <a href="{% url 'view_feedback_responses' %}"><i class="fas fa-reply mr-2"></i>Response</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content area -->
+        <div class="content-wrapper">
+            <div class="approve-form">
+                <h3>Approve Teacher</h3>
+                <p>Are you sure you want to approve the teacher <strong>{{ teacher.first_name }} {{ teacher.last_name }}</strong>?</p>
+
+                <form method="POST" action="{% url 'approve_teacher' teacher.id %}">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+
+                    <div class="form-group">
+                        <label>Assign Courses to Teach</label><br>
+                        {% for course in courses %}
+                            <div class="form-check">
+                                <input type="checkbox" name="courses" id="course_{{ course.id }}" value="{{ course.id }}" class="form-check-input" onclick="toggleTeachingAreaInput(this, '{{ course.id }}')">
+                                <label class="form-check-label" for="course_{{ course.id }}">{{ course.course_name }}</label>
+                                <input type="text" name="teaching_area_{{ course.id }}" id="teaching_area_{{ course.id }}" class="form-control mt-2" placeholder="Enter Teaching Area" style="display: none;">
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <button type="submit" class="btn btn-success" {% if teacher.status == 'approved' %}disabled{% endif %}>Yes, Approve</button>
+                    <a href="{% url 'manage_teachers' %}" class="btn btn-secondary">Cancel</a>
+                </form>
+
+                {% if teacher.status == 'approved' %}
+                <div class="alert alert-success mt-3">
+                    Teacher Approved!
+                </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 
     <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
@@ -46,10 +240,10 @@
         function toggleTeachingAreaInput(checkbox, courseId) {
             const teachingAreaInput = document.getElementById('teaching_area_' + courseId);
             if (checkbox.checked) {
-                teachingAreaInput.style.display = 'block'; // Show input field
+                teachingAreaInput.style.display = 'block';
             } else {
-                teachingAreaInput.style.display = 'none'; // Hide input field
-                teachingAreaInput.value = ''; // Clear input field when unchecked
+                teachingAreaInput.style.display = 'none';
+                teachingAreaInput.value = '';
             }
         }
     </script>

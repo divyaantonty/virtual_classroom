@@ -372,12 +372,25 @@ class Group(models.Model):
         return f"Group for {self.course.course_name}"
 
 
-
 class Message(models.Model):
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='messages')
     sender = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    
+    content = models.TextField()
+    timestamp = models.DateTimeField(default=timezone.now)
+
+    
+
+    def __str__(self):
+        return f"Message by {self.sender.username} in {self.group.course.course_name}"
+    
+
+class TeacherMessage(models.Model):
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='teacher_messages')
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     content = models.TextField()
     timestamp = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        return f"Message by {self.sender.username} in {self.group.course.course_name}"
+        return f"Teacher {self.teacher.first_name} {self.teacher.last_name} in {self.group.course.course_name}"
+

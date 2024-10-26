@@ -10,7 +10,7 @@ from django.utils.crypto import get_random_string
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 import requests
-from .models import CustomUser, Course, Parent
+from .models import CustomUser, Course, Parent, TeacherMessage
 
 def register(request):
     if request.method == 'POST':
@@ -2488,12 +2488,13 @@ def student_leave_requests(request):
         'leave_requests': leave_requests
     })
 
-from .models import Group, Message, Course, CustomUser, Teacher
+from .models import Group, Message, TeacherMessage, Course, CustomUser, Teacher
+from django.shortcuts import render, get_object_or_404, redirect
 
 def group_chat_view(request, course_id):
     course = get_object_or_404(Course, id=course_id)
     
-    # Fetch the user based on the session variable custom_user_id (Assumes teachers also log in with custom_user_id)
+    # Fetch the user based on the session variable custom_user_id
     custom_user_id = request.session.get('custom_user_id') 
     if not custom_user_id:
         return redirect('login')  # Redirect to login if not authenticated via session
@@ -2504,7 +2505,7 @@ def group_chat_view(request, course_id):
     group, created = Group.objects.get_or_create(course=course)
 
     # Check if the user is a student or a teacher, and add them to the respective group if not already added
-    if user:  # Assuming CustomUser has a field to differentiate between students and teachers
+    if user:  
         if not group.students.filter(id=user.id).exists():
             group.students.add(user)
 
@@ -2516,9 +2517,18 @@ def group_chat_view(request, course_id):
             return redirect('group_chat', course_id=course_id)
 
     # Get all messages related to the group
-    messages = group.messages.all().order_by('timestamp')
+    student_messages = group.messages.all().order_by('timestamp')
+    teacher_messages = group.teacher_messages.all().order_by('timestamp')
 
-    return render(request, 'group_chat.html', {'group': group, 'messages': messages})
+    # Combine messages from both models
+    all_messages = sorted(list(student_messages) + list(teacher_messages), key=lambda m: m.timestamp)
+
+    return render(request, 'group_chat.html', {
+        'group': group,
+        'messages': all_messages,
+        'user': user,  # Pass the user to the template if needed
+    })
+
 
 
 def discussion_forum(request):
@@ -2527,3 +2537,47 @@ def discussion_forum(request):
     
 
     return render(request,'discussion_forum.html',{'enrolled_courses':enrolled_courses})
+
+
+def teacher_group_chat_view(request, course_id):
+    teacher_id = request.session.get('teacher_id')
+
+    if not teacher_id:
+        return redirect('login')
+
+    course = get_object_or_404(Course, id=course_id)
+    group = get_object_or_404(Group, course=course)
+
+    # Get all messages for students and teachers
+    student_messages = group.messages.all().order_by('timestamp')
+    teacher_messages = group.teacher_messages.all().order_by('timestamp')
+
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+
+    if request.method == 'POST':
+        content = request.POST.get('message')
+        if content:
+            # Create a message for teachers
+            TeacherMessage.objects.create(group=group, teacher=teacher, content=content)
+            return redirect('teacher_group_chat', course_id=course_id)
+
+    return render(request, 'teacher_group_chat.html', {
+        'group': group,
+        'student_messages': student_messages,
+        'teacher_messages': teacher_messages,
+        'teacher': teacher,
+    })
+
+
+from django.shortcuts import render, get_object_or_404
+from .models import TeacherCourse
+
+def teacher_discussion_forum(request):
+    teacher_id = request.session.get('teacher_id')
+    if not teacher_id:
+        return redirect('login')  # Redirect to login if not authenticated
+
+    # Get all courses assigned to the teacher
+    assigned_courses = TeacherCourse.objects.filter(teacher_id=teacher_id)
+
+    return render(request, 'teacher_discussion_forum.html', {'assigned_courses': assigned_courses})
