@@ -235,6 +235,7 @@ class Quizs(models.Model):
     end_date = models.DateField()
     start_time = models.TimeField()
     end_time = models.TimeField()
+    duration = models.IntegerField(default=30, help_text="Duration of the quiz in minutes")
 
     def __str__(self):
         return f"{self.title} - {self.course.course_name}"

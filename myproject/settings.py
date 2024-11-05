@@ -9,7 +9,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Quick-start development settings - unsuitable for production
 SECRET_KEY = 'django-insecure-k=ah64yxejvl%6*uih0nscqb5_v-bwod7+e7s+4^83^e1dv05+'
 DEBUG = True
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 INSTALLED_APPS = [
@@ -20,6 +20,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'myApp',
+    
+    
 ]
 
 MIDDLEWARE = [
@@ -30,6 +32,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware'
 
 ]
 
@@ -53,17 +56,29 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'myproject.wsgi.application'
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'vc1',  
+#         'USER': 'root',    
+#         'PASSWORD': '',  
+#         'HOST': 'localhost',
+#         'PORT': '3306',
+#     }
+# }
+
+# settings.py
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'vc1',  
-        'USER': 'root',    
-        'PASSWORD': '',  
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'NAME': 'vc_signcalmso',
+        'USER': 'vc_signcalmso',
+        'PASSWORD': 'c71dc785d3e6c51ca733e9fef1c71f56a20afd30',  # Replace with your actual password
+        'HOST': '5v7yf.h.filess.io',
+        'PORT': '3307',
     }
 }
-
 
 
 # Password validation

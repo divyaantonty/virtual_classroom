@@ -1,237 +1,293 @@
-{% load static %}
-{% load tz %}
+    {% load static %}
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Available Courses</title>
+        <!-- External fonts and icons -->
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Available Courses</title>
-    <style>
-        /* General styles */
-        body {
-            font-family: 'Poppins', sans-serif;
-            color: #333;
-            margin: 0;
-            background-image: url("{% static 'images/bk.jpg' %}");
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-        }
 
-        .site-wrap {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
+        <!-- Styling -->
+        <style>
+            body {
+                font-family: 'Poppins', sans-serif;
+                color: #333;
+                margin: 0;
+                background-image: url("{% static 'images/bk.jpg' %}");
+                background-size: cover;
+                background-position: center;
+                background-attachment: fixed;
+            }
 
-        .site-navbar {
-            background-color: #ffffff;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 10px 20px;
-        }
+            .site-navbar {
+                background-color: #708cab;
+                padding: 20px 0;
+                color: white;
+                text-align: center;
+            }
 
-        .header-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
+            .site-navbar h1 {
+                margin: 0;
+                font-size: 24px;
+                font-weight: 600;
+                color: #fff;
+            }
 
-        .site-logo img {
-            height: 40px;
-        }
+            .page-container {
+                display: flex;
+                max-width: 1200px;
+                margin: 30px auto;
+                background-color: white;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                border-radius: 8px;
+                overflow: hidden;
+            }
 
-        .dashboard-heading {
-            font-size: 24px;
-            font-weight: 600;
-            color: #2c3e50;
-            margin: 0;
-        }
+            /* Sidebar styles */
+            .filter-sidebar {
+                width: 600px;
+                background-color: #f8f9fa;
+                padding: 20px;
+                border-right: 1px solid #ddd;
+            }
 
-        .profile-dropdown {
-            position: relative;
-        }
+            .filter-form h3 {
+                margin-top: 0;
+                margin-bottom: 15px;
+                color: #333;
+                font-size: 18px;
+            }
 
-        .profile-dropdown-content {
-            display: none;
-            position: absolute;
-            top: 40px;
-            right: 0;
-            background-color: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            z-index: 1;
-        }
-        .profile-dropdown-content.show {
-            display: block;
-        }
+            .filter-form label {
+                display: block;
+                margin-bottom: 10px;
+                font-size: 14px;
+                color: #555;
+            }
 
-        .profile-dropdown:hover .profile-dropdown-content {
-            display: block;
-        }
+            .filter-form input[type="radio"] {
+                margin-right: 10px;
+            }
 
-        .profile-dropdown-content a {
-            display: block;
-            padding: 10px 20px;
-            color: #333;
-            transition: background-color 0.3s;
-            text-decoration: none;
-        }
+            .filter-form button {
+                width: 100%;
+                padding: 10px;
+                background-color: #007bff;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                margin-top: 20px;
+                transition: background-color 0.3s;
+            }
 
-        .profile-dropdown-content a:hover {
-            background-color: #f1f1f1;
-        }
+            .filter-form button:hover {
+                background-color: #0056b3;
+            }
 
-        /* Main content layout */
-        .page-container {
-            display: flex;
-            max-width: 1400px;
-            margin: 20px auto;
-            background-color: white;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            border-radius: 5px;
-            overflow: hidden;
-        }
+            /* Course list styles */
+            .course-container {
+                flex-grow: 1;
+                padding: 20px;
+            }
 
-        /* Sidebar styles */
-        .filter-sidebar {
-            width: 400px;
-            padding: 20px;
-            background-color: #f8f9fa;
-            border-right: 1px solid #e0e0e0;
-        }
+            .course-list {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 20px;
+            }
 
-        .filter-form h3 {
-            margin-top: 0;
-            margin-bottom: 15px;
-            color: #333;
-        }
+            .course-item {
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                background-color: #fff;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                padding: 15px;
+                text-align: center;
+                transition: transform 0.3s ease;
+            }
 
-        .filter-form label {
-            display: block;
-            margin-bottom: 10px;
-            color: #555;
-        }
+            .course-item:hover {
+                transform: translateY(-5px);
+            }
 
-        .filter-form input[type="radio"] {
-            margin-right: 10px;
-        }
+            .course-item img {
+                max-width: 100%;
+                height: auto;
+                border-radius: 5px;
+                margin-bottom: 10px;
+            }
 
-        .filter-form button {
-            width: 100%;
-            padding: 10px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: background-color 0.3s;
-        }
+            .course-item h2 {
+                font-size: 1.2em;
+                margin-bottom: 10px;
+                color: #333;
+            }
 
-        .filter-form button:hover {
-            background-color: #0056b3;
-        }
+            .course-item p {
+                margin: 5px 0;
+                font-size: 0.9em;
+                color: #666;
+            }
 
-        /* Course list styles */
-        .course-container {
-            flex-grow: 1;
-            padding: 20px;
-        }
+            .btn {
+                display: inline-block;
+                padding: 8px 15px;
+                border-radius: 5px;
+                text-decoration: none;
+                transition: background-color 0.3s;
+            }
 
-        .course-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-        }
+            .btn-primary {
+                background-color: #007bff;
+                color: white;
+            }
 
-        .course-item {
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            padding: 15px;
-            background-color: white;
-            transition: transform 0.3s;
-        }
+            .btn-primary:hover {
+                background-color: #0056b3;
+            }
 
-        .course-item:hover {
-            transform: translateY(-5px);
-        }
+            .btn-secondary {
+                background-color: #6c757d;
+                color: white;
+            }
 
-        .course-item img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 5px;
-            margin-bottom: 10px;
-        }
+            .btn-disabled {
+                background-color: #6c757d;
+                color: white;
+                cursor: not-allowed;
+            }
 
-        .course-item h2 {
-            font-size: 1.2em;
-            margin: 10px 0;
-            color: #333;
-        }
+            /* Utility styles */
+            .hidden {
+                display: none;
+            }
+            .site-navbar {
+                background-color: #007bff;
+                padding: 15px 0;
+                color: white;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                position: relative;
+                z-index: 10;
+            }
+        
+            .header-container {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 0 20px;
+            }
+        
+            .site-logo img {
+                height: 40px;
+                width: auto;
+            }
+        
+            .dashboard-heading {
+                margin: 0;
+                font-size: 20px;
+                font-weight: 600;
+                color: white;
+                text-align: center;
+            }
+        
+            .profile-dropdown {
+                position: relative;
+            }
+        
+            .profile-dropdown a {
+                color: white;
+                font-size: 16px;
+                text-decoration: none;
+                padding: 8px 12px;
+                display: inline-block;
+            }
+        
+            .profile-dropdown-content {
+                display: none;
+                position: absolute;
+                top: 100%;
+                right: 0;
+                background-color: white;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+                z-index: 100;
+                min-width: 160px;
+            }
+        
+            .profile-dropdown-content a {
+                display: block;
+                padding: 10px 15px;
+                color: #333;
+                text-decoration: none;
+                font-size: 14px;
+                transition: background-color 0.3s ease;
+            }
+        
+            .profile-dropdown-content a:hover {
+                background-color: #f1f1f1;
+            }
+        
+            .profile-dropdown:hover .profile-dropdown-content {
+                display: block;
+            }
+        
+            /* Responsiveness */
+            @media screen and (max-width: 768px) {
+                .header-container {
+                    flex-direction: column;
+                    align-items: center;
+                }
+        
+                .dashboard-heading {
+                    font-size: 18px;
+                }
+        
+                .profile-dropdown a {
+                    font-size: 14px;
+                }
+        
+                .profile-dropdown-content a {
+                    font-size: 12px;
+                }
+            }
 
-        .course-item p {
-            margin: 5px 0;
-            font-size: 0.9em;
-            color: #666;
-        }
 
-        .btn {
-            display: inline-block;
-            padding: 8px 15px;
-            border-radius: 5px;
-            text-decoration: none;
-            transition: background-color 0.3s;
-        }
+        </style>
+    </head>
+    <body>
 
-        .btn-primary {
-            background-color: #007bff;
-            color: white;
-        }
+<!-- Navbar -->
+<header class="site-navbar js-sticky-header site-navbar-target" role="banner">
+    <div class="header-container">
+        <div class="site-logo">
+            <a href="{% url 'index' %}" class="d-block">
+                <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid logo-img">
+            </a>
+        </div>
+        <h2 class="dashboard-heading">Student Dashboard</h2>
+        <div class="profile-dropdown">
+            <a href="#" class="nav-link text-right d-flex align-items-center">
+                <i class="fas fa-user-circle mr-2"></i>
+                <span>{{ custom_user.username }}</span>
+            </a>
+            <div class="profile-dropdown-content">
+                
+                <a href="{% url 'student_dashboard' %}"><i class="fa fa-user"></i> My Courses</a>
+                <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
 
-        .btn-primary:hover {
-            background-color: #0056b3;
-        }
-
-        .btn-secondary, .btn-disabled {
-            background-color: #6c757d;
-            color: white;
-            cursor: not-allowed;
-        }
-    </style>
-</head>
-<body>
-    
-        <!-- Navbar -->
-        <header class="site-navbar js-sticky-header site-navbar-target" role="banner">
-            <div class="header-container">
-                <div class="site-logo">
-                    <a href="#" class="d-block">
-                        <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid">
-                    </a>
-                </div>
-                <h2 class="dashboard-heading">Available Courses</h2>
-                <div class="profile-dropdown" id="profileDropdown">
-                    <a href="#" class="nav-link text-right d-flex align-items-center">
-                        {% if request.user.profile.avatar %}
-                            <img src="{{ request.user.profile.avatar.url }}" alt="User Avatar" style="width: 30px; height: 30px; border-radius: 50%; margin-right: 10px;">
-                        {% else %}
-                            <i class="fas fa-user-circle mr-2"></i>
-                        {% endif %}
-                        <span>{{ custom_user.username }}</span>
-                    </a>
-                    <div class="profile-dropdown-content" id="profileDropdownContent">
-                        <a href="{% url 'student_dashboard' %}"><i class="fas fa-tachometer-alt mr-2"></i>Student Dashboard</a>
-                        <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
-                    </div>
-                </div>
             </div>
-        </header>
+        </div>
+    </div>
+</header>
+
 
         <div class="page-container">
             <!-- Price Filter Sidebar -->
@@ -305,29 +361,30 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- JavaScript for confirmation alert -->
-    <script>
-        function confirmEnrollment() {
-            return confirm('Are you sure you want to enroll in this course?');
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-        const profileDropdown = document.getElementById('profileDropdown');
-        const profileDropdownContent = document.getElementById('profileDropdownContent');
-
-        profileDropdown.addEventListener('click', function(event) {
-            event.preventDefault();
-            profileDropdownContent.classList.toggle('show');
-        });
-
-        // Close the dropdown when clicking outside
-        window.addEventListener('click', function(event) {
-            if (!profileDropdown.contains(event.target) && !profileDropdownContent.contains(event.target)) {
-                profileDropdownContent.classList.remove('show');
+        <!-- JavaScript for confirmation alert -->
+        <script>
+            function confirmEnrollment() {
+                return confirm('Are you sure you want to enroll in this course?');
             }
-        });
-    });
-    </script>
-</body>
-</html>
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const profileDropdown = document.getElementById('profileDropdown');
+                const profileDropdownContent = document.getElementById('profileDropdownContent');
+
+                profileDropdown.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    profileDropdownContent.classList.toggle('show');
+                });
+
+                // Close the dropdown when clicking outside
+                window.addEventListener('click', function(event) {
+                    if (!profileDropdown.contains(event.target) && !profileDropdownContent.contains(event.target)) {
+                        profileDropdownContent.classList.remove('show');
+                    }
+                });
+            });
+        </script>
+
+    </body>
+    </html>

@@ -297,7 +297,7 @@
                             <a href="{% url 'view_uploaded_materials' %}"><i class="fas fa-list mr-2"></i>View Materials</a>
                         </div>
                     </div>
-                    <a href="#" class="dashboard-box">
+                    <a href="{% url 'teacher_discussion_forum' %}" class="dashboard-box">
                         <i class="fas fa-comments mr-2"></i>Discussion Forum
                     </a>
                     <div class="dropdown">
@@ -377,7 +377,10 @@
                             <input type="time" name="end_time" id="end_time" required>
                             <div class="error" id="endTimeError"></div>
                         </div>
-
+                        <div class="form-group"> 
+                            <label for="duration">Duration (minutes):</label>
+                            <input type="number" name="duration" id="duration" min="1" required>
+                        <div>    
                         <button type="submit">Create Quiz</button>
                     </form>
                     <a href="{% url 'teacher_dashboard' %}" class="back-link">Back to Teacher Dashboard</a>

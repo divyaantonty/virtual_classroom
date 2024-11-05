@@ -12,6 +12,8 @@ from django.core.exceptions import ValidationError
 import requests
 from .models import CustomUser, Course, Parent, TeacherMessage
 
+
+
 def register(request):
     if request.method == 'POST':
         # Extract form data from request.POST
@@ -638,7 +640,7 @@ def toggle_teacher_status(request, teacher_id):
     send_mail(
         email_subject,
         email_message,
-        'your_email@example.com',  # Replace with your email
+        'divyaantony2025@mca.ajce.in',  # Replace with your email
         [teacher.email],  # Send email to the teacher
         fail_silently=False,
     )
@@ -1454,13 +1456,14 @@ def create_quiz(request):
         end_date = request.POST.get('end_date')
         start_time = request.POST.get('start_time')
         end_time = request.POST.get('end_time')
+        duration = request.POST.get('duration')
 
         course = get_object_or_404(Course, id=course_id)
         
         # Create and save the quiz
         quiz = Quizs(course=course, teacher_id=teacher_id, title=title, 
                      start_date=start_date, end_date=end_date, 
-                     start_time=start_time, end_time=end_time)
+                     start_time=start_time, end_time=end_time,duration=duration)
         quiz.save()
 
         return redirect('add_question', quiz_id=quiz.id)

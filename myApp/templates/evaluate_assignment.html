@@ -312,7 +312,7 @@
                             <a href="{% url 'view_uploaded_materials' %}"><i class="fas fa-list mr-2"></i>View Materials</a>
                         </div>
                     </div>
-                    <a href="#" class="dashboard-box">
+                    <a href="{% url 'teacher_discussion_forum' %}" class="dashboard-box">
                         <i class="fas fa-comments mr-2"></i>Discussion Forum
                     </a>
                     <div class="dropdown">
@@ -388,7 +388,7 @@
                                 <td>
                                     <form action="{% url 'submit_grade' submission.id %}" method="post">
                                         {% csrf_token %}
-                                        <input type="number" name="grade" min="0" max="100" class="form-control" placeholder="Enter Grade" required>
+                                        <input type="number" name="grade" min="1" max="6" class="form-control" placeholder="Enter Grade" required>
                                         <button type="submit" class="btn btn-success mt-2">Submit Grade</button>
                                     </form>
                                 </td>

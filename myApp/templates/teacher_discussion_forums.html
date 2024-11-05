@@ -1,0 +1,7 @@
+<div class="dashboard-options">
+    {% for course in assigned_courses %}
+    <a href="{% url 'teacher_group_chat' course.course.id %}" class="dashboard-box">
+        <i class="fas fa-comments mr-2"></i> Discussion Forum for {{ course.course.course_name }}
+    </a>
+    {% endfor %}
+</div>

@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 from myApp import views
 from django.conf import settings
 from django.conf.urls.static import static
@@ -124,7 +124,7 @@ urlpatterns = [
     path('teacher/<int:course_id>/group-chat/', views.teacher_group_chat_view, name='teacher_group_chat'),
     path('teacher_discussion_forum/', views.teacher_discussion_forum, name='teacher_discussion_forum'),
     
-
+     
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

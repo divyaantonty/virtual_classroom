@@ -5,13 +5,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Take Quiz</title>
+    <title>{{ quiz.title }}</title>
     <script type="text/javascript">
-        function preventBack() {
-            window.history.forward(); 
+        function startTimer(duration, display) {
+            var timer = duration, minutes, seconds;
+
+            var countdown = setInterval(function () {
+                minutes = parseInt(timer / 60, 10);
+                seconds = parseInt(timer % 60, 10);
+
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                display.textContent = minutes + ":" + seconds;
+
+                if (--timer < 0) {
+                    clearInterval(countdown);
+                    alert("Time's up! Submitting your quiz.");
+                    document.getElementById('quiz-form').submit();
+                }
+
+                if (timer <= 60) { 
+                    display.style.color = "red";
+                }
+
+                localStorage.setItem('remainingTime', timer);
+            }, 1000);
         }
-        setTimeout("preventBack()", 0);
-        window.onunload = function () { null };
+
+        window.onload = function () {
+            var savedTime = localStorage.getItem('remainingTime');
+            var duration = savedTime ? parseInt(savedTime, 10) : {{ quiz.duration }} * 60;
+
+            var display = document.querySelector('#time');
+            startTimer(duration, display);
+        };
+
+        window.onbeforeunload = function () {
+            if (document.getElementById('quiz-form').submitted) {
+                localStorage.removeItem('remainingTime');
+            }
+        };
     </script>
     <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
@@ -21,11 +55,11 @@
         body {
             font-family: 'Poppins', sans-serif;
             color: #333;
-            margin: 0;
             background-image: url("{% static 'images/bk.jpg' %}");
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
+            margin: 0;
         }
 
         .site-wrap {
@@ -140,60 +174,43 @@
             overflow-y: auto;
         }
 
-        .content-wrapper {
-            padding: 30px;
-            background-color: rgba(255, 255, 255, 0.9);
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            max-width: 800px;
-            width: 100%;
+        .container {
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
         }
 
-        .content-wrapper h2 {
+        h2 {
             color: #2c3e50;
-            margin-bottom: 20px;
         }
 
         .question {
-            margin-bottom: 20px;
-            padding: 15px;
             background-color: #f8f9fa;
-            border-radius: 8px;
-        }
-
-        .question p {
-            font-weight: bold;
-            margin-bottom: 10px;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
         }
 
         label {
             display: block;
-            margin-bottom: 10px;
+            margin: 5px 0;
         }
 
-        input[type="radio"] {
-            margin-right: 10px;
-        }
-
-        button[type="submit"] {
+        .btn {
             background-color: #3498db;
             color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
         }
 
-        button[type="submit"]:hover {
+        .btn:hover {
             background-color: #2980b9;
         }
 
-        hr {
-            margin: 20px 0;
-            border: 0;
-            border-top: 1px solid #ddd;
+        .timer {
+            font-size: 24px;
+            color: #333;
         }
 
         @media (max-width: 768px) {
@@ -222,6 +239,10 @@
             .profile-dropdown {
                 margin-top: 10px;
             }
+
+            .container {
+                padding: 15px;
+            }
         }
     </style>
 </head>
@@ -235,7 +256,7 @@
                         <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid">
                     </a>
                 </div>
-                <h2 class="dashboard-heading">Student Dashboard</h2>
+                <h2 class="dashboard-heading">{{ quiz.title }}</h2>
                 <div class="profile-dropdown">
                     <a href="#" class="nav-link text-right d-flex align-items-center">
                         <i class="fas fa-user-circle mr-2"></i>
@@ -279,32 +300,26 @@
             </div>
 
             <div class="dashboard-content">
-                <div class="content-wrapper">
+                <div class="container">
                     <h2>{{ quiz.title }}</h2>
-                    <form method="POST" action="{% url 'submit_quiz' quiz.id %}">
+                    <p><strong>Course:</strong> {{ quiz.course.course_name }}</p>
+
+                    <!-- Timer -->
+                    <h3>Time Remaining: <span id="time" class="timer">00:00</span></h3>
+
+                    <!-- Quiz Form -->
+                    <form id="quiz-form" method="post" action="{% url 'submit_quiz' quiz.id %}" onsubmit="localStorage.removeItem('remainingTime');">
                         {% csrf_token %}
-                        {% for question in questions %}
+                        {% for question in quiz.questions.all %}
                             <div class="question">
-                                <p>{{ question.text }}</p>
-                                <label>
-                                    <input type="radio" name="question_{{ question.id }}" value="A"> {{ question.option_a }}
-                                </label>
-                                <br>
-                                <label>
-                                    <input type="radio" name="question_{{ question.id }}" value="B"> {{ question.option_b }}
-                                </label>
-                                <br>
-                                <label>
-                                    <input type="radio" name="question_{{ question.id }}" value="C"> {{ question.option_c }}
-                                </label>
-                                <br>
-                                <label>
-                                    <input type="radio" name="question_{{ question.id }}" value="D"> {{ question.option_d }}
-                                </label>
+                                <p><strong>{{ forloop.counter }}. {{ question.text }}</strong></p>
+                                <label><input type="radio" name="question_{{ question.id }}" value="A"> {{ question.option_a }}</label>
+                                <label><input type="radio" name="question_{{ question.id }}" value="B"> {{ question.option_b }}</label>
+                                <label><input type="radio" name="question_{{ question.id }}" value="C"> {{ question.option_c }}</label>
+                                <label><input type="radio" name="question_{{ question.id }}" value="D"> {{ question.option_d }}</label>
                             </div>
-                            <hr>
                         {% endfor %}
-                        <button type="submit">Submit Quiz</button>
+                        <button type="submit" class="btn btn-primary">Submit</button>
                     </form>
                 </div>
             </div>
