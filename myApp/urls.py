@@ -81,7 +81,7 @@ urlpatterns = [
     path('add_feedback_question/', views.add_feedback_question, name='add_feedback_question'),
     path('view_feedback_responses/', views.view_feedback_responses, name='view_feedback_responses'),
     path('toggle-student-status/<int:student_id>/', views.toggle_student_status, name='toggle_student_status'),
-
+    path('edit_course/<int:course_id>/', views.edit_course, name='edit_course'),
 
     path('manage-teachers/', views.manage_teachers, name='manage_teachers'),
     path('teachers/', views.teacher_list, name='teacher_list'),

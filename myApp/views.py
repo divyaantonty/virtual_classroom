@@ -167,11 +167,14 @@ def available_courses(request):
 
     # Get the logged-in user's ID from the session
     custom_user_id = request.session['custom_user_id']
-
-    courses = Course.objects.all()
-
+    
+    # Get the current date
     current_date = timezone.now().date()
 
+    # Filter courses to only include those that have not started and haven't reached their end date
+    courses = Course.objects.filter(starting_date__gt=current_date, ending_date__gt=current_date)
+
+    # Apply price range filter if set
     price_range = request.GET.get('price_range')
     if price_range:
         if price_range == 'all':
@@ -189,17 +192,13 @@ def available_courses(request):
         elif price_range == '5000+':
             courses = courses.filter(price__gte=5000)
 
-    # Get the current date
-  
-
     # Prepare a list to hold course data along with enrollment status
     course_data = []
-
     for course in courses:
         # Check if the user is enrolled in the current course
         is_enrolled = Enrollment.objects.filter(student_id=custom_user_id, course=course).exists()
         
-        # Append course data with the enrollment status and start date check
+        # Append course data with enrollment status and start date check
         course_data.append({
             'course': course,
             'is_enrolled': is_enrolled,
@@ -211,7 +210,7 @@ def available_courses(request):
         'custom_user': custom_user_id,
         'course_data': course_data,
         'current_date': current_date,
-        'selected_price_range':price_range
+        'selected_price_range': price_range
     })
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -2590,3 +2589,30 @@ def teacher_discussion_forum(request):
     assigned_courses = TeacherCourse.objects.filter(teacher_id=teacher_id)
 
     return render(request, 'teacher_discussion_forum.html', {'assigned_courses': assigned_courses})
+
+
+# myproject/myApp/views.py
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Course
+
+def edit_course(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+    
+    if request.method == 'POST':
+        # Manually update the course fields
+        course.course_name = request.POST.get('course_name')
+        course.description = request.POST.get('description')
+        course.duration = request.POST.get('duration')
+        course.price = request.POST.get('price')
+        course.starting_date = request.POST.get('starting_date')
+        course.ending_date = request.POST.get('ending_date')
+        
+        # Handle file upload for the image
+        if request.FILES.get('image'):
+            course.image = request.FILES['image']
+        
+        # Save the updated course
+        course.save()
+        return redirect('course_list')  # Redirect to the course list or another page
+    
+    return render(request, 'edit_course.html', {'course': course})

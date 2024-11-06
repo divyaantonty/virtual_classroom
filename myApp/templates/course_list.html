@@ -234,10 +234,11 @@
                         {% endif %}
                         <h3>{{ course.course_name }}</h3>
                         <p>{{ course.description }}</p>
-                        <p><strong>Duration:</strong> {{ course.duration }} weeks</p>
+                        <p><strong>Duration:</strong> {{ course.duration }} </p>
                         <p><strong>Price:</strong> ₹{{ course.price }}</p>
                         <p><strong>Start Date:</strong> {{ course.starting_date|date:"F d, Y" }}</p>
                         <p><strong>End Date:</strong> {{ course.ending_date|date:"F d, Y" }}</p>
+                        <a href="{% url 'edit_course' course.id %}" class="btn btn-warning">Edit</a>
                     </div>
                 {% empty %}
                     <p>No courses available at the moment.</p>
