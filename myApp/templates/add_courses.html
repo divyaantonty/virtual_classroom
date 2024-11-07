@@ -210,9 +210,9 @@
                                 pattern="^[A-Z][a-z]*$" title="Course name should start with an uppercase letter and be followed by lowercase letters." required>
                         </div>
                         <div class="col-md-6 form-group">
-                            <label for="duration">Duration (in weeks):</label>
-                            <input type="number" name="duration" id="duration" class="form-control form-control-lg" 
-                                min="1" max="99" title="Duration must be a positive number and can be at most 2 digits." required>
+                            <label for="duration">Duration for course:</label>
+                            <input type="number" name="duration" id="duration" class="form-control form-control-lg" value="1"
+                                min="1" max="1" title="Duration must be a positive number and can be at most 2 digits." required>
                         </div>
                     </div>
                     <div class="row">
@@ -240,7 +240,7 @@
                         </div>
                         <div class="col-md-6 form-group">
                             <label for="end_date">End Date:</label>
-                            <input type="date" name="end_date" id="end_date" class="form-control form-control-lg" required>
+                            <input type="date" name="end_date" id="end_date" class="form-control form-control-lg" readonly>
                         </div>
                     </div>
                     <div class="row">
@@ -264,6 +264,15 @@
     <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.min.js' %}"></script>
     <script>
+        document.getElementById('start_date').addEventListener('change', function() {
+            var startDate = new Date(this.value); // Get the selected start date
+            if (!isNaN(startDate)) { // Check if the start date is valid
+                var endDate = new Date(startDate);
+                endDate.setFullYear(startDate.getFullYear() + 1); // Add 1 year to the start date
+                var endDateString = endDate.toISOString().split('T')[0]; // Format the end date to YYYY-MM-DD
+                document.getElementById('end_date').value = endDateString; // Set the calculated end date
+            }
+        });
         function validateForm() {
             const courseName = document.getElementById('course_name').value;
             const duration = document.getElementById('duration').value;
@@ -275,7 +284,7 @@
                 return false;
             }
 
-            if (duration <= 0 || duration > 99) {
+            if (duration <= 1 || duration > 1) {
                 alert("Duration must be a positive number and can be at most 2 digits.");
                 return false;
             }
@@ -284,7 +293,7 @@
             if (!descriptionPattern.test(description) || description.length < 10) {
                 alert("Description must be at least 10 characters long and can only contain alphabetic characters.");
                 return false;
-            }
+            } 
 
             return true;
         }

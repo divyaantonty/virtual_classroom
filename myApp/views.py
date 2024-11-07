@@ -864,22 +864,33 @@ def interview_teacher(request):
 
 
 
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from .models import Course
+from datetime import datetime, timedelta
 
 def add_course(request):
     if request.method == 'POST':
         course_name = request.POST.get('course_name')
         description = request.POST.get('description')
-        duration = request.POST.get('duration')
+        duration = request.POST.get('duration')  # Duration is 1 hour
         price = request.POST.get('price')
         image = request.FILES.get('image')
         start_date = request.POST.get('start_date')  # getting the start date
-        end_date = request.POST.get('end_date')
+        
+        # Convert start_date string to a datetime object
+        start_date = datetime.strptime(start_date, "%Y-%m-%d")
+        
+        # Calculate the end_date by adding one year to the start_date
+        end_date = datetime.strptime(end_date, "%Y-%m-%d")
 
-        new_course = Course(course_name=course_name, description=description, duration=int(duration), price=price, image=image,starting_date=start_date,  # saving start date
-            ending_date=end_date,)
+        # Create and save the new course object
+        new_course = Course(
+            course_name=course_name, 
+            description=description, 
+            duration=int(duration), 
+            price=price, 
+            image=image,
+            starting_date=start_date,
+            ending_date=end_date
+        )
         new_course.save()
 
         messages.success(request, 'Course added successfully!')
