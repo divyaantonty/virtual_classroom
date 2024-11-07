@@ -51,6 +51,100 @@
     .dropdown-item:hover {
         background-color: #f1f1f1; /* Hover effect */
     }
+    <style>
+      .site-section .container .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+      /* Custom styles for course card */
+      .course-1-item {
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+          transition: all 0.3s ease;
+          overflow: hidden;
+          background-color: #fff;
+          height: 100%;
+      }
+    
+      .course-1-item:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+      }
+    
+      .course-1-item .thumbnail img {
+          width: 100%;
+          height: 200px;
+          object-fit: cover;
+          border-bottom: 1px solid #ddd;
+      }
+    
+      .course-1-content {
+          padding: 20px;
+      }
+    
+      .course-1-content h2 {
+          font-size: 22px;
+          font-weight: bold;
+          margin-bottom: 15px;
+          color: #333;
+      }
+    
+      .course-1-content p {
+          font-size: 16px;
+          color: #555;
+          margin-bottom: 10px;
+      }
+    
+      .course-1-content p strong {
+          color: #333;
+      }
+    
+      .course-1-content .price {
+          font-size: 18px;
+          font-weight: bold;
+          color: #27ae60;
+      }
+    
+      .btn-enroll {
+          display: inline-block;
+          background-color: #27ae60;
+          color: #fff;
+          padding: 10px 20px;
+          border-radius: 30px;
+          text-transform: uppercase;
+          text-align: center;
+          font-weight: bold;
+          margin-top: 10px;
+          transition: background-color 0.3s ease;
+      }
+    
+      .btn-enroll:hover {
+          background-color: #2ecc71;
+      }
+    
+      /* Hover effect for course name */
+      .course-1-content h2:hover {
+          color: #2ecc71;
+          cursor: pointer;
+      }
+    
+      /* Add some spacing between rows */
+      .site-section {
+          padding-top: 50px;
+          padding-bottom: 50px;
+      }
+    
+      .site-section .container {
+          max-width: 1200px;
+      }
+    
+      .dropdown-menu {
+          border-radius: 8px;
+      }
+    </style>
+    
   </style>
   
 </head>
@@ -141,51 +235,41 @@
       </div>
     </div>
 
+    <!-- Display available courses -->
     <div class="site-section">
       <div class="container">
-        <!-- Row for displaying multiple courses in parallel -->
         <div class="row">
-          <!-- First Course -->
+          {% for course in courses %}
           <div class="col-lg-4 col-md-6 mb-4">
             <div class="course-1-item">
               <figure class="thumbnail">
-                <a href="course-single.html"><img src="{% static 'images/course_1.jpg' %}" alt="Image" class="img-fluid"></a>
-                <div class="category"><h3>10th Class</h3></div>  
+                <a href="{% url 'courses' %}">
+                  {% if course.image %}
+                    <img src="{{ course.image.url }}" alt="Image of {{ course.course_name }}" class="img-fluid">
+                  {% else %}
+                    <img src="{% static 'images/default_course_image.jpg' %}" alt="Default Image" class="img-fluid">
+                  {% endif %}
+                </a>
               </figure>
               <div class="course-1-content">
-                <h2>Strong Educational Foundation for 10th Students</h2>
-                <div class="rating mb-3">
-                  <span class="icon-star2 text-warning"></span>
-                  <span class="icon-star2 text-warning"></span>
-                  <span class="icon-star2 text-warning"></span>
-                  <span class="icon-star2 text-warning"></span>
-                  <span class="icon-star2 text-warning"></span>
-                </div>
-                <p class="desc mb-4">Build a strong academic foundation with our 10th Standard courses, designed to solidify key concepts and prepare you for the next stage of your educational journey.</p>
-              </div>
-            </div>
-          </div>
+                <h2>{{ course.course_name }}</h2>
+                <p><strong>Description:</strong> {{ course.description|truncatewords:50 }}</p>
+                <p><strong>Duration of class:</strong> {{ course.duration }} </p>
+                <p><strong>Start Date:</strong> {{ course.starting_date }}</p>
+                <p><strong>End Date:</strong> {{ course.ending_date }}</p>
+                <p><strong>Price:</strong> {{ course.price }}</p>
+                <a href="{% url 'register' %}" class="btn-enroll">Enroll Now</a>
 
-          <!-- Second Course -->
-          <div class="col-lg-4 col-md-6 mb-4">
-            <div class="course-1-item">
-              <figure class="thumbnail">
-                <a href="course-single.html"><img src="{% static 'images/course_2.jpg' %}" alt="Image" class="img-fluid"></a>
-                <div class="category"><h3>Higher Secondary</h3></div>  
-              </figure>
-              <div class="course-1-content">
-                <h2>Educational Foundation for Higher Secondary Students</h2>
-                <div class="rating mb-3">
-                  <span class="icon-star2 text-warning"></span>
-                  <span class="icon-star2 text-warning"></span>
-                  <span class="icon-star2 text-warning"></span>
-                  <span class="icon-star2 text-warning"></span>
-                  <span class="icon-star2 text-warning"></span>
-                </div>
-                <p class="desc mb-4">Prepare for the future with our Higher Secondary courses, offering in-depth knowledge and skills to excel in your chosen stream.</p>
               </div>
             </div>
           </div>
+          {% empty %}
+          <p>No available courses at the moment.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    
 
         </div>
       </div>

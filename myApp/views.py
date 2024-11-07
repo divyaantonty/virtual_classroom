@@ -370,8 +370,15 @@ def reply_message(request, message_id):
 
 
 
+# views.py
+from django.shortcuts import render
+from .models import Course  # Make sure the Course model is imported
+from django.utils import timezone
+
 def courses_view(request):
-    return render(request, 'courses.html')
+    # Fetch courses that haven't reached the start date
+    available_courses = Course.objects.filter(starting_date__gt=timezone.now())
+    return render(request, 'courses.html', {'courses': available_courses})
 
 def course_detail_10(request):
     return render(request, 'course_detail_10.html')
