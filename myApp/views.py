@@ -164,10 +164,10 @@ def available_courses(request):
     # Check if the user is authenticated via session
     if 'custom_user_id' not in request.session:
         return redirect('login')  # Redirect to the login page if not authenticated
-
+   
     # Get the logged-in user's ID from the session
     custom_user_id = request.session['custom_user_id']
-    
+    custom_user = CustomUser.objects.get(id=custom_user_id)
     # Get the current date
     current_date = timezone.now().date()
 
@@ -181,6 +181,9 @@ def available_courses(request):
             pass
         elif price_range == '0-500':
             courses = courses.filter(price__lt=500)
+        elif price_range == '500-999':
+            courses = courses.filter(price__gte=500, price__lt=1000)
+
         elif price_range == '1000-2000':
             courses = courses.filter(price__gte=1000, price__lt=2000)
         elif price_range == '2000-3000':
@@ -207,10 +210,11 @@ def available_courses(request):
 
     # Pass the course data and current date to the template
     return render(request, 'available_courses.html', {
-        'custom_user': custom_user_id,
+        'custom_user': custom_user,
         'course_data': course_data,
         'current_date': current_date,
-        'selected_price_range': price_range
+        'selected_price_range': price_range,
+        
     })
 
 from django.shortcuts import render, redirect, get_object_or_404

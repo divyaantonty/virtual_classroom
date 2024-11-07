@@ -303,6 +303,10 @@
                         Below 500
                     </label>
                     <label>
+                        <input type="radio" name="price_range" value="500-999"  {% if selected_price_range == '500-999' %}checked{% endif %}>
+                        500 - 999
+                    </label>    
+                    <label>
                         <input type="radio" name="price_range" value="1000-2000" {% if selected_price_range == '1000-2000' %}checked{% endif %}>
                         1000 - 2000
                     </label>

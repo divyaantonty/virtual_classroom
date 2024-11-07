@@ -6,52 +6,301 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Course - {{ course.course_name }}</title>
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+        }
+        header img {
+            height: 50px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin: 20px 0;
+        }
+        .main-content {
+            display: flex;
+            height: calc(100vh - 70px);
+            overflow: hidden;
+        }
+        .dashboard-sidebar {
+            background-color: #ffffff;
+            width: 300px;
+            padding: 30px 20px;
+            color: white;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+        .dashboard-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .dashboard-box {
+            background-color: #0056b3;
+            color: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            text-decoration: none;
+            border-radius: 10px;
+            text-align: left;
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        .dashboard-box:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .dropdown {
+            position: relative;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #34495e;
+            min-width: 100%;
+            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 0 0 10px 10px;
+            overflow: hidden;
+        }
+        .dropdown-content a {
+            color: white;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.3s;
+        }
+        .dropdown-content a:hover {
+            background-color: #2980b9;
+        }
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        .content-wrapper {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .form-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
+    <!-- Header with logo -->
+    <header>
+        <div>
+            <a href="{% url 'admin_dashboard' %}">
+                <img src="{% static 'images/logo.png' %}" alt="Logo">
+            </a>
+        </div>
         <h1>Edit Course: {{ course.course_name }}</h1>
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="course_name">Course Name</label>
-                <input type="text" name="course_name" class="form-control" value="{{ course.course_name }}" required>
+        <div>
+            <a href="{% url 'admin_dashboard' %}" class="back-btn">Back to Admin Dashboard</a>
+        </div>
+    </header>
+
+    <!-- Main content with sidebar -->
+    <div class="main-content">
+        <!-- Sidebar -->
+        <div class="dashboard-sidebar">
+            <div class="dashboard-options">
+                <a href="{% url 'manage_students' %}" class="dashboard-box">
+                    <i class="fas fa-user-graduate mr-2"></i>Manage Students
+                </a>
+                <a href="{% url 'manage_teachers' %}" class="dashboard-box">
+                    <i class="fas fa-chalkboard-teacher mr-2"></i>Manage Teachers
+                </a>
+                <div class="dropdown">
+                    <button class="dashboard-box">
+                        <i class="fas fa-book mr-2"></i>Add Courses
+                    </button>
+                    <div class="dropdown-content">
+                        <a href="{% url 'add_courses' %}"><i class="fas fa-plus mr-2"></i>Add New Course</a>
+                        <a href="{% url 'course_list' %}"><i class="fas fa-list mr-2"></i>View Added Courses</a>
+                    </div>
+                </div>
+                <a href="{% url 'view_messages' %}" class="dashboard-box">
+                    <i class="fas fa-envelope mr-2"></i>View Messages
+                </a>
+                <div class="dropdown">
+                    <button class="dashboard-box">
+                        <i class="fas fa-comment mr-2"></i>Send Feedback
+                    </button>
+                    <div class="dropdown-content">
+                        <a href="{% url 'add_feedback_question' %}"><i class="fas fa-question mr-2"></i>Feedback to Student</a>
+                        <a href="{% url 'view_feedback_responses' %}"><i class="fas fa-reply mr-2"></i>Response</a>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="description">Description</label>
-                <textarea name="description" class="form-control" required>{{ course.description }}</textarea>
+        </div>
+
+        <div class="content-wrapper">
+            <div class="form-container">
+                <form method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="course_name">Course Name</label>
+                        <input type="text" name="course_name" class="form-control" id="course_name" value="{{ course.course_name }}" required oninput="validateCourseName()">
+                        <div id="course_name_error" class="error-message text-danger"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea name="description" class="form-control" id="description" required oninput="validateDescription()">{{ course.description }}</textarea>
+                        <div id="description_error" class="error-message text-danger"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="duration">Duration (weeks)</label>
+                        <input type="number" name="duration" class="form-control" id="duration" value="{{ course.duration }}" readonly required>
+                        <div id="duration_error" class="error-message text-danger"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="price">Price</label>
+                        <input type="number" name="price" class="form-control" id="price" value="{{ course.price }}" required oninput="validatePrice()">
+                        <div id="price_error" class="error-message text-danger"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="starting_date">Start Date</label>
+                        <input type="date" name="starting_date" class="form-control" id="starting_date" value="{{ course.starting_date|date:'Y-m-d' }}" required onchange="setEndDate()">
+                        <div id="starting_date_error" class="error-message text-danger"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ending_date">End Date</label>
+                        <input type="date" name="ending_date" class="form-control" id="ending_date" value="{{ course.ending_date|date:'Y-m-d' }}" required readonly>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="image">Course Image</label>
+                        <input type="file" name="image" class="form-control" id="image" accept=".png, .jpg, .jpeg" onchange="validateImage()">
+                        <small>Current Image:
+                            {% if course.image %}
+                                <img src="{{ course.image.url }}" alt="{{ course.course_name }}" style="max-width: 100px;">
+                            {% else %}
+                                <span>No image available</span>
+                            {% endif %}
+                        </small>
+                        <div id="image_error" class="error-message text-danger"></div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <a href="{% url 'course_list' %}" class="btn btn-secondary">Cancel</a>
+                </form>
             </div>
-            <div class="form-group">
-                <label for="duration">Duration (weeks)</label>
-                <input type="number" name="duration" class="form-control" value="{{ course.duration }}" required>
-            </div>
-            <div class="form-group">
-                <label for="price">Price</label>
-                <input type="number" name="price" class="form-control" value="{{ course.price }}" required>
-            </div>
-            <div class="form-group">
-                <label for="starting_date">Start Date</label>
-                <input type="date" name="starting_date" class="form-control" value="{{ course.starting_date|date:'Y-m-d' }}" required>
-            </div>
-            <div class="form-group">
-                <label for="ending_date">End Date</label>
-                <input type="date" name="ending_date" class="form-control" value="{{ course.ending_date|date:'Y-m-d' }}" required>
-            </div>
-            <div class="form-group">
-                <label for="image">Course Image</label>
-                <input type="file" name="image" class="form-control">
-                <small>Current Image:
-                    {% if course.image %}
-                        <img src="{{ course.image.url }}" alt="{{ course.course_name }}" style="max-width: 100px;">
-                    {% else %}
-                        <span>No image available</span>
-                    {% endif %}
-                </small>
-            </div>
-            
-            <button type="submit" class="btn btn-primary">Save Changes</button>
-            <a href="{% url 'course_list' %}" class="btn btn-secondary">Cancel</a>
-        </form>
-    </div>
+        </div>
+        
+        <script>
+            function validateCourseName() {
+                const courseName = document.getElementById('course_name').value;
+                const regex = /^[A-Z][a-zA-Z\s]*$/;
+                const errorElement = document.getElementById('course_name_error');
+                if (!regex.test(courseName)) {
+                    errorElement.textContent = "Course name must start with a capital letter and contain only letters and spaces.";
+                    return false;
+                } else {
+                    errorElement.textContent = "";
+                    return true;
+                }
+            }
+        
+            function validateDescription() {
+                const description = document.getElementById('description').value;
+                const regex = /^[A-Z][a-zA-Z\s.,]*$/;
+                const errorElement = document.getElementById('description_error');
+                if (!regex.test(description)) {
+                    errorElement.textContent = "Description must start with a capital letter and can include letters, spaces, periods, and commas.";
+                    return false;
+                } else {
+                    errorElement.textContent = "";
+                    return true;
+                }
+            }
+        
+            function validatePrice() {
+                const price = parseFloat(document.getElementById('price').value);
+                const errorElement = document.getElementById('price_error');
+                if (isNaN(price) || price < 100) {
+                    errorElement.textContent = "Price must be at least 100 and cannot be zero or negative.";
+                    return false;
+                } else {
+                    errorElement.textContent = "";
+                    return true;
+                }
+            }
+        
+            function setEndDate() {
+                const startDate = document.getElementById('starting_date').value;
+                const errorElement = document.getElementById('starting_date_error');
+                const today = new Date().toISOString().split('T')[0];
+                
+                if (startDate < today) {
+                    errorElement.textContent = "Start date cannot be in the past.";
+                    return false;
+                } else {
+                    errorElement.textContent = "";
+                    
+                    // Calculate end date as one year from start date
+                    const endDate = new Date(startDate);
+                    endDate.setFullYear(endDate.getFullYear() + 1);
+                    document.getElementById('ending_date').value = endDate.toISOString().split('T')[0];
+                    return true;
+                }
+            }
+        
+            function validateImage() {
+                const imageInput = document.getElementById('image');
+                const errorElement = document.getElementById('image_error');
+                const allowedExtensions = /(\.jpg|\.jpeg|\.png)$/i;
+        
+                if (imageInput.files.length > 0) {
+                    const fileName = imageInput.files[0].name;
+                    if (!allowedExtensions.exec(fileName)) {
+                        errorElement.textContent = "Only .png, .jpg, and .jpeg image formats are allowed.";
+                        imageInput.value = '';
+                        return false;
+                    } else {
+                        errorElement.textContent = "";
+                        return true;
+                    }
+                }
+                return true;
+            }
+        
+            function validateForm() {
+                return validateCourseName() && validateDescription() && validatePrice() && setEndDate() && validateImage();
+            }
+        </script>
+        
+    
+
     <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.min.js' %}"></script>
 </body>
