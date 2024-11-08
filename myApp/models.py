@@ -289,10 +289,12 @@ class AssignmentSubmission(models.Model):
     
 
 from django.db import models
+from django.utils.timezone import now  # Add this import
 
 class FeedbackQuestion(models.Model):
     question_text = models.TextField()
-
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='feedback_questions', null=True, blank=True)
+    release_date = models.DateField(default=now)
     def __str__(self):
         return self.question_text
 
