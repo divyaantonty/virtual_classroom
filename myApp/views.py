@@ -1393,9 +1393,6 @@ def upload_material(request):
     
     return render(request, 'upload_material.html', {'courses': courses})
 
-
-
-
 from django.shortcuts import render, redirect, get_object_or_404  # type: ignore
 from django.contrib import messages  # type: ignore
 from .models import Material, CustomUser, Enrollment
