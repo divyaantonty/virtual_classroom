@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -101,6 +102,7 @@
         }
     </style>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
     <div class="container">
@@ -134,16 +136,14 @@
                 <!-- Confirm Enrollment Button -->
                 <form method="POST" action="{% url 'confirm_enrollment' course.id %}">
                     {% csrf_token %}
-                    {% comment %} <button type="submit">Confirm Enrollment</button> {% endcomment %}
-                    <button type="button" id="pay-button">Confirm Enrollment</button>
+                    <button type="button" id="confirm-button">Confirm Enrollment</button>
                     {% if messages %}
-                                <ul class="messages">
-                                    {% for message in messages %}
-                                        <li class="alert alert-danger">{{ message }}</li>
-                                    {% endfor %}
-                                </ul>
-                            {% endif %}
-
+                        <ul class="messages">
+                            {% for message in messages %}
+                                <li class="alert alert-danger">{{ message }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
                 </form>
 
                 <!-- Razorpay Payment Button (only after confirmation) -->
@@ -152,12 +152,26 @@
         </div>
     </div>
 
-    <!-- Razorpay Script -->
+    <!-- SweetAlert and Razorpay Script -->
     <script>
-        
-        // Handle Razorpay payment
-        document.getElementById('pay-button').onclick = function(e) {
+        document.getElementById('confirm-button').onclick = function(e) {
             e.preventDefault();
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "Do you want to enroll in this course?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#0073e6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, enroll me!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    initiatePayment();
+                }
+            });
+        };
+
+        function initiatePayment() {
             var options = {
                 "key": "{{ razorpay_key_id }}",
                 "amount": "{{ amount }}",
@@ -167,8 +181,6 @@
                 "order_id": "{{ razorpay_order_id }}",
                 "handler": function(response) {
                     alert("Payment successful! Payment ID: " + response.razorpay_payment_id);
-
-                    // Redirect to confirm enrollment after successful payment
                     window.location.href = "{% url 'confirm_enrollment' course.id %}";
                 },
                 "prefill": {
