@@ -367,10 +367,10 @@
                             {% elif not item.can_enroll %}
                                 <button class="btn btn-disabled" disabled>Enrollment Closed</button>
                             {% else %}
-                                <form method="POST" action="{% url 'enroll_course' item.course.id %}" onsubmit="return confirmEnrollment();">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-primary">Enroll Now</button>
-                                </form>
+                            <form method="GET" action="{% url 'enrollment_details' item.course.id %}">
+                                <button type="submit" class="btn btn-primary">Enroll Now</button>
+                            </form>
+                            
                             {% endif %}
                         </div>
                     {% empty %}

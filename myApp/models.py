@@ -157,6 +157,10 @@ class Enrollment(models.Model):
     enrollment_date = models.DateField(auto_now_add=True)
     enrollment_time = models.TimeField(auto_now_add=True)  # Store time of enrollment
     completion_date = models.DateField(blank=True, null=True)
+    payment_status = models.CharField(max_length=20, choices=[('Pending', 'Pending'), ('Completed', 'Completed'), ('Failed', 'Failed')], default='Pending')
+    payment_amount = models.DecimalField(max_digits=10, decimal_places=2,blank=True, null=True)  # Store the payment amount
+    transaction_id = models.CharField(max_length=100, blank=True, null=True)  # Store the payment transaction ID
+    payment_date = models.DateField(blank=True, null=True)  # Date when payment was completed
     
     def __str__(self):
         return f"{self.student} enrolled in {self.course}"
@@ -294,7 +298,8 @@ from django.utils.timezone import now  # Add this import
 class FeedbackQuestion(models.Model):
     question_text = models.TextField()
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='feedback_questions', null=True, blank=True)
-    release_date = models.DateField(default=now)
+    release_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
     def __str__(self):
         return self.question_text
 

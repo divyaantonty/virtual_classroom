@@ -11,6 +11,9 @@ SECRET_KEY = 'django-insecure-k=ah64yxejvl%6*uih0nscqb5_v-bwod7+e7s+4^83^e1dv05+
 DEBUG = True
 ALLOWED_HOSTS = ['*']
 
+RAZORPAY_API_KEY = 'rzp_test_o8cawEIEiGsQ6C'
+RAZORPAY_API_SECRET = 'ITd8ronAQbSCUCqvlqkMlxYl'
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -56,29 +59,29 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'myproject.wsgi.application'
 
-# DATABASES = {
-#   'default': {
-#        'ENGINE': 'django.db.backends.mysql',
-#        'NAME': 'vc1',  
-#        'USER': 'root',    
-#        'PASSWORD': '',  
-#        'HOST': 'localhost',
-#        'PORT': '3306',
-#     }
-#  }
+DATABASES = {
+  'default': {
+       'ENGINE': 'django.db.backends.mysql',
+       'NAME': 'vc1',  
+       'USER': 'root',    
+       'PASSWORD': '',  
+       'HOST': 'localhost',
+       'PORT': '3306',
+    }
+ }
 
 # settings.py
 
-DATABASES = {
-   'default': {
-      'ENGINE': 'django.db.backends.mysql',
-      'USER': 'vc_signcalmso',
-      'NAME':'vc_signcalmso',
-       'PASSWORD': 'c71dc785d3e6c51ca733e9fef1c71f56a20afd30',  # Replace with your actual password
-       'HOST': '5v7yf.h.filess.io',
-       'PORT': '3307',
-    }
-}
+# DATABASES = {
+#    'default': {
+#       'ENGINE': 'django.db.backends.mysql',
+#       'USER': 'vc_signcalmso',
+#       'NAME':'vc_signcalmso',
+#        'PASSWORD': 'c71dc785d3e6c51ca733e9fef1c71f56a20afd30',  # Replace with your actual password
+#        'HOST': '5v7yf.h.filess.io',
+#        'PORT': '3307',
+#     }
+# }
 
 
 # Password validation

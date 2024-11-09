@@ -123,6 +123,10 @@ urlpatterns = [
 
     path('teacher/<int:course_id>/group-chat/', views.teacher_group_chat_view, name='teacher_group_chat'),
     path('teacher_discussion_forum/', views.teacher_discussion_forum, name='teacher_discussion_forum'),
+    path('enroll/details/<int:course_id>/', views.enrollment_details, name='enrollment_details'),
+    path('enroll/confirm/<int:course_id>/', views.confirm_enrollment, name='confirm_enrollment'),
+
+
     
      
 ]

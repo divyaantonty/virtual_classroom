@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enrollment Details</title>
+    <style>
+        /* Basic reset */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Verdana', sans-serif;
+        }
+
+        /* Page styling */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e8f0fe;
+            padding: 20px;
+        }
+
+        /* Container styling */
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s;
+        }
+
+        .container:hover {
+            transform: translateY(-3px);
+        }
+
+        /* Header */
+        h2 {
+            text-align: center;
+            color: #2d2d2d;
+            font-weight: 600;
+            margin-bottom: 25px;
+        }
+
+        /* Table styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f4f4f4;
+            color: #555;
+            font-weight: bold;
+        }
+
+        /* Button styling */
+        .form-container {
+            text-align: center;
+            margin-top: 25px;
+        }
+
+        button[type="button"], button[type="submit"] {
+            background-color: #0073e6;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        button[type="button"]:hover, button[type="submit"]:hover {
+            background-color: #005bb5;
+            transform: scale(1.05);
+        }
+
+        /* Enrollment confirmed message */
+        .enrollment-confirmed {
+            text-align: center;
+            color: #28a745;
+            font-weight: bold;
+            padding: 15px;
+            border: 1px solid #c3e6cb;
+            background-color: #d4edda;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+    </style>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h2>Enrollment Details</h2>
+
+        <!-- Display User Details in Table -->
+        <table>
+            <tr><th colspan="2">User Details</th></tr>
+            <tr><td><strong>Email:</strong></td><td>{{ user.email }}</td></tr>
+            <tr><td><strong>First Name:</strong></td><td>{{ user.first_name }}</td></tr>
+            <tr><td><strong>Last Name:</strong></td><td>{{ user.last_name }}</td></tr>
+            <tr><td><strong>Date of Birth:</strong></td><td>{{ user.date_of_birth }}</td></tr>
+            <tr><td><strong>Contact:</strong></td><td>{{ user.contact }}</td></tr>
+        </table>
+
+        <!-- Display Course Details in Table -->
+        <table>
+            <tr><th colspan="2">Course Details</th></tr>
+            <tr><td><strong>Course:</strong></td><td>{{ course.course_name }}</td></tr>
+            <tr><td><strong>Description:</strong></td><td>{{ course.description }}</td></tr>
+            <tr><td><strong>Price:</strong></td><td>{{ course.price }}</td></tr>
+        </table>
+
+        <!-- Enrollment Confirmation or Payment Form -->
+        <div class="form-container">
+            {% if enrolled %}
+                <p class="enrollment-confirmed">
+                    Enrollment Confirmed! Thank you, {{ user.first_name }}. You have been successfully enrolled in {{ course.course_name }}.
+                </p>
+            {% else %}
+                <!-- Confirm Enrollment Button -->
+                <form method="POST" action="{% url 'confirm_enrollment' course.id %}">
+                    {% csrf_token %}
+                    {% comment %} <button type="submit">Confirm Enrollment</button> {% endcomment %}
+                    <button type="button" id="pay-button">Confirm Enrollment</button>
+                    {% if messages %}
+                                <ul class="messages">
+                                    {% for message in messages %}
+                                        <li class="alert alert-danger">{{ message }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+
+                </form>
+
+                <!-- Razorpay Payment Button (only after confirmation) -->
+                <button type="button" id="pay-button" style="display:none;">Pay with Razorpay</button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Razorpay Script -->
+    <script>
+        
+        // Handle Razorpay payment
+        document.getElementById('pay-button').onclick = function(e) {
+            e.preventDefault();
+            var options = {
+                "key": "{{ razorpay_key_id }}",
+                "amount": "{{ amount }}",
+                "currency": "INR",
+                "name": "Course Enrollment",
+                "description": "Enrollment for {{ course.course_name }}",
+                "order_id": "{{ razorpay_order_id }}",
+                "handler": function(response) {
+                    alert("Payment successful! Payment ID: " + response.razorpay_payment_id);
+
+                    // Redirect to confirm enrollment after successful payment
+                    window.location.href = "{% url 'confirm_enrollment' course.id %}";
+                },
+                "prefill": {
+                    "email": "{{ user.email }}",
+                    "contact": "{{ user.contact }}"
+                },
+                "theme": {
+                    "color": "#0073e6"
+                }
+            };
+            var rzp1 = new Razorpay(options);
+            rzp1.open();
+        }
+    </script>
+</body>
+</html>

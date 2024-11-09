@@ -2025,23 +2025,42 @@ def submit_grade(request, submission_id):
     return redirect('evaluate_assignment')
 
 from django.shortcuts import render, redirect
-from .models import FeedbackQuestion
+from .models import FeedbackQuestion, Course
 
 def add_feedback_question(request):
+    courses = Course.objects.all()  # Fetch all courses from the Course table
+
     if request.method == 'POST':
         questions = []
+        course_id = request.POST.get('course')  # Retrieve selected course ID
+        release_date = request.POST.get('release_date')
+        end_date = request.POST.get('end_date')
+
+        course = Course.objects.get(id=course_id) if course_id else None
+
         for key, value in request.POST.items():
             if key.startswith('question_text_'):
                 questions.append(value)
 
-        if questions:
+        if questions and release_date and end_date:
             for question_text in questions:
-                FeedbackQuestion.objects.create(question_text=question_text)  # Save each question to the database
-            return redirect('admin_dashboard')  # Redirect to admin dashboard after saving
+                # Save each question with an optional associated course, release date, and end date
+                FeedbackQuestion.objects.create(
+                    question_text=question_text,
+                    course=course,
+                    release_date=release_date,
+                    end_date=end_date
+                )
+            return redirect('admin_dashboard')
         else:
-            return render(request, 'add_feedback_question.html', {'error': 'Please enter at least one question.'})
+            return render(request, 'add_feedback_question.html', {
+                'courses': courses,
+                'error': 'Please enter at least one question, and specify release and end dates.'
+            })
 
-    return render(request, 'add_feedback_question.html')
+    return render(request, 'add_feedback_question.html', {'courses': courses})
+
+
 
 
 from django.shortcuts import render, redirect
@@ -2635,3 +2654,100 @@ def edit_course(request, course_id):
         return redirect('course_list')  # Redirect to the course list or another page
     
     return render(request, 'edit_course.html', {'course': course})
+
+
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Course, CustomUser, Enrollment
+from django.contrib import messages
+import razorpay
+from django.conf import settings
+
+def enrollment_details(request, course_id):
+    custom_user_id = request.session.get('custom_user_id')
+    if not custom_user_id:
+        messages.error(request, 'You need to log in to view enrollment details.')
+        return redirect('login')  # Redirect to login if session doesn't have a custom_user_id
+
+    user = get_object_or_404(CustomUser, id=custom_user_id)
+    course = get_object_or_404(Course, id=course_id)
+    
+    client = razorpay.Client(auth=(settings.RAZORPAY_API_KEY, settings.RAZORPAY_API_SECRET))
+
+    # Convert course price to paise (multiply by 100) as Razorpay expects the amount in paise
+    amount = int(course.price * 100)
+
+    # Create an order with Razorpay for tracking (optional)
+    razorpay_order = client.order.create({
+        "amount": amount,
+        "currency": "INR",
+        "payment_capture": "1"  # Auto-capture
+    })
+
+    # Pass the necessary data to the template
+    context = {
+        'user': user,
+        'course': course,
+        'enrolled': False,  # Default: user not enrolled
+        'razorpay_key_id': settings.RAZORPAY_API_KEY,
+        'razorpay_order_id': razorpay_order['id'],  # Order ID for tracking
+        'amount': amount
+    }
+
+    # After the user confirms the payment, Razorpay will send a response with payment details
+    if request.method == "POST":
+        payment_id = request.POST.get('razorpay_payment_id')
+        order_id = request.POST.get('razorpay_order_id')
+        signature = request.POST.get('razorpay_signature')
+
+        # Verify the payment signature
+        params_dict = {
+            'razorpay_order_id': order_id,
+            'razorpay_payment_id': payment_id,
+            'razorpay_signature': signature
+        }
+        
+        try:
+            # Verify the signature
+            client.utility.verify_payment_signature(params_dict)
+
+            # Create enrollment record and save payment details
+            enrollment = Enrollment.objects.create(
+                student=user,
+                course=course,
+                payment_amount=amount / 100,  # Converting paise back to INR
+                payment_id=payment_id,
+                payment_status="Completed",  # Or any status based on your business logic
+            )
+
+            # Update context and mark the user as enrolled
+            context.update({'enrolled': True},{enrollment,})
+            messages.success(request, f"Enrollment confirmed! Thank you, {user.first_name}. You have been successfully enrolled in {course.course_name}.")
+
+        except Exception as e:
+            messages.error(request, "Payment verification failed. Please try again.")
+            return redirect('enrollment_details', course_id=course.id)
+
+    return render(request, 'enrollment_details.html', context)
+
+
+def confirm_enrollment(request, course_id):
+    custom_user_id = request.session.get('custom_user_id')
+    if not custom_user_id:
+        messages.error(request, 'You need to log in to confirm enrollment.')
+        return redirect('login')  # Redirect to login if session doesn't have a custom_user_id
+
+    user = get_object_or_404(CustomUser, id=custom_user_id)
+    course = get_object_or_404(Course, id=course_id)
+
+    # Create an enrollment record
+    enrollment = Enrollment.objects.create(
+        student=user,
+        course=course,
+        payment_amount=course.price,  # Assuming price is already in INR
+        
+    )
+
+    messages.success(request, f"You have successfully confirmed your enrollment in {course.course_name}.")
+    
+    # Redirect to enrollment details to display Razorpay button
+    return redirect('available_courses')
