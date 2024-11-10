@@ -299,7 +299,7 @@
                         <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid">
                     </a>
                 </div>
-                <h2 class="dashboard-heading">Schedule Class</h2>
+                <h2 class="dashboard-heading">Teacher Dashboard</h2>
                 <div class="profile-dropdown">
                     <a href="#" class="nav-link text-right d-flex align-items-center">
                         <i class="fas fa-user-circle mr-2"></i>
@@ -381,12 +381,17 @@
             <div class="dashboard-content">
                 <div class="content-wrapper">
                     <h2>Schedule a New Class</h2>
+                    
                     <form method="POST" onsubmit="return validateForm();">
                         {% csrf_token %}
                         {% if error_message %}
                             <p class="error-message">{{ error_message }}</p>
                         {% endif %}
                         <table>
+                            <div style="text-align: center; margin: 20px 0;">
+                                <a href="{% url 'create_meeting' %}" class="btn btn-primary">Generate Link</a>
+                            </div>
+                            
                             <tr>
                                 <th>Field</th>
                                 <th>Input</th>
@@ -433,6 +438,7 @@
             </div>
         </div>
     </div>
+    
 
     <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
     <script src="{% static 'js/jquery-migrate-3.0.1.min.js' %}"></script>

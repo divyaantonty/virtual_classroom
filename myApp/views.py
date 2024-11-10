@@ -1014,7 +1014,7 @@ def schedule_class(request):
         schedule.save()
 
         if schedule:
-            return redirect('teacher_dashboard')  # Redirect to teacher's dashboard on success
+            return redirect('view_teacher_schedule_class')  # Redirect to teacher's dashboard on success
 
     # Fetch scheduled classes for this teacher
     current_datetime = datetime.now()
@@ -1030,8 +1030,6 @@ def schedule_class(request):
         'scheduled_classes': scheduled_classes,
         'error_message': error_message
     })
-
-
 
 
 from django.shortcuts import render, redirect
@@ -2150,7 +2148,7 @@ def add_event(request):
     return render(request, 'add_event.html', {'courses': courses})  # Render the template with courses
 
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from .models import Course, CalendarEvent, TeacherCourse  # Import your models
 
 def view_events(request):
@@ -2163,12 +2161,22 @@ def view_events(request):
     # Fetch courses assigned to the teacher
     assigned_courses = Course.objects.filter(id__in=TeacherCourse.objects.filter(teacher_id=teacher_id).values_list('course_id', flat=True))
     
-    # Fetch events created by the teacher for the assigned courses
-    events = CalendarEvent.objects.filter(created_by_id=teacher_id, course_id__in=assigned_courses)
+    # Optionally, get the event_type from the request (for example, from a GET parameter)
+    event_type = request.GET.get('event_type', None)
+
+    # Fetch events created by the teacher for the assigned courses, with optional event_type filter
+    events = CalendarEvent.objects.filter(
+        created_by_id=teacher_id, 
+        course__in=assigned_courses
+    )
+    
+    if event_type:
+        events = events.filter(event_type=event_type)
 
     return render(request, 'view_events.html', {
         'events': events,
-        'courses': assigned_courses  # Pass only the courses assigned to the teacher to the template
+        'courses': assigned_courses,  # Pass only the courses assigned to the teacher to the template
+        'event_type': event_type  # Optionally pass the selected event_type to the template for UI purposes
     })
 
 
@@ -2439,8 +2447,15 @@ def view_attendance(request):
 
     return render(request, 'view_attendance.html', context)
 
+import requests
+import json
+from datetime import datetime
+from django.shortcuts import render
+
 def create_zoom_meeting(request):
-    access_token = "eyJzdiI6IjAwMDAwMSIsImFsZyI6IkhTNTEyIiwidiI6IjIuMCIsImtpZCI6IjI5NGNjYjIwLWY3MDQtNDJhYS1iNzEyLTAxNGE0M2EyMzg2YyJ9.eyJhdWQiOiJodHRwczovL29hdXRoLnpvb20udXMiLCJ1aWQiOiJPR3pzdVV4M1M2aXBWblZPbS1QTF9RIiwidmVyIjoxMCwiYXVpZCI6IjEyYTlhY2Q5NDZlMTZlZDAxY2M3MjI5NGIyM2M2ZGQ5OGQxNGYwNTcwNWJjZjVjMjk4MjJlODJiY2ExMzRkNDQiLCJuYmYiOjE3Mjk3ODg0NjAsImNvZGUiOiJoem9vNXlGSFMxMnAtTktSd18yc0d3ejhOWDM4Z0pGRHQiLCJpc3MiOiJ6bTpjaWQ6OTV3MVQybmxTcE9XeXV4dTVHamg0dyIsImdubyI6MCwiZXhwIjoxNzI5NzkyMDYwLCJ0eXBlIjozLCJpYXQiOjE3Mjk3ODg0NjAsImFpZCI6ImJzNGhzUTZHUnRlOE8tRUhtRzh1RFEifQ.t3InXC_J95euY8WDhxopJeMnGmYCR9CHbqG7-my5stlGSaagaiX8AEh1YO5t24ZBzAMQ1l5Gd48C7OEibY8UaQ"
+    # Replace this line with the function that retrieves your access token dynamically
+    access_token = get_zoom_access_token()
+
     url = "https://api.zoom.us/v2/users/me/meetings"
     headers = {
         "Authorization": f"Bearer {access_token}",
@@ -2450,13 +2465,13 @@ def create_zoom_meeting(request):
     payload = {
         "topic": "class_name",
         "type": 2,
-        "start_time": "start_time.strftime('%Y-%m-%dT%H:%M:%SZ'),",
+        "start_time": datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
         "duration": 60,
         "timezone": "UTC",
         "settings": {
             "host_video": True,
             "participant_video": True,
-            "join_before_host": True,  # Optional
+            "join_before_host": True,
             "mute_upon_entry": False
         }
     }
@@ -2469,6 +2484,21 @@ def create_zoom_meeting(request):
     else:
         return render(request, 'error.html', {'error': response.text})
 
+from requests.auth import HTTPBasicAuth
+
+def get_zoom_access_token():
+    client_id = '95w1T2nlSpOWyuxu5Gjh4w'
+    client_secret = 'IXjEp1mgI5w5HEb3VHR3NS8taAmyCX5q'
+    account_id = 'bs4hsQ6GRte8O-EHmG8uDQ'
+    
+    url = f'https://zoom.us/oauth/token?grant_type=account_credentials&account_id={account_id}'
+    response = requests.post(url, auth=HTTPBasicAuth(client_id, client_secret))
+    
+    if response.status_code == 200:
+        access_token = response.json().get('access_token')
+        return access_token
+    else:
+        raise Exception(f"Failed to get Access Token. Status code: {response.status_code}, Response: {response.text}")
 
 from django.shortcuts import render, redirect
 from django.contrib import messages

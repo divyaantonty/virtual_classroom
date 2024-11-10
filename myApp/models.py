@@ -328,8 +328,8 @@ class CalendarEvent(models.Model):
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     description = models.TextField(blank=True)
-    event_type = models.CharField(max_length=50)  # e.g., 'class', 'assignment', 'exam'
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)  # Link event to a course
+    event_type = models.CharField(max_length=50)  
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)  
     created_by = models.ForeignKey(Teacher, on_delete=models.CASCADE)  # Link the event to the Teacher
 
     def __str__(self):

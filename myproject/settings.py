@@ -59,29 +59,29 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'myproject.wsgi.application'
 
-DATABASES = {
-  'default': {
-       'ENGINE': 'django.db.backends.mysql',
-       'NAME': 'vc1',  
-       'USER': 'root',    
-       'PASSWORD': '',  
-       'HOST': 'localhost',
-       'PORT': '3306',
-    }
- }
+# DATABASES = {
+#   'default': {
+#        'ENGINE': 'django.db.backends.mysql',
+#        'NAME': 'vc1',  
+#        'USER': 'root',    
+#        'PASSWORD': '',  
+#        'HOST': 'localhost',
+#        'PORT': '3306',
+#     }
+#  }
 
 # settings.py
 
-# DATABASES = {
-#    'default': {
-#       'ENGINE': 'django.db.backends.mysql',
-#       'USER': 'vc_signcalmso',
-#       'NAME':'vc_signcalmso',
-#        'PASSWORD': 'c71dc785d3e6c51ca733e9fef1c71f56a20afd30',  # Replace with your actual password
-#        'HOST': '5v7yf.h.filess.io',
-#        'PORT': '3307',
-#     }
-# }
+DATABASES = {
+   'default': {
+      'ENGINE': 'django.db.backends.mysql',
+      'USER': 'vc_signcalmso',
+      'NAME':'vc_signcalmso',
+       'PASSWORD': 'c71dc785d3e6c51ca733e9fef1c71f56a20afd30',  # Replace with your actual password
+       'HOST': '5v7yf.h.filess.io',
+       'PORT': '3307',
+    }
+}
 
 
 # Password validation
