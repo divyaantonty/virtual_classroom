@@ -374,6 +374,9 @@
                     <a href="{% url 'view_attendance' %}" class="dashboard-box">
                         <i class="fas fa-clipboard-check mr-2"></i>Attendance
                     </a>
+                    <a href="{% url 'manage_leave' %}" class="dashboard-box">
+                        <i class="fas fa-clipboard-check mr-2"></i>Manage Leave
+                    </a>
                 </div>
             </div>
 
@@ -434,6 +437,7 @@
                             <button type="submit">Schedule Class</button>
                         </div>
                     </form>
+                    <a href="{% url 'teacher_dashboard' %}" class="back-link">Back to Teacher Dashboard</a>
                 </div>
             </div>
         </div>
