@@ -883,7 +883,7 @@ def add_course(request):
         start_date = datetime.strptime(start_date, "%Y-%m-%d")
         
         # Calculate the end_date by adding one year to the start_date
-        end_date = datetime.strptime(end_date, "%Y-%m-%d")
+        end_date = start_date + timedelta(days=365)
 
         # Create and save the new course object
         new_course = Course(
@@ -2062,16 +2062,27 @@ def add_feedback_question(request):
 
 
 from django.shortcuts import render, redirect
-from .models import Feedback, FeedbackQuestion
+from datetime import date
+from .models import Feedback, FeedbackQuestion, Course, Enrollment  # Ensure your enrollment model is imported
 
 def feedback_view(request):
     user_id = request.session.get('custom_user_id', 'Anonymous')  # Get the user ID from the session
 
+    # Get the current date
+    today = date.today()
+
+    # Get the list of courses the student is enrolled in by querying the StudentCourseEnrollment model
+    enrolled_courses = Enrollment.objects.filter(student_id=user_id).values_list('course_id', flat=True)
+
     # Get a list of questions that the user has already answered
     answered_questions = Feedback.objects.filter(user=user_id).values_list('question_id', flat=True)
 
-    # Load only the questions that the user has not yet answered
-    questions = FeedbackQuestion.objects.exclude(id__in=answered_questions)
+    # Filter the feedback questions based on the enrolled courses, release date, and end date
+    questions = FeedbackQuestion.objects.exclude(id__in=answered_questions).filter(
+        release_date=today,
+        end_date__gte=today,
+        course_id__in=enrolled_courses  # Filter questions for the courses the student is enrolled in
+    )
 
     if request.method == 'POST':
         for question in questions:
@@ -2085,6 +2096,7 @@ def feedback_view(request):
         return redirect('student_dashboard')  # Redirect to a thank you page or another view
 
     return render(request, 'feedback_form.html', {'questions': questions})
+
 
 def thank_you_view(request):
     return render(request, 'thank_you.html')
@@ -2781,3 +2793,57 @@ def confirm_enrollment(request, course_id):
     
     # Redirect to enrollment details to display Razorpay button
     return redirect('available_courses')
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .models import CalendarEvent, EventRegistration
+from django.conf import settings
+
+def register_event(request, event_id):
+    # Retrieve the custom user ID from the session
+    custom_user_id = request.session.get('custom_user_id')
+
+    if not custom_user_id:
+        messages.error(request, "You are not logged in.")
+        return redirect('login')  # Redirect to login page if user ID is not in session
+
+    event = get_object_or_404(CalendarEvent, id=event_id)
+
+    if request.method == 'POST':
+        contact_number = request.POST.get('contact_number')
+
+        # Check if the user is already registered for the event
+        if EventRegistration.objects.filter(event=event, user_id=custom_user_id).exists():
+            messages.warning(request, "You are already registered for this event.")
+        else:
+            # Save the registration
+            EventRegistration.objects.create(
+                event=event,
+                user_id=custom_user_id,
+                contact_number=contact_number,
+                status='registered'
+            )
+            messages.success(request, "You have successfully registered for the event.")
+        return redirect('student_event')  # Replace 'events' with your event listing URL name
+
+    return render(request, 'event_registration.html', {'event': event})
+
+# views.py
+from django.shortcuts import render, get_object_or_404
+from .models import TeacherInterview
+
+def view_interview_details(request, teacher_id):
+    interview = get_object_or_404(TeacherInterview, teacher_id=teacher_id)
+    return render(request, 'interview_details.html', {'interview': interview})
+
+from django.http import JsonResponse
+from .models import Course
+
+def check_course_name(request):
+    course_name = request.GET.get('course_name', None)
+    if course_name:
+        course_exists = Course.objects.filter(course_name=course_name).exists()
+        return JsonResponse({'exists': course_exists})
+    return JsonResponse({'exists': False})

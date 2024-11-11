@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register for {{ event.title }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #333;
+        }
+        p {
+            color: #555;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #28a745;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .message {
+            margin-top: 20px;
+            color: #e74c3c;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Register for Event: {{ event.title }}</h2>
+        <p><strong>Date:</strong> {{ event.start_time|date:"F j, Y, g:i a" }} - {{ event.end_time|date:"F j, Y, g:i a" }}</p>
+        <p><strong>Description:</strong> {{ event.description }}</p>
+
+        {% if messages %}
+            <div class="message">
+                <ul>
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        {% if event.start_time|date:"Y-m-d" <= "now"|date:"Y-m-d" %}
+            <p class="message">Registration is closed for this event.</p>
+        {% elif is_registered %}
+            <p class="message">You are already registered for this event.</p>
+        {% else %}
+            <form method="post" action="{% url 'register_event' event.id %}" onsubmit="return validateContactNumber()">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="contact_number">Contact Number:</label>
+                    <input type="text" name="contact_number" id="contact_number" maxlength="10" pattern="^[6-9]\d{9}$" title="Please enter a valid 10-digit contact number starting with 6, 7, 8, or 9" required>
+                </div>
+                <div class="error" id="contact_number_error"></div>
+                <button type="submit">Register</button>
+            </form>
+        {% endif %}
+    </div>
+
+    <script>
+        function validateContactNumber() {
+            const contactNumber = document.getElementById('contact_number').value;
+            const errorElement = document.getElementById('contact_number_error');
+            
+            // Regular expression for validating 10-digit number starting with 6-9
+            const regex = /^[6-9]\d{9}$/;
+            
+            // Clear previous error message
+            errorElement.textContent = '';
+
+            // Check if the contact number is valid
+            if (!regex.test(contactNumber)) {
+                errorElement.textContent = 'Please enter a valid 10-digit contact number starting with 6, 7, 8, or 9.';
+                return false;  // Prevent form submission
+            }
+
+            return true;  // Allow form submission
+        }
+    </script>
+</body>
+</html>

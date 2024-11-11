@@ -368,6 +368,7 @@
                         <div class="modal-content">
                             <span class="close">&times;</span>
                             <h2 id="eventTitle"></h2>
+                            <p id="eventCourse"></p>
                             <p id="eventDetails"></p>
                             <p id="eventDate"></p>
                         </div>
@@ -412,6 +413,7 @@
                         end: "{{ event.end_time|date:'Y-m-d H:i:s' }}",
                         description: "{{ event.description }}",
                         event_type: "{{ event.event_type }}",
+                        course_name: "{{ event.course.course_name }}",
                     },
                     {% endfor %}
                 ],
@@ -419,7 +421,11 @@
                     // Show the modal
                     $('#eventTitle').text(event.title);
                     $('#eventDetails').text(event.description);
-                    $('#eventDate').text('Event Date: ' + event.start.format('MMMM Do YYYY, h:mm a'));
+                    $('#eventCourse').text('Course: ' + event.course_name);
+                    $('#eventDate').text(
+                          'Event Date: ' + event.start.format('MMMM Do YYYY, h:mm a') +
+                          ' - ' + event.end.format('MMMM Do YYYY, h:mm a')
+                    );
                     $('#eventModal').show();
                 }
             });

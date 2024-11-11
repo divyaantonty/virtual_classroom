@@ -187,6 +187,9 @@
             .dropdown:hover .dropdown-content {
                 display: block;
             }
+            .profile-dropdown {
+                margin-top: 10px;
+            }
         }
     </style>    
 </head>
@@ -199,9 +202,11 @@
             </a>
         </div>
         <h1>Manage Teachers</h1>
-        <div>
-            <a href="{% url 'admin_dashboard' %}" class="back-btn">Back to Admin Dashboard</a>
-        </div>
+        
+            <div class="profile-dropdown-content">
+                <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+            </div>
+        
     </header>
 
     <!-- Main content with sidebar -->
@@ -251,6 +256,7 @@
                             <th>Contact</th>
                             <th>Qualification</th>
                             <th>Experience</th>
+                            <th>Certifications</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -262,10 +268,19 @@
                             <td>{{ teacher.contact }}</td>
                             <td>{{ teacher.qualification }}</td>
                             <td>{{ teacher.experience }}</td>
+                            <td>
+                                {% if teacher.qualification_certificate %}
+                                    <a href="{{ teacher.qualification_certificate.url }}" target="_blank">View Qualification</a><br>
+                                {% endif %}
+                                {% if teacher.experience_certificate %}
+                                    <a href="{{ teacher.experience_certificate.url }}" target="_blank">View Experience</a>
+                                {% endif %}
+                            </td>
                             <td class="actions">
                                 <a href="{% url 'approve_teacher' teacher.id %}" class="btn-success">Approve</a>
                                 <a href="{% url 'reject_teacher' teacher.id %}" class="btn-danger">Reject</a>
                                 <a href="{% url 'interview_teacher' %}" class="btn-primary">Interview</a>
+                                <a href="{% url 'view_interview_details' teacher.id %}" class="btn-secondary">View Interview Details</a>
                             </td>
                         </tr>
                         {% endfor %}

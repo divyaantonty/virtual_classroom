@@ -126,9 +126,10 @@ urlpatterns = [
     path('enroll/details/<int:course_id>/', views.enrollment_details, name='enrollment_details'),
     path('enroll/confirm/<int:course_id>/', views.confirm_enrollment, name='confirm_enrollment'),
 
-
+    path('register_event/<int:event_id>/', views.register_event, name='register_event'),
+    path('teacher/interview_details/<int:teacher_id>/', views.view_interview_details, name='view_interview_details'),
     
-     
+    path('check-course-name/', views.check_course_name, name='check_course_name'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

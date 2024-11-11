@@ -14,6 +14,8 @@
     </script>
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -119,60 +121,50 @@
         }
         .content-wrapper {
             flex-grow: 1;
-            padding: 20px;
-            overflow-y: auto;
+            padding: 30px;
+            background-color: #f9f9f9;
         }
         .interview-form {
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
             max-width: 600px;
-            margin: 0 auto;
+            margin: auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 10px;
+        }
+        .form-group label {
+            font-weight: bold;
+            color: #333;
         }
         .form-control {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
+            height: 30px;
             border-radius: 5px;
+            border: 1px solid #ccc;
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 4px rgba(0, 123, 255, 0.4);
         }
         .submit-btn {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
             width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
         }
         .submit-btn:hover {
             background-color: #0056b3;
-        }
-        @media (max-width: 768px) {
-            .main-content {
-                flex-direction: column;
-            }
-            .dashboard-sidebar {
-                width: 100%;
-                order: 2;
-            }
-            .content-wrapper {
-                order: 1;
-            }
-            .dropdown-content {
-                position: static;
-                display: none;
-            }
-            .dropdown:hover .dropdown-content {
-                display: block;
-            }
-        }
+        }    
     </style>
-</head>
-<body>
     <!-- Header with logo -->
     <header>
         <div>
@@ -180,7 +172,7 @@
                 <img src="{% static 'images/logo.png' %}" alt="Logo">
             </a>
         </div>
-        <h1>Interview Teacher</h1>
+        <h1>Admin Dashboard</h1>
         <div>
             <a href="{% url 'manage_teachers' %}" class="back-btn">Back to Manage Teachers</a>
         </div>
@@ -278,7 +270,7 @@
             var email = selectedOption.getAttribute('data-email');
             document.getElementById('teacher_email').value = email;
         }
-
+        
         function validateForm() {
             var interviewDate = new Date(document.getElementById('interview_date').value);
             var startingTime = document.getElementById('starting_time').value;
@@ -301,7 +293,7 @@
 
             var nameRegex = /^[A-Z][a-zA-Z\s]{2,}$/;
             if (!nameRegex.test(interviewerName)) {
-                alert('Interviewer's name must start with a capital letter and be at least 3 characters long.');
+                alert("Interviewer's name must start with a capital letter and be at least 3 characters long.");
                 return false;
             }
 

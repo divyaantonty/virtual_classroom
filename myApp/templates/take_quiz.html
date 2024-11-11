@@ -281,7 +281,7 @@
                     <a href="{% url 'view_materials' %}" class="dashboard-box">
                         <i class="fas fa-book mr-2"></i>Study Materials
                     </a>
-                    <a href="#" class="dashboard-box">
+                    <a href="{% url 'discussion_forum' %}" class="dashboard-box">
                         <i class="fas fa-comments mr-2"></i>Discussion Forum
                     </a>
                     <a href="{% url 'available_quizzes' %}" class="dashboard-box">
@@ -328,12 +328,51 @@
 
     <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.min.js' %}"></script>
-    <script type="text/javascript">
-        window.history.forward();
-        function noBack() {
-            window.history.forward();
+    <script>
+        function startTimer(duration, display) {
+        var timer = duration, minutes, seconds;
+    
+        var countdown = setInterval(function () {
+            minutes = parseInt(timer / 60, 10);
+            seconds = parseInt(timer % 60, 10);
+    
+            minutes = minutes < 10 ? "0" + minutes : minutes;
+            seconds = seconds < 10 ? "0" + seconds : seconds;
+    
+            display.textContent = minutes + ":" + seconds;
+    
+            if (--timer < 0) {
+                clearInterval(countdown);
+                alert("Time's up! Submitting your quiz.");
+                setTimeout(function() {
+                    document.getElementById('quiz-form').submit();  // Submit after alert
+                }, 500);  // Add a small delay to ensure the alert is shown before submitting
+            }
+    
+            if (timer <= 60) {
+                display.style.color = "red";  // Change color when there's less than 1 minute left
+            }
+    
+            localStorage.setItem('remainingTime', timer);  // Save time to localStorage
+        }, 1000);
+    }
+    
+    window.onload = function () {
+        var savedTime = localStorage.getItem('remainingTime');
+        var duration = savedTime ? parseInt(savedTime, 10) : {{ quiz.duration }} * 60; // Use quiz.duration from Django context
+    
+        var display = document.querySelector('#time');
+        startTimer(duration, display);
+    };
+    
+    window.onbeforeunload = function () {
+        if (document.getElementById('quiz-form').submitted) {
+            localStorage.removeItem('remainingTime');
         }
-    </script>
+    };
+</script>
+    
+    
 </body>
 
 </html>

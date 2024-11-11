@@ -402,3 +402,20 @@ class TeacherMessage(models.Model):
     def __str__(self):
         return f"Teacher {self.teacher.first_name} {self.teacher.last_name} in {self.group.course.course_name}"
 
+from django.db import models
+from django.conf import settings
+from .models import CalendarEvent
+
+class EventRegistration(models.Model):
+    event = models.ForeignKey(CalendarEvent, on_delete=models.CASCADE, related_name='registrations')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    registration_date = models.DateTimeField(auto_now_add=True)
+    contact_number = models.CharField(max_length=15, blank=True, null=True)
+    status = models.CharField(
+        max_length=20,
+        choices=[('registered', 'Registered'), ('cancelled', 'Cancelled')],
+        default='registered'
+    )
+
+    def __str__(self):
+        return f"{self.user.username} - {self.event.title}"

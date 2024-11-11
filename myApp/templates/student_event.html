@@ -186,6 +186,7 @@
             .profile-dropdown {
                 margin-top: 10px;
             }
+            
         }
     </style>
 </head>
@@ -224,7 +225,7 @@
                     <a href="{% url 'view_materials' %}" class="dashboard-box">
                         <i class="fas fa-book mr-2"></i>Study Materials
                     </a>
-                    <a href="#" class="dashboard-box">
+                    <a href="{% url 'discussion_forum' %}" class="dashboard-box">
                         <i class="fas fa-comments mr-2"></i>Discussion Forum
                     </a>
                     <a href="{% url 'available_quizzes' %}" class="dashboard-box">
@@ -235,6 +236,9 @@
                     </a>
                     <a href="{% url 'student_event' %}" class="dashboard-box">
                         <i class="fas fa-calendar-alt mr-2"></i>Events
+                    </a>
+                    <a href="{% url 'available_courses' %}" class="dashboard-box">
+                        <i class="fas fa-graduation-cap mr-2"></i>Available Courses
                     </a>
                     <a href="{% url 'student_dashboard' %}" class="dashboard-box">
                         <i class="fas fa-tachometer-alt mr-2"></i>Back to Dashboard
@@ -252,9 +256,11 @@
                             <div class="col">
                                 <select name="event_type" class="form-control" onchange="this.form.submit()">
                                     <option value="">All Events</option>
-                                    <option value="assignment" {% if request.GET.event_type == 'assignment' %}selected{% endif %}>Assignments</option>
-                                    <option value="exam" {% if request.GET.event_type == 'exam' %}selected{% endif %}>Exams</option>
-                                    <option value="class" {% if request.GET.event_type == 'class' %}selected{% endif %}>Class Schedule</option>
+                                    <option value="webinar" {% if request.GET.event_type == 'webinar' %}selected{% endif %}>Webinar</option>
+                                    <option value="workshop" {% if request.GET.event_type == 'workshop' %}selected{% endif %}>Workshop</option>
+                                    <option value="guest_lecture" {% if request.GET.event_type == 'guest_lecture' %}selected{% endif %}>Guest Lecture</option>
+                                    <option value="training" {% if request.GET.event_type == 'training' %}selected{% endif %}>Training</option>
+                                    <option value="seminar" {% if request.GET.event_type == 'seminar' %}selected{% endif %}>Seminar</option>
                                 </select>
                             </div>
                             <div class="col">
@@ -262,8 +268,28 @@
                             </div>
                         </div>
                     </form>
+                    
 
                     <div id="calendar"></div>
+                    <div class="event-details-container">
+                        <h2>Event Details</h2>
+                        {% for event in events %}
+                        <div class="event-item">
+                            <p class="event-title">{{ event.title }}</p>
+                            <p class="event-date">Date: {{ event.start_time|date:"F j, Y, g:i a" }} - {{ event.end_time|date:"F j, Y, g:i a" }}</p>
+                            <p class="event-description">Description: {{ event.description }}</p>
+                            <p class="event-type">Type: {{ event.event_type }}</p>
+                            {% if event.course %}
+                            <p class="event-course">Course: {{ event.course.course_name }}</p>
+                            {% endif %}
+                            {% if event.is_registered %}
+                                <button class="btn btn-secondary mt-3" disabled>Already Registered</button>
+                            {% else %}
+                                <a href="{% url 'register_event' event.id %}" class="btn btn-primary mt-3">Register</a>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </div>

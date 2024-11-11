@@ -252,7 +252,7 @@
                     <a href="{% url 'view_materials' %}" class="dashboard-box">
                         <i class="fas fa-book mr-2"></i>Study Materials
                     </a>
-                    <a href="#" class="dashboard-box">
+                    <a href="{% url 'discussion_forum' %}" class="dashboard-box">
                         <i class="fas fa-comments mr-2"></i>Discussion Forum
                     </a>
                     <a href="{% url 'available_quizzes' %}" class="dashboard-box">
@@ -263,6 +263,9 @@
                     </a>
                     <a href="{% url 'student_event' %}" class="dashboard-box">
                         <i class="fas fa-calendar-alt mr-2"></i>Events
+                    </a>
+                    <a href="{% url 'available_courses' %}" class="dashboard-box">
+                        <i class="fas fa-graduation-cap mr-2"></i>Available Courses
                     </a>
                     <a href="{% url 'student_dashboard' %}" class="dashboard-box">
                         <i class="fas fa-tachometer-alt mr-2"></i>Back to Dashboard

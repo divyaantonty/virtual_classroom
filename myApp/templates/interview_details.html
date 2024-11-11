@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interview Details</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 600px;
+        }
+        h1 {
+            font-size: 24px;
+            color: #007bff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        p {
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        p strong {
+            color: #555;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s;
+        }
+        a:hover {
+            color: #0056b3;
+        }
+        .btn-back {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            color: white;
+            background-color: #007bff;
+            border-radius: 5px;
+            text-align: center;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+        .btn-back:hover {
+            background-color: #0056b3;
+        }
+        .interview-detail {
+            padding: 12px 0;
+            border-bottom: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Interview Details for {{ interview.teacher.first_name }} {{ interview.teacher.last_name }}</h1>
+        
+        <div class="interview-detail">
+            <p><strong>Date:</strong> {{ interview.interview_date }}</p>
+        </div>
+        <div class="interview-detail">
+            <p><strong>Starting Time:</strong> {{ interview.starting_time }}</p>
+        </div>
+        <div class="interview-detail">
+            <p><strong>Ending Time:</strong> {{ interview.ending_time }}</p>
+        </div>
+        <div class="interview-detail">
+            <p><strong>Link:</strong> <a href="{{ interview.meeting_link }}" target="_blank">{{ interview.meeting_link }}</a></p>
+        </div>
+        <div class="interview-detail">
+            <p><strong>Interviewer's Name:</strong> {{ interview.interviewer_name }}</p>
+        </div>
+
+        <a href="{% url 'manage_teachers' %}" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Manage Teachers</a>
+    </div>
+</body>
+</html>
