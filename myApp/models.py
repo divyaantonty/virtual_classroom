@@ -419,3 +419,8 @@ class EventRegistration(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.event.title}"
+
+class UploadedMaterial(models.Model):
+    file = models.FileField(upload_to='materials/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    

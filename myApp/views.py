@@ -484,7 +484,7 @@ def toggle_student_status(request, student_id):
     send_mail(
         email_subject,
         email_message,
-        'divyaantony2025.mca.ajce.in',
+        'divyaantony2025@mca.ajce.in',
         [student.email],
         fail_silently=False,
     )
@@ -2847,3 +2847,26 @@ def check_course_name(request):
         course_exists = Course.objects.filter(course_name=course_name).exists()
         return JsonResponse({'exists': course_exists})
     return JsonResponse({'exists': False})
+
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from .models import Teacher, CustomUser
+
+def assign_students_to_teacher(request):
+    teachers = Teacher.objects.all()
+    return render(request, 'assign_students_to_teacher.html', {'teachers': teachers})
+
+
+def assign_students(request, teacher_id):
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+    # Exclude students already assigned to any teacher
+    assigned_students = Teacher.objects.values_list('students', flat=True)
+    available_students = CustomUser.objects.filter(course=teacher.course).exclude(id__in=assigned_students)
+
+    if request.method == 'POST':
+        selected_students = request.POST.getlist('students')
+        teacher.students.add(*selected_students)
+        return redirect('assign_students_to_teacher')
+
+    return render(request, 'assign_students.html', {'teacher': teacher, 'students': available_students})

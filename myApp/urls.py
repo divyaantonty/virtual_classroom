@@ -130,6 +130,8 @@ urlpatterns = [
     path('teacher/interview_details/<int:teacher_id>/', views.view_interview_details, name='view_interview_details'),
     
     path('check-course-name/', views.check_course_name, name='check_course_name'),
+    path('assign_students/', views.assign_students_to_teacher, name='assign_students_to_teacher'),
+    path('assign_students/<int:teacher_id>/', views.assign_students, name='assign_students'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

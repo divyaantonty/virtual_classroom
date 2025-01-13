@@ -314,6 +314,9 @@
                     <a href="{% url 'manage_teachers' %}" class="dashboard-box">
                         <i class="fas fa-chalkboard-teacher mr-2"></i>Manage Teachers
                     </a>
+                    <a href="{% url 'assign_students_to_teacher' %}" class="dashboard-box">
+                        <i class="fas fa-user-plus mr-2"></i>Assign Students to Teachers
+                    </a>
                     <div class="dropdown">
                         <button class="dropdown-btn">
                             <i class="fas fa-book mr-2"></i>Add Courses
@@ -334,6 +337,7 @@
                             <a href="{% url 'add_feedback_question' %}"><i class="fas fa-question mr-2"></i>Feedback to Student</a>
                             <a href="{% url 'view_feedback_responses' %}"><i class="fas fa-reply mr-2"></i>Response</a>
                         </div>
+                        
                     </div>
                 </div>
             </div>
