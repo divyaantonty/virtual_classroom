@@ -1,0 +1,16 @@
+<h1>Generated Questions</h1>
+<table>
+    <tr>
+        <th>Question Type</th>
+        <th>Question Text</th>
+        <th>Marks</th>
+    </tr>
+    {% for question in questions %}
+    <tr>
+        <td>{{ question.get_question_type_display }}</td>
+        <td>{{ question.question_text }}</td>
+        <td>{{ question.marks }}</td>
+    </tr>
+    {% endfor %}
+</table>
+<a href="{% url 'upload_pdf_material' %}">Upload Another Material</a>

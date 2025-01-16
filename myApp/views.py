@@ -2870,3 +2870,86 @@ def assign_students(request, teacher_id):
         return redirect('assign_students_to_teacher')
 
     return render(request, 'assign_students.html', {'teacher': teacher, 'students': available_students})
+
+from myApp.models import UploadedMaterial, GeneratedQuestion
+from myApp.utils import  generate_questions_from_text
+# views.py
+from myApp.utils import extract_text_from_pdf
+
+
+def upload_pdf_material(request):
+    if request.method == 'POST' and request.FILES.get('material'):
+        material = UploadedMaterial.objects.create(file=request.FILES['material'])
+        text = extract_text_from_pdf(material.file.path)
+        
+        if "Error:" in text:
+            return render(request, 'upload_pdf_material.html', {'error': text})
+        
+        # Generate and save questions to the database
+        questions = generate_questions_from_text(text, material)
+        
+        # Generate Question Paper PDF
+        pdf_filename = generate_pdf(questions, answer_key=False)
+        with open(pdf_filename, "rb") as pdf:
+            response = HttpResponse(pdf.read(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename={pdf_filename}'
+            return response
+        
+    return render(request, 'upload_pdf_material.html')
+
+def download_answer_key(request):
+    questions = GeneratedQuestion.objects.all()  # Assuming questions are already generated and saved
+    pdf_filename = generate_pdf(questions, answer_key=True)
+    
+    with open(pdf_filename, "rb") as pdf:
+        response = HttpResponse(pdf.read(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename={pdf_filename}'
+        return response
+
+def generated_questions_list(request):
+    questions = GeneratedQuestion.objects.all()
+    return render(request, 'generated_questions_list.html', {'questions': questions})
+
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+
+def generate_pdf(questions, answer_key=False):
+    pdf_filename = "question_paper_with_answer_key.pdf" if answer_key else "question_paper.pdf"
+    c = canvas.Canvas(pdf_filename, pagesize=letter)
+    width, height = letter
+
+    # Title
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(100, height - 50, "Question Paper")
+    
+    # Generate questions
+    y_position = height - 80
+    for idx, question in enumerate(questions):
+        c.setFont("Helvetica", 12)
+        question_text = f"{idx + 1}. {question.question_text} ({question.marks} marks)"  # Accessing question_text
+        c.drawString(100, y_position, question_text)
+        y_position -= 20
+        
+        # Ensure the text does not overflow the page
+        if y_position < 100:
+            c.showPage()
+            y_position = height - 50
+
+    if answer_key:
+        # Include answer key at the end
+        c.showPage()
+        c.setFont("Helvetica-Bold", 14)
+        c.drawString(100, height - 50, "Answer Key")
+        y_position = height - 80
+        for idx, question in enumerate(questions):
+            answer_text = f"Answer to Question {idx + 1}: (Your answer here)"
+            c.setFont("Helvetica", 12)
+            c.drawString(100, y_position, answer_text)
+            y_position -= 20
+            
+            if y_position < 100:
+                c.showPage()
+                y_position = height - 50
+
+    c.save()
+    return pdf_filename

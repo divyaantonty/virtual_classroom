@@ -421,7 +421,7 @@ class EventRegistration(models.Model):
         return f"{self.user.username} - {self.event.title}"
 
 class UploadedMaterial(models.Model):
-    file = models.FileField(upload_to='materials/')
+    file = models.FileField(upload_to='qun_materials/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
     
 class GeneratedQuestion(models.Model):

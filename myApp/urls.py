@@ -132,6 +132,13 @@ urlpatterns = [
     path('check-course-name/', views.check_course_name, name='check_course_name'),
     path('assign_students/', views.assign_students_to_teacher, name='assign_students_to_teacher'),
     path('assign_students/<int:teacher_id>/', views.assign_students, name='assign_students'),
+    path('upload/', views.upload_material, name='upload_material'),
+
+    path('upload_pdf_material/', views.upload_pdf_material, name='upload_pdf_material'),
+    path('generated_questions_list/', views.generated_questions_list, name='generated_questions_list'),
+    path('download_answer_key/', views.download_answer_key, name='download_answer_key'),
+
+
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

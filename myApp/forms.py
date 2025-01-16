@@ -28,4 +28,3 @@ class CourseForm(forms.ModelForm):
         fields = ['course_name', 'description', 'duration']
 
 
-
