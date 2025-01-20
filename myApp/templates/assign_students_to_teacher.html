@@ -1,24 +1,6 @@
-<!DOCTYPE html>
-{% load static %}
-<html>
-<head>
-    <title>Assign Students to Teacher</title>
-    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
-</head>
-<body>
-    <div class="container mt-5">
-        <h2 class="text-center">Assign Students to Teachers</h2>
-        <div class="row">
-            {% for teacher in teachers %}
-            <div class="col-md-3 mb-4">
-                <form method="get" action="{% url 'assign_students' teacher.id %}">
-                    <button type="submit" class="btn btn-primary btn-block">
-                        {{ teacher.first_name }}
-                    </button>
-                </form>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-</body>
-</html>
+<h2>Select a Teacher to Assign Students</h2>
+<ul>
+    {% for teacher in teachers %}
+    <li><a href="{% url 'select_course_for_teacher' teacher.id %}">{{ teacher.first_name }} {{ teacher.last_name }}</a></li>
+    {% endfor %}
+</ul>

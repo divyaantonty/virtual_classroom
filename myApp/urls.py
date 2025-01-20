@@ -130,9 +130,10 @@ urlpatterns = [
     path('register_event/<int:event_id>/', views.register_event, name='register_event'),
     path('teacher/interview_details/<int:teacher_id>/', views.view_interview_details, name='view_interview_details'),
     
-    path('check-course-name/', views.check_course_name, name='check_course_name'),
     path('assign_students/', views.assign_students_to_teacher, name='assign_students_to_teacher'),
-    path('assign_students/<int:teacher_id>/', views.assign_students, name='assign_students'),
+    path('assign_students/<int:teacher_id>/', views.select_course_for_teacher, name='select_course_for_teacher'),
+    path('assign_students/<int:teacher_id>/<int:course_id>/', views.assign_students, name='assign_students_with_course'),
+
     path('upload/', views.upload_material, name='upload_material'),
 
     # path('upload_pdf_material/', views.upload_pdf_material, name='upload_pdf_material'),

@@ -1,0 +1,6 @@
+<h2>Select a Course for {{ teacher.first_name }} {{ teacher.last_name }}</h2>
+<ul>
+    {% for teacher_course in teacher_courses %}
+    <li><a href="{% url 'assign_students_with_course' teacher.id teacher_course.course.id %}">{{ teacher_course.course.course_name }}</a></li>
+    {% endfor %}
+</ul>

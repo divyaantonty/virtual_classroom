@@ -423,4 +423,16 @@ class EventRegistration(models.Model):
 class UploadedMaterial(models.Model):
     file = models.FileField(upload_to='qun_materials/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    
+
+
+# models.py
+from django.db import models
+from .models import Teacher, CustomUser
+
+class TeacherStudent(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    student = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('teacher', 'student')  # Prevent duplicate entries
+

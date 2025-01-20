@@ -1,26 +1,9 @@
-<!DOCTYPE html>
-{% load static %}
-<html>
-<head>
-    <title>Assign Students</title>
-    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
-</head>
-<body>
-    <div class="container mt-5">
-        <h2 class="text-center">Assign Students to {{ teacher.name }}</h2>
-        <form method="post">
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="students">Select Students:</label>
-                <select id="students" name="students" class="form-control" multiple>
-                    {% for student in students %}
-                    <option value="{{ student.id }}">{{ student.username }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <button type="submit" class="btn btn-success">Assign Students</button>
-            <a href="{% url 'assign_students_to_teacher' %}" class="btn btn-secondary">Back</a>
-        </form>
-    </div>
-</body>
-</html>
+<h2>Assign Students to {{ course.course_name }}</h2>
+<form method="POST">
+    {% csrf_token %}
+    <h3>Students enrolled:</h3>
+    {% for student in students %}
+        <input type="checkbox" name="students" value="{{ student.id }}"> {{ student.first_name }} {{ student.last_name }}<br>
+    {% endfor %}
+    <button type="submit" name="assign_students">Assign Selected Students</button>
+</form>

@@ -10,7 +10,7 @@ from django.utils.crypto import get_random_string
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 import requests
-from .models import CustomUser, Course, Parent, TeacherMessage
+from .models import CustomUser, Course, Parent, TeacherMessage, TeacherStudent
 
 
 
@@ -2901,27 +2901,28 @@ def check_course_name(request):
     return JsonResponse({'exists': False})
 
 
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
-from .models import Teacher, CustomUser
-
 def assign_students_to_teacher(request):
-    teachers = Teacher.objects.all()
+    teachers = Teacher.objects.all()  # Fetch all teachers
     return render(request, 'assign_students_to_teacher.html', {'teachers': teachers})
-
-
-def assign_students(request, teacher_id):
+def select_course_for_teacher(request, teacher_id):
     teacher = get_object_or_404(Teacher, id=teacher_id)
-    # Exclude students already assigned to any teacher
-    assigned_students = Teacher.objects.values_list('students', flat=True)
-    available_students = CustomUser.objects.filter(course=teacher.course).exclude(id__in=assigned_students)
+    teacher_courses = TeacherCourse.objects.filter(teacher=teacher)
+    return render(request, 'select_course_for_teacher.html', {'teacher': teacher, 'teacher_courses': teacher_courses})
+def assign_students(request, teacher_id, course_id):
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+    course = get_object_or_404(Course, id=course_id)
+    
+    # Use the Enrollment model or appropriate model linking students and courses
+    students = CustomUser.objects.filter(enrollment__course=course).distinct()
 
     if request.method == 'POST':
-        selected_students = request.POST.getlist('students')
-        teacher.students.add(*selected_students)
+        selected_student_ids = request.POST.getlist('students')
+        for student_id in selected_student_ids:
+            student = CustomUser.objects.get(id=student_id)
+            TeacherStudent.objects.create(teacher=teacher, student=student)
         return redirect('assign_students_to_teacher')
 
-    return render(request, 'assign_students.html', {'teacher': teacher, 'students': available_students})
+    return render(request, 'assign_students.html', {'teacher': teacher, 'course': course, 'students': students})
 
 # from myApp.models import UploadedMaterial, GeneratedQuestion
 # from myApp.utils import  generate_questions_from_text
