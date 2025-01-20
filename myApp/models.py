@@ -424,14 +424,3 @@ class UploadedMaterial(models.Model):
     file = models.FileField(upload_to='qun_materials/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
     
-class GeneratedQuestion(models.Model):
-    QUESTION_TYPES = (
-        ('fill_in_the_blank', 'Fill in the Blank'),
-        ('two_mark', '2-Mark Question'),
-        ('six_mark', '6-Mark Question'),
-        ('ten_mark', '10-Mark Question'),
-    )
-    material = models.ForeignKey(UploadedMaterial, on_delete=models.CASCADE)
-    question_type = models.CharField(max_length=20, choices=QUESTION_TYPES)
-    question_text = models.TextField(unique=True)
-    marks = models.IntegerField()

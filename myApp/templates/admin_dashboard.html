@@ -179,6 +179,11 @@
             background-repeat: no-repeat;
             position: relative;
         }
+        .chart-container {
+            width: 80%; /* Set width for the chart container */
+            max-width: 600px; /* Limit maximum width */
+            margin: auto; /* Center the chart container */
+        }
 
         .dashboard-content::before {
             content: "";
@@ -344,6 +349,8 @@
 
             <!-- Main Content -->
             <div class="dashboard-content">
+                
+
                 <div class="stats-container">
                     <div class="stat-box">
                         <i class="fas fa-users stat-icon"></i>
@@ -356,9 +363,11 @@
                         <div class="stat-label">Teachers</div>
                     </div>
                     <div class="stat-box">
-                        <i class="fas fa-book stat-icon"></i>
-                        <div class="stat-number">{{ total_courses }}</div>
-                        <div class="stat-label">Courses</div>
+                        <a href="{% url 'course_enrollment' %}" style="text-decoration: none; color: inherit;">
+                            <i class="fas fa-book stat-icon"></i>
+                            <div class="stat-number">{{ total_courses }}</div>
+                            <div class="stat-label">Courses</div>
+                        </a>
                     </div>
                 </div>
             </div>

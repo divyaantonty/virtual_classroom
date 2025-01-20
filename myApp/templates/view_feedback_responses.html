@@ -5,28 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Feedback Responses</title>
-    <script type="text/javascript">
-        function preventBack() {
-            window.history.forward(); 
-        }
-        setTimeout("preventBack()", 0);
-        window.onunload = function () { null };
-    </script>
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
+            font-family: 'Muli', sans-serif;
+            background-color: #f4f4f4;
             margin: 0;
             padding: 0;
             overflow: hidden;
-        }
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-top: 20px;
-            margin-bottom: 20px;
         }
         header {
             display: flex;
@@ -39,6 +26,11 @@
         header img {
             height: 50px;
         }
+        h1 {
+            text-align: center;
+            color: #fff;
+            margin: 0;
+        }
         .back-btn {
             background-color: #007bff;
             color: white;
@@ -47,7 +39,7 @@
             text-decoration: none;
         }
         .back-btn:hover {
-            background-color: #0056b3;
+            background-color: hsl(211, 100%, 35%);
             text-decoration: none;
             color: white;
         }
@@ -55,6 +47,7 @@
             display: flex;
             height: calc(100vh - 70px);
             overflow: hidden;
+            
         }
         .dashboard-sidebar {
             background-color: #ffffff;
@@ -122,23 +115,33 @@
             padding: 20px;
             overflow-y: auto;
         }
-        .feedback-table {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: white;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        .course-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-around;
         }
-        .feedback-table th, .feedback-table td {
-            padding: 12px;
+        .course-item {
+            width: calc(33.333% - 20px);
+            background-color: #fff;
+            padding: 15px;
             border: 1px solid #ddd;
-            text-align: left;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-        .feedback-table th {
-            background-color: #007bff;
-            color: white;
+        .course-item img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
         }
-        .feedback-table tr:nth-child(even) {
-            background-color: #f2f2f2;
+        .course-item h3 {
+            margin: 10px 0;
+            font-size: 18px;
+        }
+        .course-item p {
+            font-size: 14px;
+            color: #333;
         }
         @media (max-width: 768px) {
             .main-content {
@@ -151,6 +154,9 @@
             .content-wrapper {
                 order: 1;
             }
+            .course-item {
+                width: calc(50% - 20px);
+            }
             .dropdown-content {
                 position: static;
                 display: none;
@@ -158,26 +164,46 @@
             .dropdown:hover .dropdown-content {
                 display: block;
             }
+        
+        .chart-container {
+            margin-top: 20px;
+            width: 100%; /* Ensure the container takes full width */
+            max-width: 600px; /* Set a maximum width for the chart */
+            margin-left: auto; /* Center the chart */
+            margin-right: auto; /* Center the chart */
+        }
+        canvas {
+            width: 100% !important; /* Make the canvas responsive */
+            height: auto !important; /* Maintain aspect ratio */
+        }
+        .feedback-table {
+            width: 100%; /* Full width for the table */
+            margin-top: 20px; /* Space above the table */
+        }
+        .feedback-table th, .feedback-table td {
+            text-align: left; /* Align text to the left */
+            padding: 12px; /* Add padding for better spacing */
+        }
+        .feedback-table th {
+            background-color: #007bff; /* Header background color */
+            color: white; /* Header text color */
+        }
+        .feedback-table tr:hover {
+            background-color: #f1f1f1; /* Highlight row on hover */
+        }
+        .filter-form {
+            margin-top: 100px; /* Increase the margin to move it further down */
+            margin-bottom: 30px; /* Add space below the filter form */
         }
     </style>
 </head>
 <body>
-    <!-- Header with logo -->
     <header>
-        <div>
-            <a href="{% url 'admin_dashboard' %}">
-                <img src="{% static 'images/logo.png' %}" alt="Logo">
-            </a>
-        </div>
-        <h1>Feedback Responses</h1>
-        <div>
-            <a href="{% url 'admin_dashboard' %}" class="back-btn">Back to Admin Dashboard</a>
-        </div>
+        &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<h1>Feedback Responses</h1>
+        <a href="{% url 'admin_dashboard' %}" class="back-btn">Back</a>
     </header>
 
-    <!-- Main content with sidebar -->
     <div class="main-content">
-        <!-- Sidebar -->
         <div class="dashboard-sidebar">
             <div class="dashboard-options">
                 <a href="{% url 'manage_students' %}" class="dashboard-box">
@@ -210,11 +236,33 @@
             </div>
         </div>
 
-        <!-- Content area -->
-        <div class="content-wrapper">
-            <table class="feedback-table">
-                <thead>
+        <div class="content-area" style="
+        padding-left: 300px;
+    ">
+    <form method="get" class="filter-form" style="
+    padding-top: 20px;
+">
+                <select name="course" class="form-control">
+                    <option value="">All Courses</option>
+                    {% for course in courses %}
+                    <option value="{{ course.id }}" {% if request.GET.course == course.id|stringformat:"s" %}selected{% endif %}>
+                        {{ course.course_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <input type="submit" value="Filter" class="btn btn-primary mt-2">
+            </form>
+
+            <div class="chart-container" style="
+    padding-bottom: 50px;
+">
+                <canvas id="feedbackChart" width="819" height="409" style="display: block; box-sizing: border-box; height: 364px; width: 728px;"></canvas>
+            </div>
+
+            <table class="table table-striped table-bordered feedback-table">
+                <thead class="thead-dark">
                     <tr>
+                        <th>Course</th>
                         <th>User</th>
                         <th>Question</th>
                         <th>Response</th>
@@ -224,6 +272,7 @@
                 <tbody>
                     {% for feedback in feedback_responses %}
                     <tr>
+                        <td>{{ feedback.question.course.course_name }}</td>
                         <td>{{ feedback.user }}</td>
                         <td>{{ feedback.question.question_text }}</td>
                         <td>{{ feedback.get_response_display }}</td>
@@ -231,7 +280,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="4" class="text-center">No feedback responses available.</td>
+                        <td colspan="5" class="text-center">No feedback responses available.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -239,7 +288,49 @@
         </div>
     </div>
 
-    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
-    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('feedbackChart').getContext('2d');
+        const responseCounts = {{ response_counts|safe }};  // Pass the response counts to JavaScript
+
+        const feedbackChart = new Chart(ctx, {
+            type: 'bar',  // Change to 'pie' for a pie chart
+            data: {
+                labels: ['Strongly Agree', 'Agree', 'Neutral', 'Disagree', 'Strongly Disagree'],
+                datasets: [{
+                    label: 'Feedback Responses',
+                    data: [
+                        responseCounts.strongly_agree,
+                        responseCounts.agree,
+                        responseCounts.neutral,
+                        responseCounts.disagree,
+                        responseCounts.strongly_disagree
+                    ],
+                    backgroundColor: [
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(153, 102, 255, 0.2)',
+                        'rgba(255, 206, 86, 0.2)',
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(255, 159, 64, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 </html>

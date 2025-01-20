@@ -421,7 +421,7 @@ def admin_login(request):
     return render(request, 'admin_login.html')
 # views.py
 from django.shortcuts import render
-from .models import CustomUser, Teacher, Course  # Import your models
+from .models import CustomUser, Teacher, Course, Enrollment  # Import your models
 
 def admin_dashboard(request):
     # Count the number of users, teachers, and courses
@@ -429,14 +429,46 @@ def admin_dashboard(request):
     total_teachers = Teacher.objects.count()
     total_courses = Course.objects.count()
 
+    # Prepare data for course enrollment visualization
+    courses = Course.objects.all()
+    course_enrollment_data = []
+
+    for course in courses:
+        enrollment_count = Enrollment.objects.filter(course=course).count()
+        course_enrollment_data.append({
+            'course_name': course.course_name,
+            'enrollment_count': enrollment_count
+        })
+
     context = {
         'total_users': total_users,
         'total_teachers': total_teachers,
         'total_courses': total_courses,
+        'course_enrollment_data': course_enrollment_data,  # Pass enrollment data to template
     }
 
     return render(request, 'admin_dashboard.html', context)
 
+# views.py
+from django.shortcuts import render
+from .models import Course, Enrollment  # Import your models
+
+def course_enrollment_view(request):
+    # Get enrollment counts for each course
+    course_data = []
+    courses = Course.objects.all()
+    for course in courses:
+        registration_count = Enrollment.objects.filter(course=course).count()  # Count enrollments for each course
+        course_data.append({
+            'course_name': course.course_name,
+            'registration_count': registration_count
+        })
+
+    context = {
+        'course_data': course_data,  # Pass course data to the template
+    }
+
+    return render(request, 'course_enrollment.html', context)
 
 from django.shortcuts import render
 from .models import CustomUser
@@ -2105,9 +2137,29 @@ from django.shortcuts import render
 from .models import Feedback
 
 def view_feedback_responses(request):
-    feedback_responses = Feedback.objects.all()  # Fetch all feedback responses
-    return render(request, 'view_feedback_responses.html', {'feedback_responses': feedback_responses})
+    course_id = request.GET.get('course')  # Get the selected course from the request
+    feedback_responses = Feedback.objects.all()
 
+    if course_id:
+        feedback_responses = feedback_responses.filter(question__course_id=course_id)  # Filter by course
+
+    # Prepare data for chart
+    response_counts = {
+        'strongly_agree': 0,
+        'agree': 0,
+        'neutral': 0,
+        'disagree': 0,
+        'strongly_disagree': 0,
+    }
+
+    for feedback in feedback_responses:
+        response_counts[feedback.response] += 1
+
+    return render(request, 'view_feedback_responses.html', {
+        'feedback_responses': feedback_responses,
+        'response_counts': response_counts,
+        'courses': Course.objects.all(),  # Pass all courses for filtering
+    })
 
 from django.shortcuts import render, redirect
 from django.utils import timezone  # Ensure you have this imported
@@ -2871,85 +2923,106 @@ def assign_students(request, teacher_id):
 
     return render(request, 'assign_students.html', {'teacher': teacher, 'students': available_students})
 
-from myApp.models import UploadedMaterial, GeneratedQuestion
-from myApp.utils import  generate_questions_from_text
-# views.py
-from myApp.utils import extract_text_from_pdf
+# from myApp.models import UploadedMaterial, GeneratedQuestion
+# from myApp.utils import  generate_questions_from_text
+# # views.py
+# from myApp.utils import extract_text_from_pdf
 
+# from django.shortcuts import render
+# from myApp.models import UploadedMaterial, GeneratedQuestion
+# from myApp.utils import extract_text_from_pdf, generate_questions_from_text, classify_text_bloom_levels
 
-def upload_pdf_material(request):
-    if request.method == 'POST' and request.FILES.get('material'):
-        material = UploadedMaterial.objects.create(file=request.FILES['material'])
-        text = extract_text_from_pdf(material.file.path)
+# def upload_pdf_material(request):
+#     if request.method == 'POST' and request.FILES.get('material'):
+#         material = UploadedMaterial.objects.create(file=request.FILES['material'])
+#         text = extract_text_from_pdf(material.file.path)
         
-        if "Error:" in text:
-            return render(request, 'upload_pdf_material.html', {'error': text})
+#         if "Error:" in text:
+#             return render(request, 'upload_pdf_material.html', {'error': text})
         
-        # Generate and save questions to the database
-        questions = generate_questions_from_text(text, material)
+#         # Classify text into Bloom's Taxonomy levels
+#         classified_questions = classify_text_bloom_levels(text, material)
         
-        # Generate Question Paper PDF
-        pdf_filename = generate_pdf(questions, answer_key=False)
-        with open(pdf_filename, "rb") as pdf:
-            response = HttpResponse(pdf.read(), content_type='application/pdf')
-            response['Content-Disposition'] = f'attachment; filename={pdf_filename}'
-            return response
+#         # Generate and save questions to the database
+#         for level, questions in classified_questions.items():
+#             for question in questions:
+#                 if not GeneratedQuestion.objects.filter(question_text=question).exists():
+#                     generated_question = GeneratedQuestion(
+#                         material=material,
+#                         question_type=level,
+#                         question_text=question,
+#                         marks=1  # Adjust marks as needed
+#                     )
+#                     generated_question.save()
         
-    return render(request, 'upload_pdf_material.html')
-
-def download_answer_key(request):
-    questions = GeneratedQuestion.objects.all()  # Assuming questions are already generated and saved
-    pdf_filename = generate_pdf(questions, answer_key=True)
+#         return render(request, 'generated_questions_list.html', {'questions': GeneratedQuestion.objects.all()})
     
-    with open(pdf_filename, "rb") as pdf:
-        response = HttpResponse(pdf.read(), content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename={pdf_filename}'
-        return response
+#     return render(request, 'upload_pdf_material.html')
 
-def generated_questions_list(request):
-    questions = GeneratedQuestion.objects.all()
-    return render(request, 'generated_questions_list.html', {'questions': questions})
+# def filter_questions(request):
+#     if request.method == 'POST':
+#         selected_level = request.POST.get('level')
+#         number_of_questions = int(request.POST.get('number'))
 
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
+#         # Filter questions based on the selected Bloom's level
+#         questions = GeneratedQuestion.objects.filter(question_type=selected_level)[:number_of_questions]
 
-def generate_pdf(questions, answer_key=False):
-    pdf_filename = "question_paper_with_answer_key.pdf" if answer_key else "question_paper.pdf"
-    c = canvas.Canvas(pdf_filename, pagesize=letter)
-    width, height = letter
+#         return render(request, 'generated_questions_list.html', {'questions': questions})
 
-    # Title
-    c.setFont("Helvetica-Bold", 14)
-    c.drawString(100, height - 50, "Question Paper")
+#     return render(request, 'filter_questions.html')
+# def download_answer_key(request):
+#     questions = GeneratedQuestion.objects.all()  # Assuming questions are already generated and saved
+#     pdf_filename = generate_pdf(questions, answer_key=True)
     
-    # Generate questions
-    y_position = height - 80
-    for idx, question in enumerate(questions):
-        c.setFont("Helvetica", 12)
-        question_text = f"{idx + 1}. {question.question_text} ({question.marks} marks)"  # Accessing question_text
-        c.drawString(100, y_position, question_text)
-        y_position -= 20
-        
-        # Ensure the text does not overflow the page
-        if y_position < 100:
-            c.showPage()
-            y_position = height - 50
+#     with open(pdf_filename, "rb") as pdf:
+#         response = HttpResponse(pdf.read(), content_type='application/pdf')
+#         response['Content-Disposition'] = f'attachment; filename={pdf_filename}'
+#         return response
 
-    if answer_key:
-        # Include answer key at the end
-        c.showPage()
-        c.setFont("Helvetica-Bold", 14)
-        c.drawString(100, height - 50, "Answer Key")
-        y_position = height - 80
-        for idx, question in enumerate(questions):
-            answer_text = f"Answer to Question {idx + 1}: (Your answer here)"
-            c.setFont("Helvetica", 12)
-            c.drawString(100, y_position, answer_text)
-            y_position -= 20
+# def generated_questions_list(request):
+#     questions = GeneratedQuestion.objects.all()
+#     return render(request, 'generated_questions_list.html', {'questions': questions})
+
+# from reportlab.pdfgen import canvas
+# from reportlab.lib.pagesizes import letter
+
+# def generate_pdf(questions, answer_key=False):
+#     pdf_filename = "question_paper_with_answer_key.pdf" if answer_key else "question_paper.pdf"
+#     c = canvas.Canvas(pdf_filename, pagesize=letter)
+#     width, height = letter
+
+#     # Title
+#     c.setFont("Helvetica-Bold", 14)
+#     c.drawString(100, height - 50, "Question Paper")
+    
+#     # Generate questions
+#     y_position = height - 80
+#     for idx, question in enumerate(questions):
+#         c.setFont("Helvetica", 12)
+#         question_text = f"{idx + 1}. {question.question_text} ({question.marks} marks)"  # Accessing question_text
+#         c.drawString(100, y_position, question_text)
+#         y_position -= 20
+        
+#         # Ensure the text does not overflow the page
+#         if y_position < 100:
+#             c.showPage()
+#             y_position = height - 50
+
+#     if answer_key:
+#         # Include answer key at the end
+#         c.showPage()
+#         c.setFont("Helvetica-Bold", 14)
+#         c.drawString(100, height - 50, "Answer Key")
+#         y_position = height - 80
+#         for idx, question in enumerate(questions):
+#             answer_text = f"Answer to Question {idx + 1}: (Your answer here)"
+#             c.setFont("Helvetica", 12)
+#             c.drawString(100, y_position, answer_text)
+#             y_position -= 20
             
-            if y_position < 100:
-                c.showPage()
-                y_position = height - 50
+#             if y_position < 100:
+#                 c.showPage()
+#                 y_position = height - 50
 
-    c.save()
-    return pdf_filename
+#     c.save()
+#     return pdf_filename

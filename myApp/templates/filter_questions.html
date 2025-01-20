@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filter Questions</title>
+</head>
+<body>
+    <h1>Filter Questions</h1>
+    <form method="post">
+        {% csrf_token %}
+        <label for="level">Select Bloom's Level:</label>
+        <select name="level" id="level">
+            <option value="Remembering">Remembering</option>
+            <option value="Understanding">Understanding</option>
+            <option value="Applying">Applying</option>
+            <option value="Analyzing">Analyzing</option>
+            <option value="Evaluating">Evaluating</option>
+            <option value="Creating">Creating</option>
+        </select>
+        <label for="number">Number of Questions:</label>
+        <input type="number" name="number" id="number" min="1" required>
+        <button type="submit">Filter Questions</button>
+    </form>
+</body>
+</html>
