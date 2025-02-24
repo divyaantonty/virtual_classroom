@@ -202,6 +202,8 @@ urlpatterns = [
     path('save-mind-map/', views.save_mind_map, name='save_mind_map'),
     path('get-mind-maps/', views.get_mind_maps, name='get_mind_maps'),
     path('delete-mind-map/<int:map_id>/', views.delete_mind_map, name='delete_mind_map'),
+
+    path('text-to-speech/<int:material_id>/', views.text_to_speech, name='text_to_speech'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

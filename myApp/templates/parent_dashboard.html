@@ -2718,14 +2718,14 @@
         <!-- Updated sidebar -->
         <nav class="sidebar">
             <div class="feature-boxes">
-                <div class="feature-box">
-                    <a href="#" onclick="showGrades(); return false;">
+                <div class="feature-box" >
+                    <a href="#" onclick="showGrades(); return false;" id="examgrade">
                         <i class="fas fa-chart-line"></i>
                         View Exam Grades
                     </a>
                 </div>
                 <div class="feature-box">
-                    <a href="#" onclick="showAssignments(); return false;">
+                    <a href="#" onclick="showAssignments(); return false;" id="viewassignments">
                         <i class="fas fa-tasks"></i>
                         View Assignments
                     </a>
@@ -3343,7 +3343,7 @@
                             <h2><i class="fas fa-tasks"></i> Submitted Assignments</h2>
                         </div>
                         
-                        
+
                         <div class="assignments-container">
                             {% for submission in assignment_submissions %}
                             <div class="assignment-card">

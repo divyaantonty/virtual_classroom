@@ -47,6 +47,18 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
 import os
 from dotenv import load_dotenv
+from gtts import gTTS
+from django.http import FileResponse, HttpResponse
+from django.shortcuts import get_object_or_404
+from .models import Material
+import PyPDF2
+import docx
+import tempfile
+from transformers import SpeechT5Processor, SpeechT5ForTextToSpeech, SpeechT5HifiGan
+import soundfile as sf
+from datasets import load_dataset
+import pyttsx3
+import threading
 
 # Load environment variables
 load_dotenv()
@@ -5896,3 +5908,144 @@ def delete_mind_map(request, map_id):
         'success': False,
         'error': 'Invalid request method'
     })
+
+from gtts import gTTS
+import os
+from django.http import FileResponse
+from django.shortcuts import get_object_or_404
+from .models import Material
+import PyPDF2
+import docx
+import tempfile
+
+def text_to_speech(request, material_id):
+    try:
+        material = get_object_or_404(Material, id=material_id)
+        text = extract_text_from_file(material.file.path)
+        
+        if not text:
+            return JsonResponse({'success': False, 'error': 'No text found'})
+
+        # Initialize models and processor
+        processor = SpeechT5Processor.from_pretrained("microsoft/speecht5_tts")
+        model = SpeechT5ForTextToSpeech.from_pretrained("microsoft/speecht5_tts")
+        vocoder = SpeechT5HifiGan.from_pretrained("microsoft/speecht5_hifigan")
+
+        # Load speaker embeddings
+        embeddings_dataset = load_dataset("Matthijs/cmu-arctic-xvectors", split="validation")
+        speaker_embeddings = torch.tensor(embeddings_dataset[7306]["xvector"]).unsqueeze(0)
+
+        # Process text
+        inputs = processor(text=text, return_tensors="pt")
+
+        # Generate speech
+        speech = model.generate_speech(inputs["input_ids"], speaker_embeddings, vocoder=vocoder)
+
+        # Create audio directory if it doesn't exist
+        audio_dir = os.path.join(settings.MEDIA_ROOT, 'audio')
+        os.makedirs(audio_dir, exist_ok=True)
+
+        # Save the audio file
+        audio_filename = f'speech_{material_id}.wav'
+        audio_path = os.path.join(audio_dir, audio_filename)
+        sf.write(audio_path, speech.numpy(), samplerate=16000)
+
+        # Return the URL to the audio file
+        audio_url = f'{settings.MEDIA_URL}audio/{audio_filename}'
+        return JsonResponse({
+            'success': True,
+            'audio_url': audio_url
+        })
+
+    except Exception as e:
+        print(f"Error in text_to_speech: {str(e)}")
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def extract_text_from_file(file_path):
+    """Extract text from different file types"""
+    file_extension = os.path.splitext(file_path)[1].lower()
+    
+    try:
+        if file_extension == '.pdf':
+            return extract_from_pdf(file_path)
+        elif file_extension in ['.doc', '.docx']:
+            return extract_from_word(file_path)
+        elif file_extension == '.txt':
+            return extract_from_txt(file_path)
+        else:
+            raise ValueError('Unsupported file type')
+    except Exception as e:
+        print(f"Error extracting text: {str(e)}")
+        return ""
+
+def extract_from_pdf(file_path):
+    text = ""
+    with open(file_path, 'rb') as file:
+        pdf_reader = PyPDF2.PdfReader(file)
+        for page in pdf_reader.pages:
+            text += page.extract_text()
+    return text
+
+def extract_from_word(file_path):
+    doc = docx.Document(file_path)
+    text = []
+    for para in doc.paragraphs:
+        text.append(para.text)
+    return '\n'.join(text)
+
+def extract_from_txt(file_path):
+    with open(file_path, 'r', encoding='utf-8') as file:
+        return file.read()
+
+import pyttsx3
+import threading
+from django.conf import settings
+
+def text_to_speech(request, material_id):
+    try:
+        material = get_object_or_404(Material, id=material_id)
+        text = extract_text_from_file(material.file.path)
+        
+        if not text:
+            return JsonResponse({'success': False, 'error': 'No text found'})
+
+        # Create audio directory if it doesn't exist
+        audio_dir = os.path.join(settings.MEDIA_ROOT, 'audio')
+        os.makedirs(audio_dir, exist_ok=True)
+
+        # Set audio file path
+        audio_filename = f'speech_{material_id}.mp3'
+        audio_path = os.path.join(audio_dir, audio_filename)
+
+        def generate_speech():
+            engine = pyttsx3.init()
+            # Configure voice properties
+            engine.setProperty('rate', 150)    # Speed of speech
+            engine.setProperty('volume', 0.9)  # Volume (0-1)
+            
+            # Get available voices and set a female voice if available
+            voices = engine.getProperty('voices')
+            for voice in voices:
+                if "female" in voice.name.lower():
+                    engine.setProperty('voice', voice.id)
+                    break
+
+            # Generate and save audio
+            engine.save_to_file(text, audio_path)
+            engine.runAndWait()
+
+        # Run speech generation in a separate thread
+        thread = threading.Thread(target=generate_speech)
+        thread.start()
+        thread.join()  # Wait for completion
+
+        # Return the URL to the audio file
+        audio_url = f'{settings.MEDIA_URL}audio/{audio_filename}'
+        return JsonResponse({
+            'success': True,
+            'audio_url': audio_url
+        })
+
+    except Exception as e:
+        print(f"Error in text_to_speech: {str(e)}")
+        return JsonResponse({'success': False, 'error': str(e)})

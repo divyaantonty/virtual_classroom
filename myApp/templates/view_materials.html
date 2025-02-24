@@ -445,6 +445,12 @@
                                     <button class="btn-regenerate" id="regenerate-{{ material.id }}" onclick="generateSummary('{{ material.id }}', true)">
                                         <i class="fas fa-sync"></i> Regenerate Summary
                                     </button>
+                                    {% if material.has_text_to_speech %}
+                                        <button onclick="convertToSpeech({{ material.id }})" class="btn btn-info">
+                                            <i class="fas fa-volume-up"></i> Listen
+                                        </button>
+                                        <audio id="audio-{{ material.id }}" style="display: none;"></audio>
+                                    {% endif %}
                                 </td>
                             </tr>
                             <!-- Add summary section for each material -->
@@ -620,6 +626,58 @@
             } else {
                 summaryRow.style.display = 'none';
             }
+        }
+
+        function convertToSpeech(materialId) {
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Converting...';
+            button.disabled = true;
+
+            const audioElement = document.getElementById(`audio-${materialId}`);
+
+            fetch(`/text-to-speech/${materialId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        audioElement.src = data.audio_url;
+                        audioElement.play();
+                        
+                        // Add loading indicator for audio
+                        audioElement.onloadstart = function() {
+                            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading audio...';
+                        };
+                        
+                        // Reset button when audio starts playing
+                        audioElement.onplay = function() {
+                            button.innerHTML = '<i class="fas fa-pause"></i> Pause';
+                            button.disabled = false;
+                            button.onclick = () => {
+                                if (audioElement.paused) {
+                                    audioElement.play();
+                                    button.innerHTML = '<i class="fas fa-pause"></i> Pause';
+                                } else {
+                                    audioElement.pause();
+                                    button.innerHTML = '<i class="fas fa-play"></i> Play';
+                                }
+                            };
+                        };
+                        
+                        // Handle audio completion
+                        audioElement.onended = function() {
+                            button.innerHTML = originalText;
+                            button.onclick = () => convertToSpeech(materialId);
+                        };
+                    } else {
+                        throw new Error(data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to convert text to speech');
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                });
         }
     </script>
 </body>

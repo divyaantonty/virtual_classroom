@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager # type:
 from django.db import models  # type: ignore
 from django.utils import timezone # type: ignore
 from datetime import timedelta
+import os
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, username, email, password=None):
@@ -209,6 +210,11 @@ class Material(models.Model):
     def __str__(self):
         return self.description
     
+    @property
+    def has_text_to_speech(self):
+        """Check if the material can be converted to speech"""
+        allowed_extensions = ['.pdf', '.doc', '.docx', '.txt']
+        return os.path.splitext(self.file.name)[1].lower() in allowed_extensions
 
 from django.db import models # type: ignore
 from django.utils import timezone # type: ignore
