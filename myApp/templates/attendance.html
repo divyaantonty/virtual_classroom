@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Facial Recognition Attendance</title>
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        #video {
+            width: 640px;
+            height: 480px;
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        #attendance-list {
+            margin-top: 20px;
+            text-align: left;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        #marked-students {
+            list-style-type: none;
+            padding: 0;
+        }
+        #marked-students li {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Facial Recognition Attendance System</h1>
+        <video id="video" autoplay></video>
+        <br>
+        <button class="btn" id="capture">Mark Attendance</button>
+        <div id="attendance-list">
+            <h2>Marked Attendance:</h2>
+            <ul id="marked-students"></ul>
+        </div>
+    </div>
+
+    <script>
+        // Access webcam
+        const video = document.getElementById('video');
+        const captureButton = document.getElementById('capture');
+        const markedStudentsList = document.getElementById('marked-students');
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                console.error('Error accessing webcam:', err);
+                alert('Error accessing webcam. Please make sure your camera is connected and you have given permission to use it.');
+            });
+
+        // Capture and send frame for processing
+        captureButton.addEventListener('click', () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            // Convert canvas to base64
+            const imageData = canvas.toDataURL('image/jpeg');
+
+            // Send to server
+            fetch('/mark-attendance/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: 'image=' + encodeURIComponent(imageData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update attendance list
+                    data.marked_students.forEach(student => {
+                        const li = document.createElement('li');
+                        li.textContent = `${student.name} (${student.roll_number}) - ${student.time}`;
+                        markedStudentsList.appendChild(li);
+                    });
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error processing attendance. Please try again.');
+            });
+        });
+
+        // Function to get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html> 

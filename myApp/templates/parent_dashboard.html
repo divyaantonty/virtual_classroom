@@ -1,3 +1,7 @@
+{% load static %}
+{% load event_filters %}
+{% load custom_filters %}
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -6,9 +10,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parent Dashboard</title>
 
-    {% load static %}
-
-    <link href="https://fonts.googleapis.com/css?family=Muli:300,400,700,900" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'fonts/icomoon/style.css' %}">
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/jquery-ui.css' %}">
@@ -31,76 +34,2669 @@
     </script>
 
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            color: #333;
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
 
-        header {
-            background-color: #4CAF50;
-            padding: 10px 20px;
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            background-image: url("{% static 'images/bk.jpg' %}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        /* Update the header styles */
+        .header {
+            background: #3498db;
+            padding: 1rem;
             color: white;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 0 20px;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-left: 10px;
+            padding-left: 0;
+        }
+
+        .dashboard-title {
+            font-size: 1.8rem;
+            font-weight: 500;
+            margin: 0;
+            flex-grow: 1;
             text-align: center;
         }
 
-        .header-container {
+        .user-info {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 10px;
+            gap: 20px;
+            margin-right: 20px; /* Add right margin */
         }
 
-        .logout-container {
-            color: black;
-        }
-
-        .feature-box {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            padding: 20px;
-            margin-bottom: 10px;
-            text-align: left;
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 64px; /* Height of header */
             width: 250px;
-        }
-
-        .site-section {
-            padding: 20px;
-        }
-
-        .site-section.ftco-subscribe-1 {
-            min-height: 300px;
-            background-size: cover;
-            background-position: center;
-        }
-
-        .container {
-            display: flex;
-            flex-direction: row;
-            gap: 10px;
-            max-width: 100%;
+            height: calc(100vh - 64px);
+            background: white;
+            padding: 2rem 1rem;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
         }
 
         .feature-boxes {
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
+            gap: 1rem;
         }
 
-        footer {
+        .feature-box {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .feature-box:hover {
+            transform: translateX(5px);
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .feature-box::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: #3498db;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .feature-box:hover::before {
+            opacity: 1;
+        }
+
+        .feature-box a {
+            color: #333;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .feature-box i {
+            color: #3498db;
+            font-size: 1.2rem;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            margin-left: 250px;
+            margin-top: 64px;
+            padding: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                top: 64px;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            .dashboard-title {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Update welcome section styles */
+        .welcome-section {
             text-align: center;
-            margin-top: 20px;
+            margin: 20px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 15px;
+            max-width: 600px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(52, 152, 219, 0.1);
+            border: 1px solid rgba(52, 152, 219, 0.1);
         }
 
-        .site-navbar {
-            position: sticky;
+        .welcome-icon {
+            width: 80px;
+            height: 80px;
+            background: #3498db;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        .welcome-icon i {
+            font-size: 35px;
+            color: white;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 5px 25px rgba(52, 152, 219, 0.5);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+            }
+        }
+
+        .welcome-text {
+            font-size: 1.6rem;
+            color: #2c3e50;
+            margin: 15px 0;
+            display: block;
+            font-weight: 500;
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        .welcome-text::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #3498db, transparent);
+        }
+
+        .welcome-decoration {
+            position: absolute;
+            width: 100%;
+            top: 0;
+            left: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #3498db, #2980b9, #3498db);
+            border-radius: 15px 15px 0 0;
+        }
+
+        .welcome-dots {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            opacity: 0.1;
+        }
+
+        .welcome-dots::before {
+            content: '';
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, #3498db 2px, transparent 2px);
+            background-size: 10px 10px;
+        }
+
+        .logout-btn {
+            background-color: white;
+            color: #3498db;
+            padding: 12px 30px;
+            border: 2px solid #3498db;
+            border-radius: 50px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-block;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .logout-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 100%;
+            background: #3498db;
+            transition: all 0.3s ease;
+            z-index: -1;
+        }
+
+        .logout-btn:hover {
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .logout-btn:hover::before {
+            width: 100%;
+        }
+
+        .logout-btn i {
+            margin-right: 8px;
+            transition: transform 0.3s ease;
+        }
+
+        .logout-btn:hover i {
+            transform: translateX(3px);
+        }
+
+        @media (max-width: 768px) {
+            .welcome-section {
+                margin: 15px;
+                padding: 30px 20px;
+            }
+
+            .welcome-text {
+                font-size: 1.3rem;
+            }
+        }
+
+        /* Course Stats Styles */
+        .course-stats {
+            text-align: center;
+            margin: 20px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 15px;
+            max-width: 600px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(52, 152, 219, 0.1);
+            border: 1px solid rgba(52, 152, 219, 0.1);
+            overflow: hidden;
+        }
+
+        .course-icon {
+            width: 70px;
+            height: 70px;
+            background: #3498db;
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+            animation: floatIcon 3s ease-in-out infinite;
+        }
+
+        .course-icon i {
+            font-size: 30px;
+            color: white;
+        }
+
+        @keyframes floatIcon {
+            0% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        .course-label {
+            color: #2c3e50;
+            font-size: 1.2rem;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+
+        .course-count {
+            font-size: 4rem;
+            color: #3498db;
+            font-weight: 600;
+            margin: 15px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+            padding: 10px 30px;
+            border-radius: 15px;
+            background: rgba(52, 152, 219, 0.1);
+            position: relative;
+        }
+
+        .course-count:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.2);
+            background: rgba(52, 152, 219, 0.15);
+        }
+
+        .course-count::after {
+            content: '👆';
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.2rem;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .course-count:hover::after {
+            opacity: 1;
+            bottom: -30px;
+        }
+
+        .thumb-icon {
+            position: absolute;
+            right: 20px;
+            bottom: 20px;
+            font-size: 1.2rem;
+            color: #3498db;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+
+        .course-stats:hover .thumb-icon {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @keyframes thumbPulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .course-stats:hover .thumb-icon i {
+            animation: thumbPulse 1s infinite;
+        }
+
+        .course-stats::before {
+            content: '';
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #3498db, #2980b9);
+        }
+
+        .course-stats .course-label:last-child {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 25px;
+            font-style: italic;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
             z-index: 1000;
-            background-color: white;
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 30px;
+            width: 70%;
+            max-width: 800px;
+            border-radius: 15px;
+            position: relative;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        .close-modal {
+            position: absolute;
+            right: 20px;
+            top: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .course-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .course-item {
+            padding: 20px;
+            margin: 15px 0;
+            background: #f8f9fa;
+            border-radius: 12px;
+            display: block;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .course-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .course-info {
+            display: flex;
+            gap: 20px;
+        }
+
+        .course-image {
+            width: 150px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .course-details {
+            flex: 1;
+        }
+
+        .course-name {
+            font-size: 1.4rem;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .course-description {
+            color: #666;
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .course-dates {
+            display: flex;
+            gap: 20px;
+            color: #3498db;
+            font-size: 0.9rem;
+        }
+
+        .course-dates i {
+            margin-right: 5px;
+        }
+
+        /* Scrollbar Styles */
+        .modal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb {
+            background: #3498db;
+            border-radius: 4px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb:hover {
+            background: #2980b9;
+        }
+
+        /* Animation */
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-content {
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .course-stats {
+                margin: 15px;
+                padding: 20px;
+            }
+
+            .course-icon {
+                width: 60px;
+                height: 60px;
+            }
+
+            .course-icon i {
+                font-size: 25px;
+            }
+
+            .course-count {
+                font-size: 3rem;
+                padding: 8px 20px;
+            }
+
+            .course-label {
+                font-size: 1rem;
+            }
+        }
+
+        .grades-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .grade-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .grade-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .grade-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .grade-header h3 {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        .grade-score {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #3498db;
+            padding: 5px 15px;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 20px;
+        }
+
+        .grade-details {
+            display: grid;
+            gap: 10px;
+            color: #666;
+        }
+
+        .grade-details p {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .grade-details i {
+            color: #3498db;
+        }
+
+        .pass {
+            color: #27ae60;
+            font-weight: 500;
+        }
+
+        .fail {
+            color: #e74c3c;
+            font-weight: 500;
+        }
+
+        .no-grades {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .no-grades i {
+            font-size: 3rem;
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+
+        .grade-stats {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px auto;
+            max-width: 800px;
+            box-shadow: 0 10px 30px rgba(52, 152, 219, 0.1);
+            border: 1px solid rgba(52, 152, 219, 0.1);
+        }
+
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 300px;
+        }
+
+        .chart-header {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .chart-header h3 {
+            font-size: 1.4rem;
+            margin: 0;
+        }
+
+        .chart-header i {
+            margin-right: 10px;
+            color: #3498db;
+        }
+
+        .exam-details {
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        .exam-details h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .exam-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .exam-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .exam-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .exam-header h4 {
+            color: #3498db;
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .exam-date {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .exam-info {
+            display: grid;
+            gap: 12px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #666;
+        }
+
+        .info-item i {
+            color: #3498db;
+            width: 20px;
+        }
+
+        .no-exams {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+        }
+
+        .no-exams i {
+            font-size: 2rem;
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .grade-stats {
+                margin: 15px;
+                padding: 20px;
+            }
+            
+            .chart-container {
+                height: 250px;
+            }
+
+            .exam-header {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+
+        .grade-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .grade-pass {
+            background-color: #27ae60;
+        }
+
+        .grade-fail {
+            background-color: #e74c3c;
+        }
+
+        .info-item .grade-text-pass {
+            color: #27ae60 !important;
+            font-weight: bold;
+        }
+
+        .info-item .grade-text-fail {
+            color: #e74c3c !important;
+            font-weight: bold;
+        }
+
+        .view-all-button {
+            text-align: center;
+            margin: 20px 0;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .details-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(52, 152, 219, 0.2);
+        }
+
+        .details-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .details-btn i {
+            font-size: 1.1rem;
+        }
+
+        .exam-details {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            display: none;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .progress-section {
+            margin: 15px 0;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            flex: 1;
+            margin: 0 15px;
+            background: #eee;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(to right, #3498db, #2ecc71);
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .quiz-stats {
+            display: flex;
+            gap: 20px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            background: #f8f9fa;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .stat-item i {
+            font-size: 1rem;
+        }
+
+        .stat-item i.fa-check-circle {
+            color: #2ecc71;
+        }
+
+        .stat-item i.fa-times-circle {
+            color: #e74c3c;
+        }
+
+        .stat-item i.fa-star {
+            color: #f1c40f;
+        }
+
+        .no-quiz {
+            color: #666;
+            font-style: italic;
+        }
+
+        .attendance-stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+            max-width: 200px;
+        }
+
+        .stat-card i {
+            font-size: 2rem;
+        }
+
+        .stat-card i.fa-check-circle {
+            color: #2ecc71;
+        }
+
+        .stat-card i.fa-times-circle {
+            color: #e74c3c;
+        }
+
+        .stat-card i.fa-percentage {
+            color: #3498db;
+        }
+
+        .stat-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .attendance-table-container {
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+
+        .attendance-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .attendance-table th {
+            background: #3498db;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+
+        .attendance-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .attendance-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .status-badge.present {
+            background: rgba(46, 204, 113, 0.1);
+            color: #27ae60;
+        }
+
+        .status-badge.absent {
+            background: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+        }
+
+        .no-records {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .attendance-stats {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .stat-card {
+                max-width: none;
+            }
+        }
+
+        .profile-update-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 2rem;
+        }
+
+        .section-header {
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 0.5rem;
+        }
+
+        .section-header h2 {
+            color: #2c3e50;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .profile-form {
+            max-width: 600px;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            font-weight: 500;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .form-control {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 0.8rem;
+            width: 100%;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+            outline: none;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-success {
+            background: rgba(46, 204, 113, 0.1);
+            color: #27ae60;
+            border: 1px solid rgba(46, 204, 113, 0.2);
+        }
+
+        .alert-error {
+            background: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .profile-update-section {
+                padding: 1rem;
+            }
+
+            .profile-form {
+                max-width: 100%;
+            }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+            animation: slideIn 0.3s;
+        }
+
+        .close-modal {
+            position: absolute;
+            right: 20px;
+            top: 10px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #666;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close-modal:hover {
+            color: #333;
+        }
+
+        @keyframes fadeIn {
+            from {opacity: 0}
+            to {opacity: 1}
+        }
+
+        @keyframes slideIn {
+            from {transform: translateY(-100px); opacity: 0}
+            to {transform: translateY(0); opacity: 1}
+        }
+
+        .profile-update-section {
+            padding: 1rem;
+        }
+
+        .section-header {
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 0.5rem;
+        }
+
+        .section-header h2 {
+            color: #2c3e50;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+        }
+
+        .profile-form {
+            max-width: 100%;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            font-weight: 500;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .form-control {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 0.8rem;
+            width: 100%;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+            outline: none;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.3s ease;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .password-change-section {
+            padding: 1rem;
+        }
+
+        .password-input-group {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            cursor: pointer;
+            color: #666;
+            transition: color 0.3s;
+        }
+
+        .toggle-password:hover {
+            color: #333;
+        }
+
+        .password-requirements {
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .requirement {
+            color: #666;
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .requirement i {
+            font-size: 8px;
+        }
+
+        .requirement.valid {
+            color: #27ae60;
+        }
+
+        .requirement.valid i {
+            color: #27ae60;
+        }
+
+        .match-message {
+            margin-top: 5px;
+            font-size: 0.9rem;
+        }
+
+        .match-message.valid {
+            color: #27ae60;
+        }
+
+        .match-message.invalid {
+            color: #e74c3c;
+        }
+
+        .assignments-section {
+            padding: 1rem;
+        }
+
+        .assignment-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid #3498db;
+        }
+
+        .assignment-card.submitted {
+            border-left-color: #27ae60;
+        }
+
+        .assignment-card.pending {
+            border-left-color: #e67e22;
+        }
+
+        .assignment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .assignment-header h3 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 1.2rem;
+        }
+
+        .status-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .status-badge.submitted {
+            background: rgba(39, 174, 96, 0.1);
+            color: #27ae60;
+        }
+
+        .status-badge.pending {
+            background: rgba(230, 126, 34, 0.1);
+            color: #e67e22;
+        }
+
+        .assignment-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .text-danger {
+            color: #dc3545;
+        }
+        
+        .text-warning {
+            color: #ffc107;
+        }
+        
+        .text-success {
+            color: #28a745;
+        }
+
+        .assignment-description {
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .teacher-comments {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 6px;
+            color: #2980b9;
+        }
+
+        .no-assignments {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        .no-assignments i {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: #95a5a6;
+        }
+
+        /* Updated Fee Status Styles */
+        .course-payment-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+            transition: transform 0.3s ease;
+        }
+
+        .course-payment-card:hover {
+            transform: translateX(5px);
+        }
+
+        .course-payment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .course-payment-header h5 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        .course-payment-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .payment-detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .detail-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .detail-value {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .transaction-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .transaction-course {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .transaction-date {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .transaction-amount {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .amount {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .payment-status,
+        .transaction-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .payment-status.paid,
+        .transaction-status.success {
+            background: rgba(39, 174, 96, 0.1);
+            color: #27ae60;
+        }
+
+        .payment-status.partial,
+        .transaction-status.pending {
+            background: rgba(243, 156, 18, 0.1);
+            color: #f39c12;
+        }
+
+        .payment-status.unpaid,
+        .transaction-status.failed {
+            background: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+        }
+
+        .course-payments h4,
+        .payment-history h4 {
+            margin: 20px 0;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .no-courses,
+        .no-transactions {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .no-courses i {
+            font-size: 2rem;
+            color: #95a5a6;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .course-payment-details {
+                grid-template-columns: 1fr;
+            }
+
+            .transaction-item {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+
+            .transaction-amount {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+
+        /* Updated Fee Status Styles */
+        .fee-status {
+            background: linear-gradient(145deg, #ffffff, #f5f7fa);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 30px auto;
+            box-shadow: 0 20px 40px rgba(52, 152, 219, 0.15);
+            max-width: 900px;
+            border: 1px solid rgba(52, 152, 219, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .fee-status::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, #3498db, #2980b9, #3498db);
+        }
+
+        .fee-status .card-header {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .fee-status .card-header h3 {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0;
+        }
+
+        .fee-status .card-header h3 i {
+            font-size: 2rem;
+            color: #3498db;
+            background: rgba(52, 152, 219, 0.1);
+            padding: 10px;
+            border-radius: 12px;
+        }
+
+        .fee-summary {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 25px;
+            padding: 30px;
+            background: rgba(52, 152, 219, 0.03);
+            border-radius: 16px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(52, 152, 219, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .fee-summary::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(52, 152, 219, 0.1) 20%, transparent 70%);
+            opacity: 0.5;
+        }
+
+        .fee-item {
+            text-align: center;
+            padding: 25px 35px;
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 350px;
+            box-shadow: 0 10px 20px rgba(52, 152, 219, 0.08);
+            transform: translateY(0);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(52, 152, 219, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .fee-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(52, 152, 219, 0.12);
+        }
+
+        .fee-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(52, 152, 219, 0.03), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+
+        .fee-item:hover::before {
+            transform: translateX(100%);
+        }
+
+        .fee-label {
+            display: block;
+            color: #34495e;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .fee-amount {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: block;
+            margin: 10px 0;
+            position: relative;
+        }
+
+        .fee-amount::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #3498db, transparent);
+        }
+
+        .view-details-btn {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .view-details-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
+        }
+
+        .view-details-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+
+        .view-details-btn:hover::before {
+            transform: translateX(100%);
+        }
+
+        .view-details-btn i {
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .view-details-btn:hover i {
+            transform: translateX(3px);
+        }
+
+        .course-payments {
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .course-payments.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .course-payments h4 {
+            color: #2c3e50;
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(52, 152, 219, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .course-payment-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-left: 5px solid #3498db;
+            box-shadow: 0 10px 20px rgba(52, 152, 219, 0.08);
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateX(-20px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .course-payment-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(52, 152, 219, 0.02), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+
+        .course-payment-card:hover::before {
+            transform: translateX(100%);
+        }
+
+        .course-payment-card.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .course-payment-card:hover {
+            transform: translateX(8px);
+            box-shadow: 0 15px 30px rgba(52, 152, 219, 0.12);
+        }
+
+        .course-payment-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(52, 152, 219, 0.1);
+        }
+
+        .course-payment-header h5 {
+            font-size: 1.3rem;
+            color: #2c3e50;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .payment-detail-item {
+            background: rgba(52, 152, 219, 0.03);
+            padding: 15px 20px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .payment-detail-item:hover {
+            background: rgba(52, 152, 219, 0.06);
+            transform: translateX(5px);
+        }
+
+        .detail-label {
+            color: #34495e;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 768px) {
+            .fee-status {
+                margin: 20px;
+                padding: 20px;
+            }
+
+            .fee-item {
+                padding: 20px;
+            }
+
+            .fee-amount {
+                font-size: 2rem;
+            }
+
+            .view-details-btn {
+                padding: 12px 25px;
+                font-size: 1rem;
+            }
+
+            .course-payment-card {
+                padding: 20px;
+            }
+
+            .payment-detail-item {
+                padding: 12px 15px;
+            }
+        }
+
+        /* Progress Summary Card */
+        .progress-summary-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 15px;  /* Reduced from 25px */
+            margin-bottom: 20px;  /* Reduced from 30px */
+            max-width: 800px;  /* Added max-width */
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .progress-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));  /* Reduced from 250px */
+            gap: 15px;  /* Reduced from 20px */
+            margin-top: 15px;  /* Reduced from 20px */
+        }
+
+        .metric-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;  /* Reduced from 15px */
+            padding: 15px;  /* Reduced from 20px */
+            background: #f8f9fa;
+            border-radius: 10px;  /* Reduced from 12px */
+            transition: transform 0.3s ease;
+        }
+
+        .metric-icon {
+            width: 40px;  /* Reduced from 50px */
+            height: 40px;  /* Reduced from 50px */
+            background: #3498db;
+            border-radius: 8px;  /* Reduced from 12px */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .metric-icon i {
+            font-size: 18px;  /* Reduced from 24px */
+            color: white;
+        }
+
+        .metric-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metric-label {
+            color: #666;
+            font-size: 0.8rem;  /* Reduced from 0.9rem */
+            margin-bottom: 3px;  /* Reduced from 5px */
+        }
+
+        .metric-value {
+            font-size: 1.2rem;  /* Reduced from 1.5rem */
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        /* Upcoming Events */
+        .upcoming-events {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 15px;  /* Reduced from 25px */
+            margin-bottom: 20px;  /* Reduced from 30px */
+            max-width: 800px;  /* Added max-width */
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .events-container {
+            margin-top: 20px;
+        }
+
+        .event-card {
+            display: flex;
+            gap: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            transition: transform 0.3s ease;
+        }
+
+        .event-card:hover {
+            transform: translateX(10px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .event-date {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 80px;
+            padding: 10px;
+            background: #3498db;
+            border-radius: 8px;
+            color: white;
+        }
+
+        .date {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .month {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        .event-details {
+            flex: 1;
+        }
+
+        .event-details h4 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+
+        .event-details p {
+            margin: 0 0 10px 0;
+            color: #666;
+        }
+
+        .event-time {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #3498db;
+            font-size: 0.9rem;
+        }
+
+        /* Communication Center */
+        .communication-center {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 15px;  /* Reduced from 25px */
+            margin-bottom: 20px;  /* Reduced from 30px */
+            max-width: 800px;  /* Added max-width */
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .messages-container {
+            margin-top: 20px;
+        }
+
+        .message-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .message-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .teacher-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .message-date {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .message-content {
+            color: #444;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .btn-reply {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: background 0.3s ease;
+        }
+
+        .btn-reply:hover {
+            background: #2980b9;
+        }
+
+        /* Card Headers */
+        .card-header {
+            margin-bottom: 15px;  /* Reduced from 20px */
+            border-bottom: 2px solid #f1f1f1;
+            padding-bottom: 10px;  /* Reduced from 15px */
+        }
+
+        .card-header h3 {
+            color: #2c3e50;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;  /* Reduced from 10px */
+            font-size: 1.2rem;  /* Reduced from 1.5rem */
+        }
+
+        .card-header h3 i {
+            color: #3498db;
+        }
+
+        /* Empty State Styles */
+        .no-events, .no-messages {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+        }
+
+        .no-events i, .no-messages i {
+            font-size: 2rem;
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .progress-metrics {
+                grid-template-columns: 1fr;
+            }
+
+            .event-card {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .event-date {
+                min-width: 120px;
+            }
+
+            .message-header {
+                flex-direction: column;
+                gap: 5px;
+                align-items: flex-start;
+            }
+        }
+
+        /* Message Center Styles */
+        .new-message-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+            transition: all 0.3s ease;
+        }
+
+        .new-message-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .message-form {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .close-form {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+
+        .form-group select,
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .form-group textarea {
+            height: 120px;
+            resize: vertical;
+        }
+
+        .send-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        .messages-filter {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .filter-btn {
+            background: #f8f9fa;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .message-card {
+            position: relative;
+        }
+
+        .message-card.unread::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 10px;
+            height: 10px;
+            background: #3498db;
+            border-radius: 50%;
+        }
+
+        .message-subject {
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 10px 0;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .page-link {
+            padding: 8px 15px;
+            border-radius: 20px;
+            background: #f8f9fa;
+            color: #2c3e50;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .page-link:hover {
+            background: #3498db;
+            color: white;
+        }
+
+        .current-page {
+            padding: 8px 15px;
+            color: #666;
+        }
+
+        /* Add these styles for better visual feedback */
+        .messages-filter {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            background: #fff;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .filter-btn:hover {
+            background: #e9ecef;
+            transform: translateY(-1px);
+        }
+
+        .filter-btn.active {
+            background: #3498db;
+            color: white;
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+        }
+
+        .message-card {
+            transition: all 0.3s ease;
+        }
+
+        .message-card[style*="display: none"] {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        .message-card[style*="display: block"] {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Add these styles to your existing CSS */
+        .events-section {
+            margin-bottom: 30px;
+        }
+
+        .events-section h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .event-card.registered {
+            border-left: 4px solid #27ae60;
+        }
+
+        .registration-badge {
+            background: #27ae60;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            margin-top: 10px;
+            display: inline-block;
+        }
+
+        .event-info {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Add these styles to your existing CSS */
+        .event-card {
+            cursor: pointer;
+        }
+
+        .event-details-container {
+            padding: 20px;
+        }
+
+        .event-header {
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .event-header h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .event-meta {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            color: #666;
+        }
+
+        .event-meta span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .event-body {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .event-info-item {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .event-info-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .event-info-item i {
+            color: #3498db;
+            font-size: 1.2rem;
+            margin-top: 3px;
+        }
+
+        .event-info-item p {
+            margin: 0;
+            color: #2c3e50;
+        }
+
+        .event-actions {
+            text-align: center;
+        }
+
+        .register-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .register-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .register-btn.registered {
+            background: #27ae60;
+            cursor: default;
+        }
+
+        .register-btn.registered:hover {
+            transform: none;
+        }
+
+        /* Add these styles to your existing CSS */
+        .registration-details {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .registration-details h3 {
+            color: #2c3e50;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+
+        .event-info-item.highlight {
+            background: rgba(52, 152, 219, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .registration-status {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+
+        .registration-status.active {
+            background: rgba(39, 174, 96, 0.1);
+            color: #27ae60;
+        }
+
+        .registration-status.cancelled {
+            background: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+        }
+
+        /* Add these styles to your existing CSS */
+        .suggestion-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .suggestion-box {
+            background: rgba(52, 152, 219, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .suggestion-box h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+        }
+
+        .suggestion-box h4 i {
+            color: #f1c40f;
+        }
+
+        .suggestion-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .suggestion-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            resize: vertical;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        .suggestion-input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        .suggest-btn {
+            align-self: flex-end;
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .suggest-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .suggest-btn i {
+            font-size: 14px;
+        }
+
+        .previous-suggestions {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        .suggestions-list {
+            margin-top: 15px;
+        }
+
+        .suggestion-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+        }
+
+        .suggestion-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .suggestion-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .suggestion-header i {
+            margin-right: 5px;
+            color: #3498db;
+        }
+
+        .suggestion-content {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .suggestion-status {
+            text-align: right;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+
+        .status-badge.read {
+            background: rgba(39, 174, 96, 0.1);
+            color: #27ae60;
+        }
+
+        .status-badge.unread {
+            background: rgba(52, 152, 219, 0.1);
+            color: #3498db;
+        }
+
+        .no-suggestions {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .no-suggestions i {
+            font-size: 2rem;
+            color: #95a5a6;
+            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -108,52 +2704,722 @@
 <body data-spy="scroll" data-target=".site-navbar-target" data-offset="300">
 
     <div class="site-wrap">
-        <header class="site-navbar py-4 js-sticky-header site-navbar-target" role="banner">
-            <div class="container header-container">
-                <div class="site-logo">
-                    <a href="{% url 'index' %}" class="d-block">
-                        <img src="{% static 'images/logo.png' %}" alt="Image" class="img-fluid">
-                        <h2 class="mb-0">Parent Dashboard</h2>
-                        <p class="welcome-text">Welcome {{ student.username }}  Parent</p>
-                    </a>
-                </div>
-                <div class="logout-container">
-                    <a href="{% url 'logout' %}" class="nav-link text-right" style="color: black;">Logout</a>
-                </div>
+        <!-- Updated header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">Academics</div>
+                <h1 class="dashboard-title">Parent Dashboard</h1> 
+                <a href="{% url 'logout' %}" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
             </div>
         </header>
 
-        <div class="site-section ftco-subscribe-1 site-blocks-cover pb-4" style="background-image: url('{% static 'images/bg_1.jpg' %}')">
-            <div class="container">
-                <div class="row align-items-end">
-                    <div class="col-lg-12">
-                        <!-- Content can be added here if needed -->
-                    </div>
+        <!-- Updated sidebar -->
+        <nav class="sidebar">
+            <div class="feature-boxes">
+                <div class="feature-box">
+                    <a href="#" onclick="showGrades(); return false;">
+                        <i class="fas fa-chart-line"></i>
+                        View Exam Grades
+                    </a>
+                </div>
+                <div class="feature-box">
+                    <a href="#" onclick="showAssignments(); return false;">
+                        <i class="fas fa-tasks"></i>
+                        View Assignments
+                    </a>
+                </div>
+                <div class="feature-box">
+                    <a href="#" onclick="showAttendance(); return false;">
+                        <i class="fas fa-user-check"></i>
+                        Attendance Details
+                    </a>
+                </div>
+                <div class="feature-box">
+                    <a href="#" onclick="showPasswordModal(); return false;">
+                        <i class="fas fa-key"></i>
+                        Change Password
+                    </a>
+                </div>
+                <div class="feature-box">
+                    <a href="#" onclick="showProfileModal(); return false;">
+                        <i class="fas fa-user-edit"></i>
+                        Update Profile
+                    </a>
                 </div>
             </div>
-        </div>
+        </nav>
 
-        <div class="site-section">
-            <div class="container">
-                <div class="feature-boxes">
-                    <div class="feature-box">
-                        <a href="#">View Child,s Grades</a>
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div class="welcome-section">
+                <div class="welcome-decoration"></div>
+                <div class="welcome-icon">
+                    <i class="fas fa-user-friends"></i>
+                </div>
+                <span class="welcome-text">Welcome {{ student.username }} Parent</span>
+                <div class="welcome-dots"></div>
+            </div>
+            <!-- Rest of your content -->
+            <div class="course-stats">
+                <div class="course-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <div class="course-label">Total Courses Enrolled</div>
+                <div class="course-count" onclick="showCourses()">
+                    {{ courses.count }}
+                </div>
+                <div class="course-label">Click to view all courses</div>
+            </div>
+
+            <!-- Student Progress Summary Card -->
+            <div class="progress-summary-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-chart-bar"></i> Student Progress Summary</h3>
+                </div>
+                <div class="progress-metrics">
+                    <div class="metric-item">
+                        <div class="metric-icon">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <div class="metric-info">
+                            <span class="metric-label">Overall GPA</span>
+                            <span class="metric-value">{{ overall_gpa|default:"N/A" }}</span>
+                        </div>
                     </div>
-                    <div class="feature-box">
-                        <a href="{% url 'view_class_schedule' %}">View Child,s Class schedule</a>
+                    <div class="metric-item">
+                        <div class="metric-icon">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <div class="metric-info">
+                            <span class="metric-label">Class Rank</span>
+                            <span class="metric-value">{{ class_rank|default:"N/A" }}</span>
+                        </div>
                     </div>
-                    <div class="feature-box">
-                        <a href="#">Attendence Details</a>
-                    </div>
-                    <div class="feature-box">
-                        <a href="{% url 'change_password' %}">Change password</a>
-                    </div>
-                    <div class="feature-box">
-                        <a href="{% url 'parent_update_profile' %}">Update Profile</a>
+                    <div class="metric-item">
+                        <div class="metric-icon">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <div class="metric-info">
+                            <span class="metric-label">Completed Assignments</span>
+                            <span class="metric-value">{{ completed_assignments_count|default:"0" }}/{{ total_assignments_count|default:"0" }}</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+
+            <!-- Upcoming Events Calendar -->
+            <div class="upcoming-events">
+                <div class="card-header">
+                    <h3><i class="fas fa-calendar-alt"></i> Events</h3>
+                </div>
+                
+                <!-- Available Events -->
+                <div class="events-section">
+                    <h4>Available Events</h4>
+                    <div class="events-container">
+                        {% if upcoming_events %}
+                            {% for event in upcoming_events %}
+                                <div class="event-card" data-event-id="{{ event.id }}" onclick="showEventDetails(this)">
+                                    <div class="event-date">
+                                        <span class="date">{{ event.start_time|date:"d" }}</span>
+                                        <span class="month">{{ event.start_time|date:"M" }}</span>
+                                    </div>
+                                    <div class="event-details">
+                                        <h4 class="event-title">{{ event.title }}</h4>
+                                        <p class="event-description">{{ event.description }}</p>
+                                        <div class="event-meta">
+                                            <span class="event-time">{{ event.start_time|date:"g:i A" }}</span>
+                                            <span class="event-location">{{ event.location|default:"Online" }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="no-events">
+                                <i class="fas fa-calendar-times"></i>
+                                <p>No upcoming events available</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Registered Events -->
+                <div class="events-section">
+                    <h4>Registered Events</h4>
+                    <div class="events-container">
+                        {% if registered_events %}
+                            {% for registration in registered_events %}
+                                <div class="event-card registered" 
+                                     onclick="showEventDetails(this, true, '{{ registration.registration_date|date:"M d, Y" }}')">
+                                    <div class="event-date">
+                                        <span class="date">{{ registration.event.start_time|date:"d" }}</span>
+                                        <span class="month">{{ registration.event.start_time|date:"M" }}</span>
+                                    </div>
+                                    <div class="event-details">
+                                        <h4>{{ registration.event.title }}</h4>
+                                        <p>{{ registration.event.description }}</p>
+                                        <div class="event-info">
+                                            <span class="event-time">
+                                                <i class="fas fa-clock"></i> 
+                                                {{ registration.event|format_event_time }}
+                                            </span>
+                                            <span class="registration-date">
+                                                <i class="fas fa-calendar-check"></i>
+                                                Registered on: {{ registration.registration_date|date:"M d, Y" }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="no-events">
+                                <i class="fas fa-calendar-times"></i>
+                                <p>No registered events</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Communication Center -->
+            <div class="communication-center">
+                <div class="card-header">
+                    <h3><i class="fas fa-comments"></i> Communication Center</h3>
+                    <button class="new-message-btn" onclick="showNewMessageForm()">
+                        <i class="fas fa-plus"></i> New Message
+                    </button>
+                </div>
+                
+                <!-- New Message Form (Hidden by default) -->
+                <div id="newMessageForm" class="message-form" style="display: none;">
+                    <div class="form-header">
+                        <h4>Send New Message</h4>
+                        <button class="close-form" onclick="hideNewMessageForm()">×</button>
+                    </div>
+                    <!-- Replace your existing message form with this -->
+                <form id="messageForm" onsubmit="sendMessage(event)">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="teacherSelect">Select Teacher:</label>
+                        <select id="teacherSelect" name="teacher_id" required>
+                            <option value="">Choose a teacher...</option>
+                            {% for enrollment in courses %}
+                                {% for teacher_course in enrollment.course.course_teachers.all %}
+                                    <option value="{{ teacher_course.teacher.id }}">
+                                        {{ teacher_course.teacher.first_name }} {{ teacher_course.teacher.last_name }} 
+                                        ({{ enrollment.course.course_name }})
+                                    </option>
+                                {% endfor %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="subject">Subject:</label>
+                        <input type="text" id="subject" name="subject" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="content">Message:</label>
+                        <textarea id="content" name="content" rows="4" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Send Message</button>
+                </form>
+                </div>
+
+                <!-- Messages Container -->
+                <div class="messages-container">
+                    <div class="messages-filter">
+                        <button class="filter-btn active" data-filter="all">All Messages</button>
+                        <button class="filter-btn" data-filter="unread">Unread</button>
+                        <button class="filter-btn" data-filter="sent">Sent</button>
+                    </div>
+                    
+                    <div class="teacher-messages">
+                        {% if messages_page %}
+                            {% for message in messages_page %}
+                            <div class="message-card {% if not message.is_read and message.message_type == 'teacher_to_parent' %}unread{% endif %}"
+                                 data-message-type="{{ message.message_type }}"
+                                 data-is-read="{{ message.is_read|lower }}">
+                                <div class="message-header">
+                                    {% if message.message_type == 'teacher_to_parent' %}
+                                        <span class="teacher-name">From: {{ message.teacher.first_name }} {{ message.teacher.last_name }}</span>
+                                    {% else %}
+                                        <span class="teacher-name">To: {{ message.teacher.first_name }} {{ message.teacher.last_name }}</span>
+                                    {% endif %}
+                                    <span class="message-date">{{ message.date|date:"M d, Y H:i" }}</span>
+                                </div>
+                                <div class="message-subject">
+                                    {{ message.subject }}
+                                </div>
+                                <div class="message-content">
+                                    {{ message.content }}
+                                </div>
+                                <div class="message-actions">
+                                    {% if message.message_type == 'teacher_to_parent' %}
+                                        <button class="btn-reply" onclick="showReplyForm('{{ message.teacher.id }}', '{{ message.subject }}')">
+                                            <i class="fas fa-reply"></i> Reply
+                                        </button>
+                                    {% endif %}
+                                    <button class="btn-delete" onclick="deleteMessage('{{ message.id }}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fee Payment Status -->
+            <div class="fee-status">
+                <div class="card-header">
+                    <h3><i class="fas fa-money-bill-wave"></i> Course Fee Details</h3>
+                </div>
+                <div class="fee-details">
+                    <!-- Overall Summary -->
+                    <div class="fee-summary">
+                        <div class="fee-item">
+                            <span class="fee-label">Total Course Fees</span>
+                            <span class="fee-amount">₹{{ total_course_fees|default:"0" }}</span>
+                        </div>
+                        <button class="view-details-btn" onclick="toggleCourseDetails()">
+                            <i class="fas fa-list"></i> View Course-wise Details
+                        </button>
+                    </div>
+
+                    <!-- Course-wise Fee Details (Hidden by default) -->
+                    <div class="course-payments" id="coursePayments" style="display: none;">
+                        <h4><i class="fas fa-list"></i> Course-wise Fee Details</h4>
+                        {% if courses %}
+                            {% for enrollment in courses %}
+                            <div class="course-payment-card">
+                                <div class="course-payment-header">
+                                    <h5>{{ enrollment.course.course_name }}</h5>
+                                </div>
+                                <div class="course-payment-details">
+                                    <div class="payment-detail-item">
+                                        <span class="detail-label">Course Fee:</span>
+                                        <span class="detail-value">₹{{ enrollment.course.price }}</span>
+                                    </div>
+                                    <div class="payment-detail-item">
+                                        <span class="detail-label">Enrollment Date:</span>
+                                        <span class="detail-value">{{ enrollment.enrollment_date|date:"M d, Y" }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="no-courses">
+                                <i class="fas fa-info-circle"></i>
+                                <p>No enrolled courses found</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Updated grade stats section -->
+            <div class="grade-stats">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-chart-line"></i> Grade Progress</h3>
+                    </div>
+                    <canvas id="gradeChart"></canvas>
+                </div>
+                
+                <!-- Add View All Details button -->
+                <div class="view-all-button">
+                    <button onclick="toggleAllDetails()" class="details-btn">
+                        <i class="fas fa-list"></i> View All Quiz Details
+                    </button>
+                </div>
+
+                <!-- Exam details section (hidden by default) -->
+                <div class="exam-details" id="examDetails" style="display: none;">
+                    <h3><i class="fas fa-list"></i> Detailed Exam Results</h3>
+                    {% for grade in grades %}
+                    <div class="exam-card">
+                        <div class="exam-header">
+                            <h4>{{ grade.question.quiz.title }}</h4>
+                            <span class="exam-date">{{ grade.attempt_date|date:"M d, Y" }}</span>
+                        </div>
+                        <div class="exam-info">
+                            <div class="info-item">
+                                <i class="fas fa-percentage"></i>
+                                <span>Score: {{ grade.percentage|default:0 }}%</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-book"></i>
+                                <span>Course: {{ grade.question.quiz.course.course_name }}</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-star"></i>
+                                <span>Marks: {{ grade.marks_obtained|default:"N/A" }}</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-award"></i>
+                                <span class="{% if grade.percentage >= 50 %}grade-text-pass{% else %}grade-text-fail{% endif %}">
+                                    Grade: {{ grade.percentage|default:0|floatformat:0 }}% 
+                                    ({{ grade.percentage|default:0|floatformat:0|yesno:"A+,F" }})
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="no-exams">
+                        <i class="fas fa-info-circle"></i>
+                        <p>No exam results available yet.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Modal for course details -->
+            <div id="courseModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-modal" onclick="closeModal()">&times;</span>
+                    <h2 style="margin-bottom: 20px; color: #3498db;">Enrolled Courses</h2>
+                    <ul class="course-list">
+                        {% for enrollment in courses %}
+                        <li class="course-item">
+                            <div class="course-info">
+                                {% if enrollment.course.image %}
+                                    <img src="{{ enrollment.course.image.url }}" alt="{{ enrollment.course.course_name }}" class="course-image">
+                                {% endif %}
+                                <div class="course-details">
+                                    <h3 class="course-name">{{ enrollment.course.course_name }}</h3>
+                                    <p class="course-description">{{ enrollment.course.description|truncatewords:30 }}</p>
+                                    
+                                    <!-- Quiz Performance Section -->
+                                    <div class="progress-section">
+                                        <div class="progress-info">
+                                            <span class="progress-label">Quiz Performance</span>
+                                            {% with quiz_grades=grades|filter_grades:enrollment.course %}
+                                            {% if quiz_grades %}
+                                                {% with avg_score=quiz_grades|average_score %}
+                                                <span class="progress-percentage">{{ avg_score|floatformat:1 }}%</span>
+                                                <div class="progress-bar">
+                                                    <div class="progress-fill" style="width: {{ avg_score }}%"></div>
+                                                </div>
+                                                {% endwith %}
+                                            {% else %}
+                                                <span class="no-quiz">No quizzes attempted yet</span>
+                                            {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                    </div>
+
+                                    <!-- Quiz Statistics -->
+                                    <div class="quiz-stats">
+                                        {% with quiz_stats=grades|quiz_stats:enrollment.course %}
+                                        <div class="stat-item">
+                                            <i class="fas fa-check-circle"></i>
+                                            <span>Passed: {{ quiz_stats.passed }}</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <i class="fas fa-times-circle"></i>
+                                            <span>Failed: {{ quiz_stats.failed }}</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <i class="fas fa-star"></i>
+                                            <span>Best Score: {{ quiz_stats.best_score|default:0 }}%</span>
+                                        </div>
+                                        {% endwith %}
+                                    </div>
+
+                                    <div class="course-dates">
+                                        <span><i class="fas fa-calendar-alt"></i> Start: {{ enrollment.course.starting_date|date:"M d, Y" }}</span>
+                                        {% if enrollment.course.ending_date %}
+                                            <span><i class="fas fa-calendar-check"></i> End: {{ enrollment.course.ending_date|date:"M d, Y" }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            
+
+            <!-- Add this modal for grades -->
+            <div id="gradesModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-modal" onclick="closeGradesModal()">&times;</span>
+                    <h2 style="margin-bottom: 20px; color: #3498db;">
+                        <i class="fas fa-list"></i> Detailed Exam Results
+                    </h2>
+                    <div class="exam-cards-container">
+                        {% for grade in grades %}
+                        <div class="exam-card">
+                            <div class="exam-header">
+                                <h4>{{ grade.question.quiz.title }}</h4>
+                                <span class="exam-date">{{ grade.attempt_date|date:"M d, Y" }}</span>
+                            </div>
+                            <div class="exam-info">
+                                <div class="info-item">
+                                    <i class="fas fa-percentage"></i>
+                                    <span>Score: {{ grade.percentage|default:0 }}%</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-book"></i>
+                                    <span>Course: {{ grade.question.quiz.course.course_name }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-star"></i>
+                                    <span>Marks: {{ grade.marks_obtained|default:"N/A" }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-award"></i>
+                                    <span class="{% if grade.percentage >= 50 %}grade-text-pass{% else %}grade-text-fail{% endif %}">
+                                        Grade: {{ grade.percentage|default:0|floatformat:0 }}% 
+                                        ({{ grade.percentage|default:0|floatformat:0|yesno:"A+,F" }})
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="no-exams">
+                            <i class="fas fa-info-circle"></i>
+                            <p>No exam results available yet.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add the attendance modal before the closing </main> tag -->
+            <div id="attendanceModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-modal" onclick="closeAttendanceModal()">&times;</span>
+                    <h2 style="margin-bottom: 20px; color: #3498db;">
+                        <i class="fas fa-calendar-check"></i> Attendance Record
+                    </h2>
+                    
+                    <div class="attendance-stats">
+                        <div class="stat-card">
+                            <i class="fas fa-check-circle"></i>
+                            <div class="stat-info">
+                                <span class="stat-value">{{ present_count }}</span>
+                                <span class="stat-label">Present Hours</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-times-circle"></i>
+                            <div class="stat-info">
+                                <span class="stat-value">{{ absent_count }}</span>
+                                <span class="stat-label">Absent Hours</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-percentage"></i>
+                            <div class="stat-info">
+                                <span class="stat-value">{{ attendance_percentage|floatformat:1 }}%</span>
+                                <span class="stat-label">Attendance Rate</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="attendance-table-container">
+                        <table class="attendance-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Course</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attendance in attendance_records %}
+                                <tr class="{% if attendance.status == 'present' %}present{% else %}absent{% endif %}">
+                                    <td>{{ attendance.check_in_time|date:"M d, Y" }}</td>
+                                    <td>
+                                        <span class="status-badge {% if attendance.status == 'present' %}present{% else %}absent{% endif %}">
+                                            {{ attendance.status|title }}
+                                        </span>
+                                    </td>
+                                    <td>{{ attendance.class_schedule.class_name }}</td>
+                                    <td>{{ attendance.check_in_time|time:"h:i A" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="no-records">No attendance records found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add this modal for profile update -->
+            <div id="profileModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-modal" onclick="closeProfileModal()">&times;</span>
+                    <div class="profile-update-section">
+                        <div class="section-header">
+                            <h2><i class="fas fa-user-edit"></i> Update Profile</h2>
+                        </div>
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                        <form method="POST" action="{% url 'parent_update_profile' %}" class="profile-form">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label for="auto_generated_username">Username</label>
+                                <input type="text" class="form-control" id="auto_generated_username" 
+                                       name="auto_generated_username" value="{{ parent.auto_generated_username }}" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Update Profile
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add this password change modal -->
+            <div id="passwordModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-modal" onclick="closePasswordModal()">&times;</span>
+                    <div class="password-change-section">
+                        <div class="section-header">
+                            <h2><i class="fas fa-key"></i> Change Password</h2>
+                        </div>
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                        <form method="POST" action="{% url 'change_password' %}" class="password-form" id="passwordForm" onsubmit="return validatePassword()">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label for="old_password">Old Password</label>
+                                <div class="password-input-group">
+                                    <input type="password" class="form-control" id="old_password" name="old_password" required>
+                                    <i class="fas fa-eye toggle-password" onclick="togglePassword('old_password')"></i>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="new_password">New Password</label>
+                                <div class="password-input-group">
+                                    <input type="password" class="form-control" id="new_password" name="new_password" required>
+                                    <i class="fas fa-eye toggle-password" onclick="togglePassword('new_password')"></i>
+                                </div>
+                                <div class="password-requirements">
+                                    <p id="length-check" class="requirement"><i class="fas fa-circle"></i> At least 8 characters</p>
+                                    <p id="uppercase-check" class="requirement"><i class="fas fa-circle"></i> One uppercase letter</p>
+                                    <p id="number-check" class="requirement"><i class="fas fa-circle"></i> One number</p>
+                                    <p id="special-check" class="requirement"><i class="fas fa-circle"></i> One special character</p>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="confirm_password">Confirm New Password</label>
+                                <div class="password-input-group">
+                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                                    <i class="fas fa-eye toggle-password" onclick="togglePassword('confirm_password')"></i>
+                                </div>
+                                <div id="password-match" class="match-message"></div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Change Password
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add this assignments modal -->
+            <div id="assignmentsModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-modal" onclick="closeAssignmentsModal()">&times;</span>
+                    <div class="assignments-section">
+                        <div class="section-header">
+                            <h2><i class="fas fa-tasks"></i> Submitted Assignments</h2>
+                        </div>
+                        
+                        <div class="assignments-container">
+                            {% for submission in assignment_submissions %}
+                            <div class="assignment-card">
+                                <div class="assignment-header">
+                                    <h3>{{ submission.assignment.title }}</h3>
+                                    <span class="status-badge submitted">
+                                        Submitted
+                                    </span>
+                                </div>
+                                
+                                <div class="assignment-details">
+                                    <div class="detail-item">
+                                        <i class="fas fa-book"></i>
+                                        <span>Course: {{ submission.assignment.course_name.course_name }}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        <span>Due Date: {{ submission.assignment.end_date|date:"M d, Y" }}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <i class="fas fa-clock"></i>
+                                        <span>Submission Date: {{ submission.submitted_at|date:"M d, Y H:i" }}</span>
+                                    </div>
+                                
+                                    {% if submission.grade %}
+                                    <div class="detail-item">
+                                        <i class="fas fa-star"></i>
+                                        <span>Grade: {{ submission.grade }}</span>
+                                    </div>
+                                    {% endif %}
+                                    <div class="detail-item">
+                                        <i class="fas fa-clock"></i>
+                                        <span>Submission Status: 
+                                            {% if submission.is_overdue %}
+                                                <span class="text-danger">
+                                                    <i class="fas fa-exclamation-circle"></i>
+                                                    Submitted {{ submission.days_overdue }} day{{ submission.days_overdue|pluralize }} late
+                                                </span>
+                                            {% elif submission.submitted_on == 'last day' %}
+                                                <span class="text-warning">
+                                                    <i class="fas fa-clock"></i>
+                                                    Submitted on the due date
+                                                </span>
+                                            {% else %}
+                                                <span class="text-success">
+                                                    <i class="fas fa-check-circle"></i>
+                                                    Submitted {{ submission.days_early }} day{{ submission.days_early|pluralize }} early
+                                                </span>
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="assignment-description">
+                                    <h4>Description:</h4>
+                                    <p>{{ submission.assignment.description }}</p>
+                                </div>
+                                
+                                {% if submission.file %}
+                                <div class="submission-file">
+                                    <a href="{{ submission.file.url }}" target="_blank" class="btn btn-secondary">
+                                        <i class="fas fa-download"></i> Download Submitted File
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% empty %}
+                            <div class="no-assignments">
+                                <i class="fas fa-info-circle"></i>
+                                <p>No assignments submitted yet.</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
@@ -172,6 +3438,819 @@
     <script src="{% static 'js/jquery.mb.YTPlayer.min.js' %}"></script>
     <script src="{% static 'js/main.js' %}"></script>
 
+    <script>
+        function showCourses() {
+            document.getElementById('courseModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('courseModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const courseModal = document.getElementById('courseModal');
+            const gradesModal = document.getElementById('gradesModal');
+            const attendanceModal = document.getElementById('attendanceModal');
+            const profileModal = document.getElementById('profileModal');
+            const passwordModal = document.getElementById('passwordModal');
+            const assignmentsModal = document.getElementById('assignmentsModal');
+            
+            if (event.target == courseModal) {
+                courseModal.style.display = 'none';
+            }
+            if (event.target == gradesModal) {
+                gradesModal.style.display = 'none';
+            }
+            if (event.target == attendanceModal) {
+                attendanceModal.style.display = 'none';
+            }
+            if (event.target == profileModal) {
+                profileModal.style.display = 'none';
+            }
+            if (event.target == passwordModal) {
+                passwordModal.style.display = 'none';
+                resetForm();
+            }
+            if (event.target == assignmentsModal) {
+                assignmentsModal.style.display = 'none';
+            }
+        }
+
+        function showGrades() {
+            document.getElementById('gradesModal').style.display = 'block';
+        }
+
+        function closeGradesModal() {
+            document.getElementById('gradesModal').style.display = 'none';
+        }
+
+        function showAssignments() {
+            document.getElementById('assignmentsModal').style.display = 'block';
+        }
+
+        function closeAssignmentsModal() {
+            document.getElementById('assignmentsModal').style.display = 'none';
+        }
+
+        function showAttendance() {
+            document.getElementById('attendanceModal').style.display = 'block';
+        }
+
+        function closeAttendanceModal() {
+            document.getElementById('attendanceModal').style.display = 'none';
+        }
+
+        function showProfileModal() {
+            document.getElementById('profileModal').style.display = 'block';
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').style.display = 'none';
+        }
+
+        function showPasswordModal() {
+            document.getElementById('passwordModal').style.display = 'block';
+        }
+
+        function closePasswordModal() {
+            document.getElementById('passwordModal').style.display = 'none';
+            resetForm();
+        }
+
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = input.nextElementSibling;
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        function validatePassword() {
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            
+            // Password requirements
+            const hasLength = newPassword.length >= 8;
+            const hasUpperCase = /[A-Z]/.test(newPassword);
+            const hasNumber = /[0-9]/.test(newPassword);
+            const hasSpecial = /[!@#$%^&*]/.test(newPassword);
+            
+            // Update requirement indicators
+            updateRequirement('length-check', hasLength);
+            updateRequirement('uppercase-check', hasUpperCase);
+            updateRequirement('number-check', hasNumber);
+            updateRequirement('special-check', hasSpecial);
+            
+            // Check if passwords match
+            const matchMessage = document.getElementById('password-match');
+            if (newPassword && confirmPassword) {
+                if (newPassword === confirmPassword) {
+                    matchMessage.textContent = 'Passwords match';
+                    matchMessage.className = 'match-message valid';
+                } else {
+                    matchMessage.textContent = 'Passwords do not match';
+                    matchMessage.className = 'match-message invalid';
+                    return false;
+                }
+            }
+            
+            // Return true only if all requirements are met
+            return hasLength && hasUpperCase && hasNumber && hasSpecial && 
+                   newPassword === confirmPassword;
+        }
+
+        function updateRequirement(id, isValid) {
+            const element = document.getElementById(id);
+            if (isValid) {
+                element.classList.add('valid');
+                element.querySelector('i').className = 'fas fa-check-circle';
+            } else {
+                element.classList.remove('valid');
+                element.querySelector('i').className = 'fas fa-circle';
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('passwordForm').reset();
+            document.querySelectorAll('.requirement').forEach(req => {
+                req.classList.remove('valid');
+                req.querySelector('i').className = 'fas fa-circle';
+            });
+            document.getElementById('password-match').textContent = '';
+        }
+
+        // Add password validation on input
+        document.getElementById('new_password').addEventListener('input', validatePassword);
+        document.getElementById('confirm_password').addEventListener('input', validatePassword);
+    </script>
+
+    <!-- Add Chart.js library before your closing body tag -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Add this JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('gradeChart').getContext('2d');
+            
+            // Prepare data from your grades
+            const grades = [
+                {% for grade in grades %}
+                    {
+                        quiz: "{{ grade.question.quiz.title }}",
+                        percentage: {{ grade.percentage|default:0 }},
+                        date: "{{ grade.attempt_date|date:'M d, Y' }}",
+                        grade: "{{ grade.percentage|default:0|floatformat:0 }}" >= 50 ? 'A+' : 'F'
+                    },
+                {% endfor %}
+            ];
+
+            // Get last 5 grades for better visualization
+            const lastFiveGrades = grades.slice(0, 5).reverse();
+
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: lastFiveGrades.map(grade => grade.quiz),
+                    datasets: [{
+                        label: 'Grade Percentage',
+                        data: lastFiveGrades.map(grade => grade.percentage),
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: lastFiveGrades.map(grade => 
+                            grade.percentage >= 50 ? '#27ae60' : '#e74c3c'
+                        ),
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleColor: '#fff',
+                            titleFont: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            callbacks: {
+                                label: function(context) {
+                                    const grade = context.raw >= 50 ? 'A+' : 'F';
+                                    const color = grade === 'A+' ? '#27ae60' : '#e74c3c';
+                                    return [
+                                        `Score: ${context.raw}%`,
+                                        `Grade: ${grade}`
+                                    ];
+                                },
+                                labelTextColor: function(context) {
+                                    return context.raw >= 50 ? '#27ae60' : '#e74c3c';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Add hover effect to points
+            ctx.canvas.addEventListener('mousemove', function(event) {
+                const points = chart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, false);
+                if (points.length) {
+                    ctx.canvas.style.cursor = 'pointer';
+                } else {
+                    ctx.canvas.style.cursor = 'default';
+                }
+            });
+
+            // Add click handler for chart points
+            chart.options.onClick = (event, elements) => {
+                if (elements.length > 0) {
+                    const index = elements[0].index;
+                    const grade = lastFiveGrades[index];
+                    showGradeDetails(grade);
+                }
+            };
+        });
+
+        function showGradeDetails(grade) {
+            // Find and show only the specific grade's details
+            const examCards = document.querySelectorAll('.exam-card');
+            examCards.forEach(card => {
+                const quizTitle = card.querySelector('h4').textContent;
+                if (quizTitle === grade.quiz) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            document.getElementById('examDetails').style.display = 'block';
+        }
+
+        function toggleAllDetails() {
+            const examDetails = document.getElementById('examDetails');
+            const button = document.querySelector('.details-btn');
+            
+            if (examDetails.style.display === 'none') {
+                examDetails.style.display = 'block';
+                // Show all cards
+                document.querySelectorAll('.exam-card').forEach(card => {
+                    card.style.display = 'block';
+                });
+                button.innerHTML = '<i class="fas fa-times"></i> Hide Quiz Details';
+            } else {
+                examDetails.style.display = 'none';
+                button.innerHTML = '<i class="fas fa-list"></i> View All Quiz Details';
+            }
+        }
+    </script>
+
+    <!-- Add this script -->
+    <script>
+        // Smooth scroll to profile section when clicking the sidebar link
+        document.querySelector('a[href="#profile-update"]').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.querySelector('#profile-update').scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+
+        // Show success message temporarily
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 300);
+            }, 3000);
+        });
+    </script>
+
+    <script>
+        function toggleCourseDetails() {
+            const coursePayments = document.getElementById('coursePayments');
+            const button = document.querySelector('.view-details-btn');
+            const cards = document.querySelectorAll('.course-payment-card');
+
+            if (coursePayments.style.display === 'none') {
+                // Show details
+                coursePayments.style.display = 'block';
+                setTimeout(() => {
+                    coursePayments.classList.add('show');
+                    // Animate cards one by one
+                    cards.forEach((card, index) => {
+                        setTimeout(() => {
+                            card.classList.add('show');
+                        }, index * 100);
+                    });
+                }, 50);
+                button.innerHTML = '<i class="fas fa-times"></i> Hide Details';
+            } else {
+                // Hide details
+                coursePayments.classList.remove('show');
+                cards.forEach(card => card.classList.remove('show'));
+                setTimeout(() => {
+                    coursePayments.style.display = 'none';
+                }, 300);
+                button.innerHTML = '<i class="fas fa-list"></i> View Course-wise Details';
+            }
+        }
+    </script>
+
+    <script>
+        function showNewMessageForm() {
+            document.getElementById('newMessageForm').style.display = 'block';
+        }
+
+        function hideNewMessageForm() {
+            document.getElementById('newMessageForm').style.display = 'none';
+        }
+
+        function sendMessage(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+        
+            // Add CSRF token
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+        
+            // Log form data for debugging
+            for (let [key, value] of formData.entries()) {
+                console.log(`${key}: ${value}`);
+            }
+        
+            fetch('{% url "send_parent_message" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Clear form and show success message
+                    form.reset();
+                    alert('Message sent successfully!');
+                    location.reload(); // Reload to show new message
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to send message');
+            });
+        }
+
+        function showReplyForm(teacherId, subject) {
+            document.getElementById('newMessageForm').style.display = 'block';
+            document.getElementById('teacherSelect').value = teacherId;
+            document.getElementById('messageSubject').value = `Re: ${subject}`;
+            document.getElementById('messageContent').focus();
+        }
+
+        function deleteMessage(messageId) {
+            if (confirm('Are you sure you want to delete this message?')) {
+                fetch(`/delete-message/${messageId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        location.reload();
+                    } else {
+                        alert('Failed to delete message');
+                    }
+                });
+            }
+        }
+
+        function filterMessages(filterType) {
+            const messageCards = document.querySelectorAll('.message-card');
+            
+            messageCards.forEach(card => {
+                const messageType = card.getAttribute('data-message-type');
+                const isRead = card.getAttribute('data-is-read') === 'true';
+                
+                switch(filterType) {
+                    case 'unread':
+                        card.style.display = (!isRead && messageType === 'teacher_to_parent') ? 'block' : 'none';
+                        break;
+                    case 'sent':
+                        card.style.display = (messageType === 'parent_to_teacher') ? 'block' : 'none';
+                        break;
+                    case 'all':
+                    default:
+                        card.style.display = 'block';
+                        break;
+                }
+            });
+        }
+    </script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Remove active class from all buttons
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                // Add active class to clicked button
+                this.classList.add('active');
+                
+                const filterType = this.getAttribute('data-filter');
+                filterMessages(filterType);
+            });
+        });
+
+        // Mark message as read when opened
+        const messageCards = document.querySelectorAll('.message-card');
+        messageCards.forEach(card => {
+            if (!card.classList.contains('read')) {
+                card.addEventListener('click', function() {
+                    const messageId = this.getAttribute('data-message-id');
+                    markAsRead(messageId);
+                });
+            }
+        });
+    });
+
+    function markAsRead(messageId) {
+        fetch(`/mark-message-read/${messageId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const messageCard = document.querySelector(`[data-message-id="${messageId}"]`);
+                messageCard.classList.remove('unread');
+                messageCard.setAttribute('data-is-read', 'true');
+            }
+        });
+    }
+
+    function filterMessages(filterType) {
+        const messageCards = document.querySelectorAll('.message-card');
+        let visibleCount = 0;
+        
+        messageCards.forEach(card => {
+            const messageType = card.getAttribute('data-message-type');
+            const isRead = card.getAttribute('data-is-read') === 'true';
+            
+            let shouldShow = false;
+            switch(filterType) {
+                case 'unread':
+                    shouldShow = !isRead && messageType === 'teacher_to_parent';
+                    break;
+                case 'sent':
+                    shouldShow = messageType === 'parent_to_teacher';
+                    break;
+                case 'all':
+                    shouldShow = true;
+                    break;
+            }
+            
+            card.style.display = shouldShow ? 'block' : 'none';
+            if (shouldShow) visibleCount++;
+        });
+
+        // Show/hide no messages message
+        const noMessages = document.querySelector('.no-messages');
+        if (noMessages) {
+            noMessages.style.display = visibleCount === 0 ? 'block' : 'none';
+        }
+    }
+    </script>
+
+    <!-- Event Details Modal -->
+    <div id="eventDetailsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeEventModal()">&times;</span>
+            <div class="event-details-container">
+                <div class="event-header">
+                    <h2 id="eventTitle"></h2>
+                    <div class="event-meta">
+                        <span id="eventDate"><i class="fas fa-calendar-alt"></i></span>
+                        <span id="eventTime"><i class="fas fa-clock"></i></span>
+                    </div>
+                </div>
+                <div class="event-body">
+                    <div class="event-info-item">
+                        <i class="fas fa-info-circle"></i>
+                        <p id="eventDescription"></p>
+                    </div>
+                    <div class="event-info-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <p id="eventLocation"></p>
+                    </div>
+                    <div class="event-info-item" id="registrationInfo">
+                        <i class="fas fa-clipboard-check"></i>
+                        <p id="registrationStatus"></p>
+                    </div>
+                    <!-- Registration details section -->
+                    <div id="registrationDetails" style="display: none;">
+                        <div class="event-info-item">
+                            <i class="fas fa-user"></i>
+                            <p id="registeredStudent"></p>
+                        </div>
+                        <div class="event-info-item">
+                            <i class="fas fa-calendar-check"></i>
+                            <p id="registrationDateTime"></p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Replace registration button with suggestion box -->
+                <div class="suggestion-section" id="suggestionSection">
+                    <div class="suggestion-box">
+                        <h4><i class="fas fa-lightbulb"></i> Suggest to Your Child</h4>
+                        <div class="suggestion-form">
+                            <textarea id="suggestionText" 
+                                    placeholder="Write a note to suggest why your child should participate in this event..."
+                                    rows="3"
+                                    class="suggestion-input"></textarea>
+                            <button onclick="sendSuggestion()" class="suggest-btn">
+                                <i class="fas fa-paper-plane"></i> Send Suggestion
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Add this section inside the event-details-container div, after the suggestion-section -->
+                <div class="previous-suggestions" id="previousSuggestions">
+                    <div class="card-header">
+                        <h4><i class="fas fa-history"></i> Previous Suggestions</h4>
+                    </div>
+                    <div class="suggestions-list">
+                        {% if event_suggestions %}
+                            {% for suggestion in event_suggestions %}
+                                <div class="suggestion-item">
+                                    <div class="suggestion-header">
+                                        <span class="suggestion-date">
+                                            <i class="fas fa-calendar"></i>
+                                            {{ suggestion.created_at|date:"M d, Y H:i" }}
+                                        </span>
+                                        <span class="suggestion-event">
+                                            <i class="fas fa-calendar-event"></i>
+                                            {{ suggestion.event.title }}
+                                        </span>
+                                    </div>
+                                    <div class="suggestion-content">
+                                        {{ suggestion.suggestion_text }}
+                                    </div>
+                                    <div class="suggestion-status">
+                                        {% if suggestion.is_read %}
+                                            <span class="status-badge read">
+                                                <i class="fas fa-check-double"></i> Read
+                                            </span>
+                                        {% else %}
+                                            <span class="status-badge unread">
+                                                <i class="fas fa-check"></i> Sent
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="no-suggestions">
+                                <i class="fas fa-info-circle"></i>
+                                <p>No suggestions sent yet</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Update the showEventDetails function
+    function showEventDetails(event, isRegistered = false, registrationDate = null) {
+        const modal = document.getElementById('eventDetailsModal');
+        const title = document.getElementById('eventTitle');
+        const date = document.getElementById('eventDate');
+        const time = document.getElementById('eventTime');
+        const description = document.getElementById('eventDescription');
+        const location = document.getElementById('eventLocation');
+        const registrationStatus = document.getElementById('registrationStatus');
+        const registrationDetails = document.getElementById('registrationDetails');
+        const suggestionSection = document.getElementById('suggestionSection');
+        const eventId = event.getAttribute('data-event-id');
+        modal.setAttribute('data-event-id', eventId);
+
+        // Populate modal with event details
+        title.textContent = event.querySelector('h4').textContent;
+        
+        const eventDate = event.querySelector('.date').textContent + ' ' + 
+                         event.querySelector('.month').textContent;
+        date.innerHTML = `<i class="fas fa-calendar-alt"></i> ${eventDate}`;
+        
+        const eventTime = event.querySelector('.event-time').textContent.trim();
+        time.innerHTML = `<i class="fas fa-clock"></i> ${eventTime}`;
+        
+        description.textContent = event.querySelector('p').textContent;
+        
+        const eventLocation = event.querySelector('.event-location') ? 
+                             event.querySelector('.event-location').textContent.trim() : 
+                             'Online';
+        location.textContent = eventLocation;
+
+        // Update registration status and details
+        if (isRegistered) {
+            registrationStatus.textContent = `Registered on: ${registrationDate}`;
+            registrationDetails.style.display = 'block';
+            document.getElementById('registeredStudent').textContent = "{{ student.username }}";
+            document.getElementById('registrationDateTime').textContent = registrationDate;
+            suggestionSection.style.display = 'none';
+        } else {
+            registrationStatus.textContent = 'Not registered';
+            registrationDetails.style.display = 'none';
+            suggestionSection.style.display = 'block';
+        }
+
+        // Fetch suggestions for this event
+        const eventId = event.getAttribute('data-event-id');
+        fetchEventSuggestions(eventId);
+
+        modal.style.display = 'block';
+    }
+
+    function fetchEventSuggestions(eventId) {
+        fetch(`/get-event-suggestions/${eventId}/`, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const suggestionsContainer = document.getElementById('previousSuggestions');
+            if (data.suggestions && data.suggestions.length > 0) {
+                let suggestionsHTML = `
+                    <div class="card-header">
+                        <h4><i class="fas fa-history"></i> Previous Suggestions</h4>
+                    </div>
+                    <div class="suggestions-list">
+                `;
+                
+                data.suggestions.forEach(suggestion => {
+                    suggestionsHTML += `
+                        <div class="suggestion-item">
+                            <div class="suggestion-header">
+                                <span class="suggestion-date">
+                                    <i class="fas fa-calendar"></i>
+                                    ${suggestion.created_at}
+                                </span>
+                            </div>
+                            <div class="suggestion-content">
+                                ${suggestion.suggestion_text}
+                            </div>
+                            <div class="suggestion-status">
+                                <span class="status-badge ${suggestion.is_read ? 'read' : 'unread'}">
+                                    <i class="fas fa-${suggestion.is_read ? 'check-double' : 'check'}"></i>
+                                    ${suggestion.is_read ? 'Read' : 'Sent'}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                suggestionsHTML += `</div>`;
+                suggestionsContainer.innerHTML = suggestionsHTML;
+                suggestionsContainer.style.display = 'block';
+            } else {
+                suggestionsContainer.innerHTML = `
+                    <div class="no-suggestions">
+                        <i class="fas fa-info-circle"></i>
+                        <p>No suggestions sent yet</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching suggestions:', error);
+        });
+    }
+
+    // Add function to handle sending suggestions
+    function sendSuggestion() {
+        const suggestionText = document.getElementById('suggestionText').value;
+        const eventTitle = document.getElementById('eventTitle').textContent;
+        const eventId = document.getElementById('eventDetailsModal').getAttribute('data-event-id');
+        
+        if (!suggestionText.trim()) {
+            alert('Please write a suggestion first.');
+            return;
+        }
+
+        // Create form data
+        const formData = new FormData();
+        formData.append('event_id', eventId);
+        formData.append('suggestion_text', suggestionText);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        // Send suggestion to backend
+        fetch('{% url "send_event_suggestion" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Your suggestion for "${eventTitle}" has been sent to your child!`);
+                document.getElementById('suggestionText').value = '';
+                closeEventModal();
+            } else {
+                alert('Failed to send suggestion: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Suggestion sent successfully.');
+        });
+    }
+
+    // Add click event listeners to event cards
+    document.addEventListener('DOMContentLoaded', function() {
+        // For available events
+        const availableEvents = document.querySelectorAll('.events-section:first-of-type .event-card');
+        availableEvents.forEach(event => {
+            event.addEventListener('click', function() {
+                const isRegistered = this.classList.contains('registered');
+                showEventDetails(this, isRegistered);
+            });
+        });
+
+        // For registered events
+        const registeredEvents = document.querySelectorAll('.events-section:last-of-type .event-card');
+        registeredEvents.forEach(event => {
+            event.addEventListener('click', function() {
+                const registrationDate = this.querySelector('.registration-date').textContent.split(': ')[1];
+                showEventDetails(this, true, registrationDate);
+            });
+        });
+    });
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('eventDetailsModal');
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+    </script>
+
 </body>
 
 </html>
+

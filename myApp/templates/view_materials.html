@@ -183,7 +183,23 @@
         .btn-download {
             display: inline-block;
             padding: 8px 15px;
-            background-color: #28a745;
+            background-color: #138496;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            margin-right: 5px;
+        }
+
+        .btn-download:hover {
+            background-color: #138496;
+        }
+
+        .btn-translate {
+            display: inline-block;
+            padding: 8px 15px;
+            background-color: #17a2b8;
             color: white;
             border: none;
             border-radius: 4px;
@@ -191,8 +207,44 @@
             transition: background-color 0.3s;
         }
 
-        .btn-download:hover {
-            background-color: #218838;
+        .btn-translate:hover {
+            background-color: #138496;
+        }
+
+        .translation-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: relative;
+            background-color: #fff;
+            margin: 10% auto;
+            padding: 20px;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 8px;
+        }
+
+        .close-modal {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        #languageSelect {
+            padding: 8px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
         }
 
         @media (max-width: 768px) {
@@ -221,6 +273,88 @@
             .profile-dropdown {
                 margin-top: 10px;
             }
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+        
+        .alert-info {
+            color: #138496;
+            background-color: #d9edf7;
+            border-color: #bce8f1;
+        }
+        
+        .alert-success {
+            color: #138496;
+            background-color: #dff0d8;
+            border-color: #d6e9c6;
+        }
+        
+        .alert-danger {
+            color: #138496;
+            background-color: #f2dede;
+            border-color: #ebccd1;
+        }
+
+        .btn-summarize {
+            display: inline-block;
+            padding: 8px 15px;
+            background-color: #138496;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            margin-right: 5px;
+            cursor: pointer;
+        }
+
+        .btn-summarize:hover {
+            background-color: #138496;
+        }
+
+        .summary-content {
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .summary-text, .key-points {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .key-points {
+            list-style-type: disc;
+            padding-left: 20px;
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .btn-regenerate {
+            display: inline-block;
+            padding: 8px 15px;
+            background-color: #138496;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            margin-left: 5px;
+            cursor: pointer;
+        }
+
+        .btn-regenerate:hover {
+            background-color: #138496;
         }
     </style>
 </head>
@@ -290,7 +424,7 @@
                             <tr>
                                 <th>Description</th>
                                 <th>Uploaded At</th>
-                                <th>Download</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -298,7 +432,36 @@
                             <tr>
                                 <td>{{ material.description }}</td>
                                 <td>{{ material.uploaded_at|date:"F d, Y H:i" }}</td>
-                                <td><a href="{{ material.file.url }}" class="btn-download" download>Download PDF</a></td>
+                                <td>
+                                    <a href="{{ material.file.url }}" class="btn-download" download>
+                                        <i class="fas fa-download"></i> Download PDF
+                                    </a>
+                                    <button class="btn-translate" onclick="openTranslateModal('{{ material.file.url }}', '{{ material.description }}')">
+                                        <i class="fas fa-language"></i> Translate
+                                    </button>
+                                    <button class="btn-summarize" onclick="generateSummary('{{ material.id }}')">
+                                        <i class="fas fa-book-reader"></i> Summarize
+                                    </button>
+                                    <button class="btn-regenerate" id="regenerate-{{ material.id }}" onclick="generateSummary('{{ material.id }}', true)">
+                                        <i class="fas fa-sync"></i> Regenerate Summary
+                                    </button>
+                                </td>
+                            </tr>
+                            <!-- Add summary section for each material -->
+                            <tr class="summary-row" id="summary-{{ material.id }}" style="display: none;">
+                                <td colspan="3">
+                                    <div class="summary-content">
+                                        <h4>Summary</h4>
+                                        <div id="summary-text-{{ material.id }}" class="summary-text">
+                                            <div class="loading-spinner" style="display: none;">
+                                                <i class="fas fa-spinner fa-spin"></i> Generating summary...
+                                            </div>
+                                            <div class="summary-body"></div>
+                                        </div>
+                                        <h4>Key Points</h4>
+                                        <div id="key-points-{{ material.id }}" class="key-points"></div>
+                                    </div>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -306,6 +469,26 @@
                     {% else %}
                         <p class="no-materials">No materials available for your selected course.</p>
                     {% endif %}
+
+                    <!-- Add Translation Modal -->
+                    <div id="translationModal" class="translation-modal">
+                        <div class="modal-content">
+                            <span class="close-modal" onclick="closeTranslateModal()">&times;</span>
+                            <h3>Translate Document</h3>
+                            <select id="languageSelect">
+                                <option value="es">Spanish (Español)</option>
+                                <option value="fr">French (Français)</option>
+                                <option value="de">German (Deutsch)</option>
+                                <option value="it">Italian (Italiano)</option>
+                                <option value="pt">Portuguese (Português)</option>
+                            
+                            </select>
+                            <div id="translationStatus"></div>
+                            <button class="btn-translate" onclick="translateDocument()">
+                                Start Translation
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -317,6 +500,126 @@
         window.history.forward();
         function noBack() {
             window.history.forward();
+        }
+    </script>
+    <script>
+        let currentFileUrl = '';
+        let currentDescription = '';
+
+        function openTranslateModal(fileUrl, description) {
+            currentFileUrl = fileUrl;
+            currentDescription = description;
+            document.getElementById('translationModal').style.display = 'block';
+        }
+
+        function closeTranslateModal() {
+            document.getElementById('translationModal').style.display = 'none';
+        }
+
+        function translateDocument() {
+            const targetLanguage = document.getElementById('languageSelect').value;
+            const statusDiv = document.getElementById('translationStatus');
+            
+            statusDiv.innerHTML = '<div class="alert alert-info">Translation in progress... This may take a few minutes for large documents.</div>';
+            
+            fetch('/translate-material/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    file_url: currentFileUrl,
+                    target_language: targetLanguage,
+                    description: currentDescription
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    statusDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            Translation completed! 
+                            <a href="${data.translated_file_url}" class="btn btn-primary btn-sm ml-2" download>
+                                <i class="fas fa-download"></i> Download Translated File
+                            </a>
+                        </div>`;
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            Translation failed: ${data.error}
+                        </div>`;
+                }
+            })
+            .catch(error => {
+                statusDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        Error occurred during translation: ${error}
+                    </div>`;
+            });
+        }
+
+        // Function to get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function generateSummary(materialId, regenerate = false) {
+            const summaryRow = document.getElementById(`summary-${materialId}`);
+            const loadingSpinner = document.querySelector(`#summary-text-${materialId} .loading-spinner`);
+            const summaryBody = document.querySelector(`#summary-text-${materialId} .summary-body`);
+            const keyPoints = document.getElementById(`key-points-${materialId}`);
+            const regenerateBtn = document.getElementById(`regenerate-${materialId}`);
+
+            // Toggle visibility of summary row
+            if (summaryRow.style.display === 'none') {
+                summaryRow.style.display = 'table-row';
+                loadingSpinner.style.display = 'block';
+                summaryBody.innerHTML = '';
+                keyPoints.innerHTML = '';
+
+                // Make API call to generate summary
+                fetch('/generate-summary/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        material_id: materialId,
+                        regenerate: regenerate
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    loadingSpinner.style.display = 'none';
+                    if (data.success) {
+                        summaryBody.innerHTML = data.summary;
+                        keyPoints.innerHTML = data.key_points.map(point => 
+                            `<li>${point}</li>`
+                        ).join('');
+                    } else {
+                        summaryBody.innerHTML = 'Error generating summary. Please try again.';
+                    }
+                })
+                .catch(error => {
+                    loadingSpinner.style.display = 'none';
+                    summaryBody.innerHTML = 'Error generating summary. Please try again.';
+                });
+            } else {
+                summaryRow.style.display = 'none';
+            }
         }
     </script>
 </body>

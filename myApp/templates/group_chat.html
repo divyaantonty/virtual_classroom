@@ -1,4 +1,5 @@
 {% load static %}
+{% load custom_filters %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -213,6 +214,170 @@
                 text-align: center;
             }
         }
+
+        .media-controls {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .media-controls button {
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .timer {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .message-content audio,
+        .message-content video {
+            max-width: 250px;
+            border-radius: 8px;
+            margin-top: 5px;
+        }
+
+        /* Media Controls Styling */
+        .media-controls {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .media-controls button {
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Voice Button Styling */
+        #voiceBtn {
+            background-color: #00897b;  /* Teal color */
+            border: none;
+            color: white;
+        }
+
+        #voiceBtn:hover {
+            background-color: #00695c;  /* Darker teal on hover */
+            transform: scale(1.1);
+        }
+
+        /* Video Button Styling */
+        #videoBtn {
+            background-color: #e53935;  /* Red color */
+            border: none;
+            color: white;
+        }
+
+        #videoBtn:hover {
+            background-color: #c62828;  /* Darker red on hover */
+            transform: scale(1.1);
+        }
+
+        /* Recording state */
+        .recording {
+            animation: pulse 1.5s infinite;
+            background-color: #d32f2f !important;  /* Bright red when recording */
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.7);
+            }
+            70% {
+                transform: scale(1.1);
+                box-shadow: 0 0 0 10px rgba(211, 47, 47, 0);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(211, 47, 47, 0);
+            }
+        }
+
+        /* Icon size adjustment */
+        .media-controls button i {
+            font-size: 1.2em;
+        }
+
+        /* File Upload Controls Styling */
+        .file-upload-controls {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .file-upload-controls button {
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        /* Image Button Styling */
+        #imageBtn {
+            background-color: #2ecc71;  /* Green color */
+            border: none;
+            color: white;
+        }
+
+        #imageBtn:hover {
+            background-color: #27ae60;  /* Darker green on hover */
+            transform: scale(1.1);
+        }
+
+        /* PDF Button Styling */
+        #pdfBtn {
+            background-color: #e74c3c;  /* Red color */
+            border: none;
+            color: white;
+        }
+
+        #pdfBtn:hover {
+            background-color: #c0392b;  /* Darker red on hover */
+            transform: scale(1.1);
+        }
+
+        /* Message content for files */
+        .message-content img {
+            max-width: 200px;
+            border-radius: 8px;
+            margin-top: 5px;
+            cursor: pointer;
+        }
+
+        .message-content .pdf-preview {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            margin-top: 5px;
+        }
+
+        .pdf-preview i {
+            font-size: 24px;
+            color: #e74c3c;
+        }
+
+        .pdf-preview a {
+            color: #2c3e50;
+            text-decoration: none;
+        }
     </style>
 </head>
 
@@ -234,22 +399,63 @@
                 <div class="content-wrapper">
                     <div class="chat-box">
                         {% for message in messages %}
-                        <div class="message {% if message.teacher %}teacher-message{% else %}student-message{% endif %}">
+                        <div class="message {% if message.teacher or message|get_class_name == 'TeacherMessage' %}teacher-message{% else %}student-message{% endif %}">
                             <div class="message-content">
                                 <p class="sender">
-                                    {% if message.teacher %}
+                                    {% if message.teacher or message|get_class_name == 'TeacherMessage' %}
                                         Teacher {{ message.teacher.first_name }} {{ message.teacher.last_name }}
                                     {% else %}
                                         {{ message.sender.username }}
                                     {% endif %}
                                 </p>
-                                <p class="message-text">{{ message.content }}</p>
+                                
+                                {% if message.message_type == 'voice' %}
+                                    <audio controls>
+                                        <source src="{{ message.media_file.url }}" type="audio/webm">
+                                        Your browser does not support audio playback.
+                                    </audio>
+                                {% elif message.message_type == 'video' %}
+                                    <video controls width="250">
+                                        <source src="{{ message.media_file.url }}" type="video/webm">
+                                        Your browser does not support video playback.
+                                    </video>
+                                {% elif message.message_type == 'image' %}
+                                    <img src="{{ message.media_file.url }}" alt="Shared image" onclick="showImagePreview(this.src)">
+                                {% elif message.message_type == 'pdf' %}
+                                    <div class="pdf-preview">
+                                        <i class="fas fa-file-pdf"></i>
+                                        <a href="{{ message.media_file.url }}" target="_blank">View PDF Document</a>
+                                    </div>
+                                {% else %}
+                                    <p class="message-text">{{ message.content }}</p>
+                                {% endif %}
+                                
                                 <p class="timestamp">{{ message.timestamp|date:"F j, Y, g:i A" }}</p>
                             </div>
                         </div>
                         {% endfor %}
                     </div>
                     
+
+                    <div class="media-controls mb-3">
+                        <button type="button" id="voiceBtn" class="btn btn-secondary" onclick="startRecording('voice')">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                        <button type="button" id="videoBtn" class="btn btn-secondary" onclick="startRecording('video')">
+                            <i class="fas fa-video"></i>
+                        </button>
+                    </div>
+
+                    <div class="file-upload-controls mb-3">
+                        <button type="button" id="imageBtn" class="btn btn-secondary" onclick="document.getElementById('imageInput').click()">
+                            <i class="fas fa-image"></i>
+                        </button>
+                        <button type="button" id="pdfBtn" class="btn btn-secondary" onclick="document.getElementById('pdfInput').click()">
+                            <i class="fas fa-file-pdf"></i>
+                        </button>
+                        <input type="file" id="imageInput" accept="image/*" style="display: none" onchange="uploadFile(this, 'image')">
+                        <input type="file" id="pdfInput" accept=".pdf" style="display: none" onchange="uploadFile(this, 'pdf')">
+                    </div>
 
                     <form method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
@@ -262,6 +468,25 @@
                     </form>
 
                     <a href="{% url 'discussion_forum' %}" class="btn btn-secondary mt-3">Back to Discussion Forum</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="recordingModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Recording</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="timer mb-3">00:00</div>
+                    <video id="videoPreview" autoplay muted style="display: none; width: 100%; max-width: 400px;"></video>
+                    <div class="mt-3">
+                        <button id="startRecordingBtn" class="btn btn-primary">Start Recording</button>
+                        <button id="stopRecordingBtn" class="btn btn-danger" style="display: none;">Stop Recording</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -281,14 +506,172 @@
             const checkbox = element.querySelector('.message-checkbox');
             checkbox.checked = !checkbox.checked;
         }
-    </script>
-    <style>
-        .highlighted-message {
-            background-color: #f5f5f5;
-            border: 2px solid #3498db;
+
+        let mediaRecorder;
+        let recordedChunks = [];
+        let recordingType = null;
+        let timer;
+        let startTime;
+
+        function startRecording(type) {
+            recordingType = type;
+            const constraints = {
+                audio: true,
+                video: type === 'video'
+            };
+
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(stream => {
+                    mediaRecorder = new MediaRecorder(stream);
+                    
+                    if (type === 'video') {
+                        document.getElementById('videoPreview').style.display = 'block';
+                        document.getElementById('videoPreview').srcObject = stream;
+                    } else {
+                        document.getElementById('videoPreview').style.display = 'none';
+                    }
+
+                    mediaRecorder.ondataavailable = (e) => {
+                        if (e.data.size > 0) {
+                            recordedChunks.push(e.data);
+                        }
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const blob = new Blob(recordedChunks, {
+                            type: recordingType === 'video' ? 'video/webm' : 'audio/webm'
+                        });
+                        uploadRecording(blob);
+                    };
+
+                    $('#recordingModal').modal('show');
+                    
+                    document.getElementById('startRecordingBtn').style.display = 'block';
+                    document.getElementById('stopRecordingBtn').style.display = 'none';
+                })
+                .catch(err => {
+                    console.error('Error accessing media devices:', err);
+                    alert('Could not access ' + (type === 'video' ? 'camera' : 'microphone'));
+                });
         }
-    </style>
-    
+
+        document.getElementById('startRecordingBtn').onclick = function() {
+            recordedChunks = [];
+            mediaRecorder.start();
+            startTime = Date.now();
+            updateTimer();
+            this.style.display = 'none';
+            document.getElementById('stopRecordingBtn').style.display = 'block';
+        };
+
+        document.getElementById('stopRecordingBtn').onclick = function() {
+            mediaRecorder.stop();
+            clearInterval(timer);
+            const tracks = mediaRecorder.stream.getTracks();
+            tracks.forEach(track => track.stop());
+        };
+
+        function updateTimer() {
+            timer = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+                const seconds = (elapsed % 60).toString().padStart(2, '0');
+                document.querySelector('.timer').textContent = `${minutes}:${seconds}`;
+            }, 1000);
+        }
+
+        function uploadRecording(blob) {
+            const formData = new FormData();
+            formData.append('media_file', blob, `recording.${recordingType === 'video' ? 'webm' : 'webm'}`);
+            formData.append('message_type', recordingType);
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+            fetch('{% url "upload_media_message" group.id %}', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    $('#recordingModal').modal('hide');
+                    location.reload();
+                } else {
+                    alert('Failed to upload recording');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to upload recording');
+            });
+        }
+
+        $('#recordingModal').on('hidden.bs.modal', function () {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            clearInterval(timer);
+            document.querySelector('.timer').textContent = '00:00';
+            const tracks = mediaRecorder?.stream?.getTracks() || [];
+            tracks.forEach(track => track.stop());
+        });
+
+        function uploadFile(input, type) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const formData = new FormData();
+                formData.append('media_file', file);
+                formData.append('message_type', type);
+                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+                fetch('{% url "upload_media_message" group.id %}', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Failed to upload file');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to upload file');
+                });
+            }
+        }
+
+        // Add image preview modal
+        document.addEventListener('click', function(e) {
+            if (e.target.tagName === 'IMG' && e.target.closest('.message-content')) {
+                const modal = document.createElement('div');
+                modal.style.position = 'fixed';
+                modal.style.top = '0';
+                modal.style.left = '0';
+                modal.style.width = '100%';
+                modal.style.height = '100%';
+                modal.style.backgroundColor = 'rgba(0,0,0,0.9)';
+                modal.style.display = 'flex';
+                modal.style.alignItems = 'center';
+                modal.style.justifyContent = 'center';
+                modal.style.zIndex = '1000';
+                
+                const img = document.createElement('img');
+                img.src = e.target.src;
+                img.style.maxHeight = '90vh';
+                img.style.maxWidth = '90vw';
+                img.style.objectFit = 'contain';
+                
+                modal.appendChild(img);
+                document.body.appendChild(modal);
+                
+                modal.onclick = function() {
+                    document.body.removeChild(modal);
+                };
+            }
+        });
+    </script>
 </body>
 
 </html>

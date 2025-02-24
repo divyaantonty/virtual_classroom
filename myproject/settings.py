@@ -1,18 +1,53 @@
 import os
 from pathlib import Path
+import google.generativeai as genai
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media') 
 
-# Quick-start development settings - unsuitable for production
-SECRET_KEY = 'django-insecure-k=ah64yxejvl%6*uih0nscqb5_v-bwod7+e7s+4^83^e1dv05+'
-DEBUG = True
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.getenv('SECRET_KEY')
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
+
 ALLOWED_HOSTS = ['*']
 
-RAZORPAY_API_KEY = 'rzp_test_o8cawEIEiGsQ6C'
-RAZORPAY_API_SECRET = 'ITd8ronAQbSCUCqvlqkMlxYl'
+# API Keys
+LIBRARY_API_KEY = os.getenv('LIBRARY_API_KEY')
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
+RAZORPAY_API_KEY = os.getenv('RAZORPAY_API_KEY')
+RAZORPAY_API_SECRET = os.getenv('RAZORPAY_API_SECRET')
+
+# Configure Google AI
+genai.configure(api_key=GOOGLE_API_KEY)
+
+# Database Settings
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
+    }
+}
+
+# Email Settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_PORT = os.getenv('EMAIL_PORT')
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Application definition
 INSTALLED_APPS = [
@@ -23,8 +58,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'myApp',
-    
-    
+    'myApp.templatetags',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -35,8 +70,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware'
-
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+ 
 ]
 
 ROOT_URLCONF = 'myproject.urls'
@@ -58,17 +93,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'myproject.wsgi.application'
-
-DATABASES = {
-  'default': {
-       'ENGINE': 'django.db.backends.mysql',
-       'NAME': 'vc1',  
-       'USER': 'root',    
-       'PASSWORD': '',  
-       'HOST': 'localhost',
-       'PORT': '3306',
-    }
- }
 
 # # settings.py
 
@@ -107,9 +131,10 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'myApp/static')
+]
 
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'myApp', 'static')]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -118,13 +143,16 @@ AUTH_USER_MODEL = 'myApp.CustomUser'
 LOGIN_URL = '/login/' 
 
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'divyaantony2025@mca.ajce.in'
-EMAIL_HOST_PASSWORD = 'exmc frrd sggj bxer' 
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+ASGI_APPLICATION = 'myproject.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
 
 
 

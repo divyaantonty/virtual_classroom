@@ -295,7 +295,7 @@
         <header class="site-navbar js-sticky-header site-navbar-target" role="banner">
             <div class="header-container">
                 <div class="site-logo">
-                    <a href="{% url 'index' %}" class="d-block">
+                    <a href="#" class="d-block">
                         <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid">
                     </a>
                 </div>
@@ -376,6 +376,9 @@
                     </a>
                     <a href="{% url 'manage_leave' %}" class="dashboard-box">
                         <i class="fas fa-clipboard-check mr-2"></i>Manage Leave
+                    </a>
+                    <a href="{% url 'question_generator' %}" class="dashboard-box">
+                        <i class="fas fa-plus mr-2"></i>Generate question
                     </a>
                 </div>
             </div>

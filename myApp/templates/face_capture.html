@@ -1,0 +1,36 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Face Capture</title>
+</head>
+<body>
+    <div style="text-align: center;">
+        <button onclick="saveFaceData()">Save Face Data</button>
+    </div>
+
+    <script>
+        function saveFaceData() {
+            fetch('{% url "save_face_data" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.cookie.split('csrftoken=')[1].split(';')[0]
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Face registered successfully!');
+                    window.location.href = '{% url "available_courses" %}';
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('Failed to save face data');
+            });
+        }
+    </script>
+</body>
+</html> 

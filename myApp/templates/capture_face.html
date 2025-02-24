@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Face Capture</title>
+</head>
+<body>
+    <video id="video" width="640" height="480" autoplay></video>
+    <button id="capture">Capture Face</button>
+    <form id="faceForm" method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="face_encoding" id="face_encoding">
+        <button type="submit">Submit</button>
+    </form>
+
+    <script>
+        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+            document.getElementById('video').srcObject = stream;
+        });
+
+        document.getElementById("capture").addEventListener("click", function() {
+            // Capture frame and extract facial data (use OpenCV.js for face detection)
+            document.getElementById("face_encoding").value = "face_data_placeholder";  // Replace with actual face data
+        });
+    </script>
+</body>
+</html>

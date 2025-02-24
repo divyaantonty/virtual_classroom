@@ -317,6 +317,7 @@
                         <div class="dropdown-content">
                             <a href="{% url 'create_quiz' %}"><i class="fas fa-plus mr-2"></i>Create Quiz</a>
                             <a href="{% url 'view_quiz_questions' %}"><i class="fas fa-list mr-2"></i>View Questions</a>
+                            <a href="{% url 'evaluate_answers' %}"><i class="fas fa-check mr-2"></i>Evaluate Answer<a/>
                         </div>
                     </div>
                     <div class="dropdown">
@@ -340,6 +341,12 @@
                     <a href="{% url 'manage_leave' %}" class="dashboard-box">
                         <i class="fas fa-clipboard-check mr-2"></i>Manage Leave
                     </a>
+                    <a href="{% url 'question_generator' %}" class="dashboard-box">
+                        <i class="fas fa-plus mr-2"></i>Generate question
+                    </a>
+                    <a href="{% url 'whiteboard' %}" class="dashboard-box">
+                        <i class="fas fa-chalkboard mr-2"></i>Live Whiteboard
+                    </a>    
                 </div>
             </div>
 

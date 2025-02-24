@@ -1,0 +1,447 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Search</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center;
+            background-color: #f5f5f5;
+        }
+        .book { 
+            border: 1px solid #ddd; 
+            padding: 15px; 
+            margin: 15px; 
+            display: inline-block; 
+            width: 250px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            vertical-align: top;
+        }
+        .book img { 
+            max-width: 128px; 
+            height: auto;
+            margin: 10px auto;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .book img:hover {
+            transform: scale(1.05);
+        }
+        .error { color: red; }
+        .book-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px 0;
+            height: 40px;
+            overflow: hidden;
+        }
+        .book-buttons {
+            margin-top: 15px;
+        }
+        .book-button {
+            display: inline-block;
+            padding: 8px 15px;
+            margin: 5px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .book-button:hover {
+            background-color: #45a049;
+        }
+        .search-box {
+            margin: 20px auto;
+            padding: 20px;
+            max-width: 600px;
+        }
+        .search-input {
+            padding: 10px;
+            width: 70%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        .search-button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .search-button:hover {
+            background-color: #45a049;
+        }
+        .book-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-left: 5px;
+        }
+        .full-access {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .partial-access {
+            background-color: #FFA500;
+            color: white;
+        }
+        .sidebar {
+            height: calc(100% - 60px);
+            width: 0;
+            position: fixed;
+            z-index: 1;
+            top: 60px;
+            left: 0;
+            background-color: #fff;
+            overflow-x: hidden;
+            transition: 0.5s;
+            padding-top: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+
+        .sidebar a {
+            padding: 15px 25px;
+            text-decoration: none;
+            font-size: 16px;
+            color: #333;
+            display: block;
+            transition: 0.3s;
+        }
+
+        .sidebar a:hover {
+            background-color: #f8f9fa;
+            color: #4CAF50;
+        }
+
+        .sidebar .closebtn {
+            position: absolute;
+            top: 0;
+            right: 25px;
+            font-size: 36px;
+            margin-left: 50px;
+        }
+
+        .open-btn {
+            position: fixed;
+            top: 90px;
+            left: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            z-index: 1;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 90px;
+            left: 80px;
+            font-size: 24px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            z-index: 1;
+            text-decoration: none;
+        }
+
+        .back-btn:hover, .open-btn:hover {
+            background-color: #45a049;
+        }
+
+        .dashboard-box {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+
+        .dashboard-box i {
+            margin-right: 10px;
+            width: 20px;
+        }
+
+        .dropdown-menu {
+            position: relative;
+            width: 100%;
+            border: none;
+            box-shadow: none;
+            background: transparent;
+        }
+
+        .dropdown-item {
+            padding-left: 55px;
+        }
+
+        #main-content {
+            transition: margin-left .5s;
+            padding: 20px;
+        }
+
+        /* Add header styles */
+        .site-wrap {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .site-navbar {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 10px 20px;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .site-logo img {
+            height: 40px;
+        }
+
+        .dashboard-heading {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .profile-dropdown {
+            position: relative;
+        }
+
+        .profile-dropdown-content {
+            display: none;
+            position: absolute;
+            top: 40px;
+            right: 0;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+
+        .profile-dropdown:hover .profile-dropdown-content {
+            display: block;
+        }
+
+        .profile-dropdown-content a {
+            display: block;
+            padding: 10px 20px;
+            color: #333;
+            transition: background-color 0.3s;
+            text-decoration: none;
+        }
+
+        .profile-dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+
+        /* Adjust main content to account for fixed header */
+        #main-content {
+            margin-top: 80px;
+        }
+    </style>
+</head>
+<body>
+    <div class="site-wrap">
+        <header class="site-navbar js-sticky-header site-navbar-target" role="banner">
+            <div class="header-container">
+                <div class="site-logo">
+                    <a href="#" class="d-block">
+                        <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid">
+                    </a>
+                </div>
+                <h2 class="dashboard-heading">Library Search</h2>
+                <div class="profile-dropdown">
+                    <a href="#" class="nav-link text-right d-flex align-items-center">
+                        <i class="fas fa-user-circle mr-2"></i>
+                        <span>{{ custom_user.username }}</span>
+                    </a>
+                    <div class="profile-dropdown-content">
+                        <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Add sidebar toggle button -->
+        <button class="open-btn" onclick="openNav()">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <!-- Add back button -->
+        <a href="{% url 'student_dashboard' %}" class="back-btn">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+
+        <!-- Add sidebar -->
+        <div id="mySidebar" class="sidebar">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+            <a href="{% url 'view_scheduled_classes' %}">
+                <i class="fas fa-chalkboard-teacher"></i> Join Classes
+            </a>
+            <a href="{% url 'assignment_detail' %}">
+                <i class="fas fa-tasks"></i> Submit Assignments
+            </a>
+            <a href="{% url 'view_materials' %}">
+                <i class="fas fa-book"></i> Study Materials
+            </a>
+            <a href="{% url 'discussion_forum' %}">
+                <i class="fas fa-comments"></i> Discussion Forum
+            </a>
+            <div class="dropdown">
+                <a href="#" onclick="toggleDropdown('quizDropdown')">
+                    <i class="fas fa-question-circle"></i> View Quizzes
+                    <i class="fas fa-caret-down"></i>
+                </a>
+                <div id="quizDropdown" class="dropdown-menu" style="display: none;">
+                    <a class="dropdown-item" href="{% url 'available_quizzes' %}">Available Quizzes</a>
+                    <a class="dropdown-item" href="{% url 'quiz_marks' %}">View Marks</a>
+                </div>
+            </div>
+            <a href="{% url 'feedback_form' %}">
+                <i class="fas fa-comment-alt"></i> Feedback
+            </a>
+            <a href="{% url 'student_event' %}">
+                <i class="fas fa-calendar-alt"></i> Events
+            </a>
+            <div class="dropdown">
+                <a href="#" onclick="toggleDropdown('leaveDropdown')">
+                    <i class="fas fa-calendar-alt"></i> Leave
+                    <i class="fas fa-caret-down"></i>
+                </a>
+                <div id="leaveDropdown" class="dropdown-menu" style="display: none;">
+                    <a class="dropdown-item" href="{% url 'apply_leave' %}">Apply for Leave</a>
+                    <a class="dropdown-item" href="{% url 'student_leave_requests' %}">View Leave Status</a>
+                </div>
+            </div>
+            <a href="{% url 'available_courses' %}">
+                <i class="fas fa-graduation-cap"></i> Available Courses
+            </a>
+            <a href="{% url 'search_books' %}">
+                <i class="fas fa-book"></i> Library
+            </a>
+        </div>
+
+        <!-- Wrap existing content -->
+        <div id="main-content">
+            <h1>Library Search</h1>
+            
+            <div class="search-box">
+                <form method="GET">
+                    <input type="text" name="q" placeholder="Search for books..." value="{{ query }}" class="search-input">
+                    <button type="submit" class="search-button">Search</button>
+                </form>
+            </div>
+
+            {% if error_message %}
+                <p class="error">{{ error_message }}</p>
+            {% endif %}
+
+            {% if books %}
+                <h2>Search Results:</h2>
+                <div>
+                    {% for book in books %}
+                        <div class="book">
+                            <div class="book-title">{{ book.volumeInfo.title|default:"Untitled" }}</div>
+                            {% if book.volumeInfo.imageLinks %}
+                                {% with thumbnail=book.volumeInfo.imageLinks.thumbnail|default:book.volumeInfo.imageLinks.smallThumbnail|default:'' %}
+                                    {% if thumbnail %}
+                                        <img src="{{ thumbnail|safe }}" alt="Book Cover">
+                                    {% else %}
+                                        <p>No image available</p>
+                                    {% endif %}
+                                {% endwith %}
+                            {% else %}
+                                <p>No image available</p>
+                            {% endif %}
+                            <p><strong>Author:</strong> 
+                            {% if book.volumeInfo.authors %}
+                                {{ book.volumeInfo.authors|join:", " }}
+                            {% else %}
+                                Unknown
+                            {% endif %}
+                            </p>
+                            <p><strong>Published:</strong> {{ book.volumeInfo.publishedDate|default:"Unknown" }}</p>
+                            
+                            <div class="book-buttons">
+                                {% if book.reading_options.preview_available %}
+                                    <a href="{{ book.volumeInfo.previewLink }}" target="_blank" class="book-button">
+                                        Preview
+                                    </a>
+                                {% endif %}
+                                
+                                {% if book.reading_options.web_reader_available %}
+                                    <a href="{{ book.accessInfo.webReaderLink }}" target="_blank" class="book-button">
+                                        Read Online
+                                    </a>
+                                {% endif %}
+                                
+                                {% if book.volumeInfo.canonicalVolumeLink %}
+                                    <a href="{{ book.volumeInfo.canonicalVolumeLink }}" target="_blank" class="book-button">
+                                        View on Google Books
+                                    </a>
+                                {% endif %}
+                                
+                                {% if book.reading_options.viewability == 'ALL_PAGES' %}
+                                    <span class="book-badge full-access">Full Access</span>
+                                {% elif book.reading_options.viewability == 'PARTIAL' %}
+                                    <span class="book-badge partial-access">Partial Access</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% elif query %}
+                <p>No results found for "{{ query }}".</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Add JavaScript for sidebar functionality -->
+    <script>
+        function openNav() {
+            document.getElementById("mySidebar").style.width = "250px";
+            document.getElementById("main-content").style.marginLeft = "250px";
+        }
+
+        function closeNav() {
+            document.getElementById("mySidebar").style.width = "0";
+            document.getElementById("main-content").style.marginLeft = "0";
+        }
+
+        function toggleDropdown(id) {
+            var dropdown = document.getElementById(id);
+            if (dropdown.style.display === "none") {
+                dropdown.style.display = "block";
+            } else {
+                dropdown.style.display = "none";
+            }
+        }
+    </script>
+
+</body>
+</html>

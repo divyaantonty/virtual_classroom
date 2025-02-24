@@ -10,10 +10,46 @@ from django.utils.crypto import get_random_string
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 import requests
-from .models import CustomUser, Course, Parent, TeacherMessage, TeacherStudent
+from .models import CustomUser, Course, FinalExam, FinalExamQuestion, Parent, TeacherMessage, TeacherStudent, Material, MaterialSummary
+import cv2
+import numpy as np
+from datetime import datetime, timedelta
+import os
+from django.shortcuts import render
+from django.http import JsonResponse
+from .models import Attendance
+import base64
+from transformers import MarianMTModel, MarianTokenizer
+import torch
+from .models import StudentFaceData
+from django.views.decorators.csrf import csrf_exempt
+from scipy.spatial.distance import cosine
+from django.shortcuts import render, redirect
+from .models import ClassSchedule
+from django.utils import timezone
+import mediapipe as mp
+from django.core.files.base import ContentFile
+from PIL import Image
+import io
+from skimage.metrics import structural_similarity as ssim  # Add this import
+from ml_code.create_db import create_data
+from ml_code.face_recognition import face_recognize
+from django.core.paginator import Paginator
+from .models import ParentTeacherMessage, Teacher, Parent
+from django.db.models import Q
+from django.utils import timezone
+from .models import Course, WhiteboardShare
+from django.http import JsonResponse
+from .models import EventSuggestion, CalendarEvent
+from django.views.decorators.http import require_POST
+from .models import MindMap
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import ensure_csrf_cookie
+import os
+from dotenv import load_dotenv
 
-
-
+# Load environment variables
+load_dotenv()
 def register(request):
     if request.method == 'POST':
         # Extract form data from request.POST
@@ -132,6 +168,12 @@ def login_view(request):
             if custom_user.check_password(password):  # Assuming password is stored as plaintext
                 # Manually log in the CustomUser (using sessions)
                 request.session['custom_user_id'] = custom_user.id  # Store CustomUser ID in session
+                
+                # Check if face data exists
+                # face_data = StudentFaceData.objects.filter(user=custom_user).first()
+                # if not face_data or not face_data.is_face_captured:
+                #     return redirect('face_capture')
+                
                 return redirect('available_courses')
             else:
                 messages.error(request, 'Invalid password for CustomUser.')
@@ -244,13 +286,11 @@ def enroll_course(request, course_id):
     # Optionally, you can show a success message or redirect to another page
     return redirect('available_courses')  # Redirect to the course list page
 
-from django.shortcuts import render, redirect
-from .models import CustomUser, FeedbackQuestion, Feedback
-
+from datetime import datetime
 def student_dashboard(request):
     custom_user_id = request.session.get('custom_user_id')
     if not custom_user_id:
-        return redirect('login')  # Redirect to login if CustomUser not authenticated
+        return redirect('login')
 
     # Fetch the CustomUser object based on the session ID
     try:
@@ -258,22 +298,25 @@ def student_dashboard(request):
         if not custom_user.is_active:
             return redirect('login')
     except CustomUser.DoesNotExist:
-        return redirect('login')  # Redirect if the user doesn't exist
+        return redirect('login')
+
     enrolled_courses = Course.objects.filter(enrollments__student_id=custom_user_id)
+    today = datetime.today()
+
     # Check for unanswered feedback questions for the logged-in user
     feedback_questions = FeedbackQuestion.objects.all()
     answered_questions = Feedback.objects.filter(user=custom_user_id).values_list('question_id', flat=True)
     
     # Identify new feedback questions (not answered by the user)
     new_feedback_questions = feedback_questions.exclude(id__in=answered_questions)
-    print('New Feedback Questions:', list(new_feedback_questions))
 
-    # Pass the CustomUser object and feedback status to the template
     return render(request, 'student_dashboard.html', {
         'enrolled_courses': enrolled_courses,
         'custom_user': custom_user,
         'new_feedback_questions': new_feedback_questions,  # This will contain unanswered questions
+        'today': today,  # Pass today's date to the template
     })
+
 
 def teacher_dashboard(request):
     teacher_id = request.session.get('teacher_id')
@@ -296,21 +339,157 @@ def teacher_dashboard(request):
 def parent_dashboard(request):
     parent_id = request.session.get('parent_id')
     if not parent_id:
-        return redirect('login')  # Redirect to login if parent not authenticated
+        return redirect('login')
 
-    # Fetch parent object based on the session ID
     try:
         parent = Parent.objects.get(id=parent_id)
-
-        # Fetch the student using the username stored in the Parent model
         student = CustomUser.objects.get(username=parent.student_username)
+        courses = Enrollment.objects.filter(student=student).select_related('course')
+        
+        # Get student's quiz answers/grades
+        grades = UserAnswers.objects.filter(
+            user=student
+        ).select_related(
+            'question__quiz',
+            'question__quiz__course'
+        ).order_by('-attempt_date')
+        
+        # Get assignment submissions for the student
+        assignment_submissions = AssignmentSubmission.objects.filter(
+            student=student
+        ).select_related(
+            'assignment',
+            'assignment__teacher',
+            'assignment__course_name'
+        ).order_by('-submitted_at')
+
+        # Calculate submission status for each submission
+        for submission in assignment_submissions:
+            # Convert submitted_at to date for comparison
+            submission_date = submission.submitted_at.date()
+            due_date = submission.assignment.end_date
+            
+            if submission_date > due_date:
+                submission.is_overdue = True
+                submission.days_overdue = (submission_date - due_date).days
+                submission.status_class = 'text-danger'
+            elif submission_date == due_date:
+                submission.is_overdue = False
+                submission.status_class = 'text-warning'
+                submission.submitted_on = 'last day'
+            else:
+                submission.is_overdue = False
+                submission.days_early = (due_date - submission_date).days
+                submission.status_class = 'text-success'
+
+        # Get attendance records
+        attendance_records = Attendance.objects.filter(student=student).order_by('-check_in_time')
+        
+        # Calculate attendance statistics
+        total_records = attendance_records.count()
+        present_count = attendance_records.filter(status='present').count()
+        absent_count = total_records - present_count
+        attendance_percentage = (present_count / total_records * 100) if total_records > 0 else 0
+
+        # Get the student's enrolled courses
+        courses = Enrollment.objects.filter(student=student).select_related('course')
+        
+        # Calculate total course fees from course prices
+        total_course_fees = sum(enrollment.course.price for enrollment in courses)
+        
+        # Use select_related and prefetch_related to optimize queries
+        teachers = Teacher.objects.filter(
+            Q(parent_messages__parent=parent) | 
+            Q(teacher_courses__course__students__username=parent.student_username)
+        ).prefetch_related('teacher_courses').distinct()
+
+        messages_list = ParentTeacherMessage.objects.filter(parent=parent).order_by('-date')
+        
+        context = {
+            'parent': parent,
+            'student': student,
+            'courses': courses,
+            'grades': grades,
+            'assignment_submissions': assignment_submissions,
+            'attendance_records': attendance_records,
+            'present_count': present_count,
+            'absent_count': absent_count,
+            'attendance_percentage': attendance_percentage,
+            'total_course_fees': total_course_fees,
+            'messages_list': messages_list,
+            'teachers': teachers,
+            'unread_count': messages_list.filter(is_read=False, message_type='teacher_to_parent').count()
+        }
+
+        try:
+            # Get enrolled courses
+            enrolled_courses = Enrollment.objects.filter(
+                student__username=parent.student_username
+            ).values_list('course', flat=True)
+
+            # Get upcoming events for enrolled courses
+            upcoming_events = CalendarEvent.objects.filter(
+                course__in=enrolled_courses,
+                end_time__gte=timezone.now()
+            ).order_by('start_time')
+
+            # Get registered events for the student
+            registered_events = EventRegistration.objects.filter(
+                user__username=parent.student_username,
+                status='registered'
+            ).select_related('event')
+
+            try:
+                # Get event suggestions for this parent
+                event_suggestions = EventSuggestion.objects.filter(
+                    parent=parent
+                ).select_related('event').order_by('-created_at')
+
+                context.update({
+                    'upcoming_events': upcoming_events,
+                    'registered_events': registered_events,
+                    'event_suggestions': event_suggestions,  # Add suggestions to context
+                })
+
+                return render(request, 'parent_dashboard.html', context)
+
+            except Exception as e:
+                print(f"Error getting event suggestions: {str(e)}")
+                return render(request, 'parent_dashboard.html', context)
+
+        except Exception as e:
+            print(f"Error in parent_dashboard: {str(e)}")
+            return render(request, 'parent_dashboard.html', context)
+
     except Parent.DoesNotExist:
         return redirect('login')
     except CustomUser.DoesNotExist:
-        student = None  # Handle if the student doesn't exist
+        student = None
+        courses = []
+        grades = []
+        assignment_submissions = []
 
-    # Pass the parent and student to the template
-    return render(request, 'parent_dashboard.html', {'parent': parent, 'student': student})
+    # Get all messages for this parent
+    messages_list = ParentTeacherMessage.objects.filter(
+        parent=parent,
+        message_type='parent_to_teacher'  # Only get messages sent by parent
+    ).select_related('teacher').order_by('-date')
+
+    context.update({
+        'sent_messages': messages_list,
+    })
+
+    return render(request, 'parent_dashboard.html', {
+        'parent': parent,
+        'student': student,
+        'courses': courses,
+        'grades': grades,
+        'assignment_submissions': assignment_submissions,
+        'attendance_records': attendance_records,
+        'present_count': present_count,
+        'absent_count': absent_count,
+        'attendance_percentage': attendance_percentage,
+    })
 
 
 def index_view(request):
@@ -1553,8 +1732,13 @@ def add_question(request, quiz_id):
 
         return redirect('add_question', quiz_id=quiz.id)
 
-    return render(request, 'add_question.html', {'quiz': quiz})
-
+    # Add this return statement for GET requests
+    return render(request, 'add_question.html', {
+        'quiz': quiz,
+        'quiz_id': quiz_id,
+        'first_name': request.session.get('first_name', ''),
+        'last_name': request.session.get('last_name', '')
+    })
 
 from django.shortcuts import render, get_object_or_404
 from .models import Quizs, Question
@@ -2133,7 +2317,7 @@ def feedback_view(request):
 def thank_you_view(request):
     return render(request, 'thank_you.html')
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from .models import Feedback
 
 def view_feedback_responses(request):
@@ -2358,7 +2542,7 @@ def view_quiz_questions(request):
     if course_id:  # If a course is selected, filter questions by that course
         # Filter quizzes based on the course and fetch related questions
         quizzes = quizzes.filter(course_id=course_id)
-        questions = Question.objects.filter(quiz__in=quizzes)  # Fetch questions for the selected course's quizzes
+        questions = Question.objects.filter(quiz__in=quizzes) .order_by('-quiz__start_date') # Fetch questions for the selected course's quizzes
 
     context = {
         'courses': courses,
@@ -2430,27 +2614,34 @@ def mark_attendance(request, schedule_id):
         student = CustomUser.objects.get(id=custom_user_id)
         class_schedule = ClassSchedule.objects.get(id=schedule_id)
         current_time = timezone.localtime(timezone.now())
-        print(current_time)
-        # Check if the student is joining within the scheduled class time
+
+        # Check if student has registered face data
+        try:
+            face_data = StudentFaceData.objects.get(user=student)
+            if not face_data.is_face_captured:
+                messages.error(request, "Please register your face first.")
+                return redirect('face_capture')
+        except StudentFaceData.DoesNotExist:
+            messages.error(request, "Please register your face first.")
+            return redirect('face_capture')
+
+        # Check if within class time
         if class_schedule.start_time <= current_time.time() <= class_schedule.end_time and current_time.date() == class_schedule.date:
-            # Mark attendance as present
-            Attendance.objects.create(
-                student=student,
-                class_schedule=class_schedule,
-                check_in_time=current_time,
-                status='present'
-            )
+            # Show face verification page
+            return render(request, 'face_verification.html', {
+                'schedule_id': schedule_id,
+                'meeting_link': class_schedule.meeting_link
+            })
         else:
-            # If the student tries to join outside the class time, mark them as absent
+            # If outside class time, mark as absent
             Attendance.objects.create(
                 student=student,
                 class_schedule=class_schedule,
                 check_in_time=current_time,
                 status='absent'
             )
-
-        # Redirect to the meeting link after marking attendance
-        return redirect(class_schedule.meeting_link)
+            messages.error(request, "Class is not active at this time.")
+            return redirect('view_scheduled_classes')
 
     except CustomUser.DoesNotExist:
         messages.error(request, "Student not found.")
@@ -2458,6 +2649,9 @@ def mark_attendance(request, schedule_id):
     except ClassSchedule.DoesNotExist:
         messages.error(request, "Class schedule not found.")
         return redirect('student_dashboard')
+    except Exception as e:
+        messages.error(request, str(e))
+        return redirect('view_scheduled_classes')
 
 
 from myApp.models import TeacherCourse, Enrollment, Course
@@ -2476,7 +2670,7 @@ def student_list(request):
     }
     return render(request, 'student_list.html', context)
 
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404  # type: ignore
 from myApp.models import TeacherCourse, Enrollment, Attendance, ClassSchedule
 
 def view_attendance(request):
@@ -2924,106 +3118,2781 @@ def assign_students(request, teacher_id, course_id):
 
     return render(request, 'assign_students.html', {'teacher': teacher, 'course': course, 'students': students})
 
-# from myApp.models import UploadedMaterial, GeneratedQuestion
-# from myApp.utils import  generate_questions_from_text
-# # views.py
-# from myApp.utils import extract_text_from_pdf
 
-# from django.shortcuts import render
-# from myApp.models import UploadedMaterial, GeneratedQuestion
-# from myApp.utils import extract_text_from_pdf, generate_questions_from_text, classify_text_bloom_levels
 
-# def upload_pdf_material(request):
-#     if request.method == 'POST' and request.FILES.get('material'):
-#         material = UploadedMaterial.objects.create(file=request.FILES['material'])
-#         text = extract_text_from_pdf(material.file.path)
-        
-#         if "Error:" in text:
-#             return render(request, 'upload_pdf_material.html', {'error': text})
-        
-#         # Classify text into Bloom's Taxonomy levels
-#         classified_questions = classify_text_bloom_levels(text, material)
-        
-#         # Generate and save questions to the database
-#         for level, questions in classified_questions.items():
-#             for question in questions:
-#                 if not GeneratedQuestion.objects.filter(question_text=question).exists():
-#                     generated_question = GeneratedQuestion(
-#                         material=material,
-#                         question_type=level,
-#                         question_text=question,
-#                         marks=1  # Adjust marks as needed
-#                     )
-#                     generated_question.save()
-        
-#         return render(request, 'generated_questions_list.html', {'questions': GeneratedQuestion.objects.all()})
-    
-#     return render(request, 'upload_pdf_material.html')
 
-# def filter_questions(request):
-#     if request.method == 'POST':
-#         selected_level = request.POST.get('level')
-#         number_of_questions = int(request.POST.get('number'))
+from django.http import JsonResponse
+from .models import Course  # Import the Course model
 
-#         # Filter questions based on the selected Bloom's level
-#         questions = GeneratedQuestion.objects.filter(question_type=selected_level)[:number_of_questions]
+def check_course_name(request):
+    if request.method == 'GET':
+        course_name = request.GET.get('course_name', '').strip()  # Get the course name from the request
+        if course_name:  # Ensure course_name is not empty
+            if Course.objects.filter(course_name__iexact=course_name).exists():  # Check for case-insensitive match
+                return JsonResponse({'status': 'error', 'message': 'Course name already exists'})
+            else:
+                return JsonResponse({'status': 'success', 'message': 'Course name is valid'})
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Course name is required'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
 
-#         return render(request, 'generated_questions_list.html', {'questions': questions})
 
-#     return render(request, 'filter_questions.html')
-# def download_answer_key(request):
-#     questions = GeneratedQuestion.objects.all()  # Assuming questions are already generated and saved
-#     pdf_filename = generate_pdf(questions, answer_key=True)
-    
-#     with open(pdf_filename, "rb") as pdf:
-#         response = HttpResponse(pdf.read(), content_type='application/pdf')
-#         response['Content-Disposition'] = f'attachment; filename={pdf_filename}'
-#         return response
+from django.shortcuts import render, redirect
+from .models import UserAnswers, TeacherCourse, Course, Quizs, Question
 
-# def generated_questions_list(request):
-#     questions = GeneratedQuestion.objects.all()
-#     return render(request, 'generated_questions_list.html', {'questions': questions})
+def evaluate_answers(request):
+    if 'teacher_id' in request.session:
+        teacher_id = request.session['teacher_id']
+        selected_course_id = request.GET.get('course_id')
+        selected_quiz_id = request.GET.get('quiz_id')
 
-# from reportlab.pdfgen import canvas
-# from reportlab.lib.pagesizes import letter
+        # Fetch all courses assigned to the teacher
+        assigned_courses = TeacherCourse.objects.filter(teacher_id=teacher_id).values_list('course_id', flat=True)
+        courses = Course.objects.filter(id__in=assigned_courses)
 
-# def generate_pdf(questions, answer_key=False):
-#     pdf_filename = "question_paper_with_answer_key.pdf" if answer_key else "question_paper.pdf"
-#     c = canvas.Canvas(pdf_filename, pagesize=letter)
-#     width, height = letter
+        # Get quizzes for the selected course
+        quizzes = Quizs.objects.filter(course_id__in=assigned_courses)
 
-#     # Title
-#     c.setFont("Helvetica-Bold", 14)
-#     c.drawString(100, height - 50, "Question Paper")
-    
-#     # Generate questions
-#     y_position = height - 80
-#     for idx, question in enumerate(questions):
-#         c.setFont("Helvetica", 12)
-#         question_text = f"{idx + 1}. {question.question_text} ({question.marks} marks)"  # Accessing question_text
-#         c.drawString(100, y_position, question_text)
-#         y_position -= 20
-        
-#         # Ensure the text does not overflow the page
-#         if y_position < 100:
-#             c.showPage()
-#             y_position = height - 50
+        if selected_course_id:
+            quizzes = quizzes.filter(course_id=selected_course_id)  # Filter quizzes by selected course
 
-#     if answer_key:
-#         # Include answer key at the end
-#         c.showPage()
-#         c.setFont("Helvetica-Bold", 14)
-#         c.drawString(100, height - 50, "Answer Key")
-#         y_position = height - 80
-#         for idx, question in enumerate(questions):
-#             answer_text = f"Answer to Question {idx + 1}: (Your answer here)"
-#             c.setFont("Helvetica", 12)
-#             c.drawString(100, y_position, answer_text)
-#             y_position -= 20
+        if selected_quiz_id:
+            quizzes = quizzes.filter(id=selected_quiz_id)  # Filter quizzes by selected quiz
+
+        # Get the UserAnswers for the selected quiz and course
+        answers = UserAnswers.objects.filter(
+            question__quiz__course_id__in=assigned_courses
+        ).select_related('question')
+        # Get the UserAnswers for the selected quiz and course that haven't been graded yet
+        answers = UserAnswers.objects.filter(
+            question__quiz__course_id__in=assigned_courses,
+            marks_obtained__isnull=True  # Only include answers without assigned marks
+        ).select_related('question', 'user')
+
+        if selected_course_id:
+            answers = answers.filter(question__quiz__course_id=selected_course_id)
+
+        if selected_quiz_id:
+            answers = answers.filter(question__quiz_id=selected_quiz_id)
+
+        # Prepare a list to store the evaluation results
+        evaluation_results = []
+        correct_count = 0  # Counter to track correct answers
+
+        for answer in answers:
+            # Get the correct option from the Question model
+            correct_option = answer.question.correct_option
             
-#             if y_position < 100:
-#                 c.showPage()
-#                 y_position = height - 50
+            # Check if the selected option is correct
+            is_correct = answer.selected_option == correct_option
+            
+            # Assign grade based on correctness
+            if is_correct:
+                grade = 'A+'
+                correct_count += 1
+            else:
+                grade = 'F'
 
-#     c.save()
-#     return pdf_filename
+            # Calculate percentage for the specific answer (1 if correct, 0 if incorrect)
+            percentage = 100 if is_correct else 0
+
+            # Store the percentage in the UserAnswer model
+            answer.percentage = percentage
+            answer.marks_obtained = 1 if is_correct else 0  # Assign marks based on correctness
+            answer.grade = grade
+            answer.save()
+
+            # Add the result to the list for display
+            evaluation_results.append({
+                'answer_id': answer.id,
+                'student': answer.user.username,
+                'question': answer.question.text,
+                'selected_option': answer.selected_option,
+                'correct_option': correct_option,
+                'is_correct': is_correct,
+                'marks': answer.marks_obtained,
+                'grade': grade,
+                'attempt_date': answer.attempt_date,
+                'percentage': answer.percentage,  # Include the percentage in the results
+            })
+
+        # Calculate the total number of questions
+        total_questions = answers.count()
+
+        # Calculate the overall percentage
+        percentage = (correct_count / total_questions) * 100 if total_questions else 0
+
+        # Determine final grade based on the percentage (optional)
+        if percentage >= 90:
+            final_grade = 'A+'
+        elif percentage >= 80:
+            final_grade = 'A'
+        elif percentage >= 70:
+            final_grade = 'B'
+        elif percentage >= 60:
+            final_grade = 'C'
+        else:
+            final_grade = 'F'
+
+        # Process marks update for each student answer (if POST request)
+        if request.method == 'POST':
+            # Iterate through the answers and save the marks
+            for answer_id, marks in request.POST.items():
+                if answer_id.startswith('marks_'):  # Marks input fields have names like "marks_<answer_id>"
+                    user_answer_id = answer_id.split('_')[1]
+                    try:
+                        user_answer = UserAnswers.objects.get(id=user_answer_id)
+                        user_answer.marks_obtained = marks
+                        user_answer.grade = 'A+' if int(marks) > 0 else 'F'  # Set grade based on marks
+                        user_answer.save()
+                    except UserAnswers.DoesNotExist:
+                        pass  # Handle invalid IDs gracefully
+
+            # Redirect to the same page to reflect updated marks
+            return redirect(request.path + f"?course_id={selected_course_id}&quiz_id={selected_quiz_id}" if selected_course_id and selected_quiz_id else request.path)
+
+        context = {
+            'evaluation_results': evaluation_results,
+            'courses': courses,
+            'selected_course_id': selected_course_id,
+            'selected_quiz_id': selected_quiz_id,
+            'quizzes': quizzes,
+            'total_questions': total_questions,
+            'correct_count': correct_count,
+            'percentage': percentage,
+            'final_grade': final_grade,
+        }
+
+        # Pass the evaluation results to the template
+        return render(request, 'evaluate_answers.html', context)
+    else:
+        return redirect('login')
+
+
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import logging
+import google.generativeai as genai
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+# Set your Gemini API Key
+API_KEY = os.getenv('API_KEY')
+
+# Configure the Generative AI client
+genai.configure(api_key=API_KEY)
+
+@csrf_exempt
+def chatbot_response(request):
+    if request.method == 'POST':
+        user_message = request.POST.get('message')
+
+        if not user_message:
+            return JsonResponse({'error': 'No message provided'}, status=400)
+
+        try:
+            # Create the model
+            model = genai.GenerativeModel("gemini-1.5-flash")
+
+            # Generate content using the user message
+            response = model.generate_content(user_message)
+
+            # Extract the AI response
+            ai_message = response.text
+
+            # Log the AI response for debugging
+            logger.info(f"Gemini API response: {ai_message}")
+
+            return JsonResponse({'response': ai_message})
+
+        except Exception as e:
+            logger.error(f"Error fetching response from Gemini API: {str(e)}")
+            return JsonResponse({'error': 'Failed to get response from AI'}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
+import os  # Ensure this import is present
+import time  # Ensure this import is present
+import base64  # Ensure this import is present
+import requests  # Ensure this import is present
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import logging
+
+# Replace with your actual Hugging Face API key
+HUGGING_FACE_API_KEY = os.getenv('HUGGING_FACE_API_KEY')
+# Configure logging
+logger = logging.getLogger(__name__)
+
+@csrf_exempt
+def generate_image(request):
+    if request.method == 'POST':
+        user_description = request.POST.get('description')
+
+        if not user_description:
+            return JsonResponse({'error': 'No description provided'}, status=400)
+
+        try:
+            logger.info(f"Generating image with description: {user_description}")
+
+            # API request headers
+            headers = {
+                'Authorization': f'Bearer {HUGGING_FACE_API_KEY}',
+                'Content-Type': 'application/json'
+            }
+
+            # Payload with user input and optional parameters
+            payload = {
+                'text_prompts': [{'text': user_description}],
+                'cfg_scale': 7.5,  # Prompt adherence (lower = more creative)
+                'width': 1024,  # Allowed width
+                'height': 1024,  # Allowed height
+                'samples': 1  # Number of images to generate
+            }
+
+            # Make API request
+            response = requests.post(
+                'https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image',
+                headers=headers,
+                json=payload
+            )
+
+            logger.info(f"Response status code: {response.status_code}")
+
+            # Handle API response
+            if response.status_code == 200:
+                response_data = response.json()
+
+                if 'artifacts' in response_data and response_data['artifacts']:
+                    # Extract base64 image data
+                    image_data = response_data['artifacts'][0].get('base64')
+                    if image_data:
+                        # Ensure the directory exists
+                        os.makedirs('media/generated_images', exist_ok=True)  # Create directory if it doesn't exist
+                        
+                        # Save the image to a file
+                        image_file_path = f'media/generated_images/image_{int(time.time())}.png'
+                        with open(image_file_path, 'wb') as image_file:
+                            image_file.write(base64.b64decode(image_data))
+                        
+                        # Return the URL of the saved image
+                        return JsonResponse({'image_url': f'/{image_file_path}'})
+                else:
+                    logger.error("No artifacts found in response.")
+                    return JsonResponse({'error': 'No images generated'}, status=500)
+            else:
+                logger.error(f"API returned an error: {response.text}")
+                return JsonResponse({'error': 'Failed to generate image'}, status=response.status_code)
+
+        except Exception as e:
+            logger.error(f"Error generating image: {e}")
+            return JsonResponse({'error': 'An error occurred'}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+from django.core.files.storage import FileSystemStorage
+
+from datetime import datetime
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import HttpResponse
+from xhtml2pdf import pisa
+from .models import Course, CustomUser, Enrollment
+from django.template.loader import render_to_string
+
+def generate_certificate(request, course_id):
+    custom_user_id = request.session.get('custom_user_id')
+    if not custom_user_id:
+        return redirect('login')
+
+    course = get_object_or_404(Course, id=course_id)
+    student = get_object_or_404(CustomUser, id=custom_user_id)
+
+    # Convert course ending date and today's date to date objects to avoid comparison error
+    today = datetime.today().date()  # Today's date (no time part)
+    end_date = course.ending_date  # No need to call .date() on already a date object
+
+    # Check if the course is completed (end date passed)
+    if today < end_date:
+        return HttpResponse("Course is not yet completed.", status=403)
+
+    enrollment = Enrollment.objects.filter(student=student, course=course).first()
+    if not enrollment:
+        return HttpResponse("You are not enrolled in this course.", status=403)
+
+    template_path = 'certificate_template.html'
+    context = {'student': student, 'course': course}
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{student.username}_certificate.pdf"'
+
+    html = render_to_string(template_path, context)
+    pisa_status = pisa.CreatePDF(html, dest=response)
+
+    if pisa_status.err:
+        return HttpResponse("Error generating PDF", status=500)
+    return response
+
+
+
+def student_performance_view(request):
+    custom_user_id = request.session.get('custom_user_id')
+    if not custom_user_id:
+        messages.error(request, "You are not logged in.")
+        return redirect('login')
+
+    try:
+        student = CustomUser.objects.get(id=custom_user_id)
+    except CustomUser.DoesNotExist:
+        messages.error(request, "Student not found.")
+        return redirect('login')
+
+    # Fetch quiz performance
+    quiz_data = UserAnswers.objects.filter(user_id=student.id).order_by('attempt_date')
+    quiz_performance = []
+    for quiz_answer in quiz_data:
+        course_name = (
+            quiz_answer.quiz.course.course_name
+            if hasattr(quiz_answer, 'quiz') and hasattr(quiz_answer.quiz, 'course')
+            else 'Unknown'
+        )
+        quiz_performance.append({
+            'course_name': course_name,
+            'date': quiz_answer.attempt_date,
+            'marks': quiz_answer.marks_obtained,
+        })
+
+    # Fetch assignment performance
+    assignment_data = AssignmentSubmission.objects.filter(student_id=student.id).order_by('submitted_at')
+    assignment_performance = []
+    for assignment_submission in assignment_data:
+        course_name = (
+            assignment_submission.assignment.course.course_name
+            if hasattr(assignment_submission, 'assignment') and hasattr(assignment_submission.assignment, 'course')
+            else 'Unknown'
+        )
+        assignment_performance.append({
+            'course_name': course_name,
+            'date': assignment_submission.submitted_at,
+            'grade': assignment_submission.grade,
+        })
+
+    # Calculate averages
+    average_quiz_marks = quiz_data.aggregate(avg_marks=Avg('marks_obtained'))['avg_marks'] or 0
+    average_assignment_grade = assignment_data.aggregate(avg_grade=Avg('grade'))['avg_grade'] or 0
+
+    # Enrolled courses
+    enrollments = Enrollment.objects.filter(student=student)
+    enrolled_courses_with_dates = [
+        (enrollment.course, enrollment.enrollment_date, enrollment.enrollment_time)
+        for enrollment in enrollments
+    ]
+
+    context = {
+        'student': student,
+        'quiz_performance': quiz_performance,
+        'assignment_performance': assignment_performance,
+        'average_quiz_marks': average_quiz_marks,
+        'average_assignment_grade': average_assignment_grade,
+        'enrolled_courses_with_dates': enrolled_courses_with_dates,
+    }
+
+    return render(request, 'student_performance.html', context)
+
+
+
+from django.utils.timezone import now
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import UserAnswers, CustomUser, Enrollment, Quizs, Material, Course
+
+def quiz_marks_view(request):
+    # Retrieve the custom user ID from the session
+    custom_user_id = request.session.get('custom_user_id')
+
+    if not custom_user_id:
+        messages.error(request, "You are not logged in.")
+        return redirect('login')
+
+    try:
+        # Fetch the student (CustomUser) based on the custom user ID
+        student = CustomUser.objects.get(id=custom_user_id)
+    except CustomUser.DoesNotExist:
+        messages.error(request, "Student not found.")
+        return redirect('login')
+
+    # Fetch enrolled courses for the student
+    enrolled_courses = Enrollment.objects.filter(student=student).select_related('course')
+
+    if not enrolled_courses.exists():
+        messages.error(request, "You are not enrolled in any courses.")
+        return redirect('student_dashboard')
+
+    # Get course IDs for enrolled courses
+    enrolled_course_ids = enrolled_courses.values_list('course_id', flat=True)
+
+    # Fetch quizzes associated with enrolled courses
+    quizzes = Quizs.objects.filter(course_id__in=enrolled_course_ids).select_related('course', 'teacher')
+
+    # Fetch UserAnswers for the student related to these quizzes
+    user_answers = UserAnswers.objects.filter(user=student, question__quiz__in=quizzes).select_related('question__quiz')
+
+    # Organize data by quiz
+    quiz_marks = {}
+    passed_quizzes = []  # To track passed quizzes for recommendations
+
+    for quiz in quizzes:
+        quiz_questions = user_answers.filter(question__quiz=quiz)
+        total_marks = sum(answer.marks_obtained or 0 for answer in quiz_questions)
+        total_questions = quiz_questions.count()
+        percentage = (total_marks / (total_questions * 1)) * 100 if total_questions > 0 else 0
+        grade = calculate_grade(percentage)  # A helper function for grade calculation
+
+        # Track quizzes the student has passed
+        if grade != "F":
+            passed_quizzes.append(quiz)
+
+        # Fetch study materials if the student failed the quiz
+        study_materials = []
+        if grade == "F":
+            study_materials = Material.objects.filter(course=quiz.course)
+
+        quiz_marks[quiz] = {
+            'questions': quiz_questions,
+            'total_marks': total_marks,
+            'total_questions': total_questions,
+            'percentage': percentage,
+            'grade': grade,
+            'study_materials': study_materials,  # Add study materials to the context
+        }
+
+    # Recommend courses for passed quizzes
+    recommended_courses = Course.objects.exclude(id__in=enrolled_course_ids).filter(
+        starting_date__gte=now().date()
+    )
+
+    context = {
+        'quiz_marks': quiz_marks,
+        'recommended_courses': recommended_courses,  # Add recommended courses to the context
+    }
+    return render(request, 'quiz_marks.html', context)
+
+
+def calculate_grade(percentage):
+    """
+    Helper function to calculate grade based on percentage.
+    """
+    if percentage >= 90:
+        return "A+"
+    elif percentage >= 80:
+        return "A"
+    elif percentage >= 70:
+        return "B+"
+    elif percentage >= 60:
+        return "B"
+    elif percentage >= 50:
+        return "C"
+    else:
+        return "F"
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+import PyPDF2
+from docx import Document
+from pptx import Presentation
+from django.conf import settings
+import os
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from .models import GeneratedQuestionPaper
+from django.core.files.base import ContentFile
+import io
+from django.utils import timezone
+
+try:
+    import google.generativeai as genai
+    # Configure Gemini AI
+    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+    genai.configure(api_key=GEMINI_API_KEY)
+    
+    # Test available models
+    for m in genai.list_models():
+        if 'generateContent' in m.supported_generation_methods:
+            print(m.name)
+            
+except ImportError:
+    print("Please install google-generativeai package using: pip install google-generativeai")
+    raise
+
+
+def question_generator(request):
+    teacher_id = request.session.get('teacher_id')  # Get teacher ID from session
+    
+    if not teacher_id:
+        return redirect('login')
+    
+    # Get courses assigned to this teacher
+    assigned_courses = TeacherCourse.objects.filter(teacher_id=teacher_id).values_list('course_id', flat=True)
+    courses = Course.objects.filter(id__in=assigned_courses)
+
+    context = {
+        'courses': courses,
+        'teacher_id': teacher_id,
+        'first_name': request.session.get('first_name', ''),
+        'last_name': request.session.get('last_name', '')
+    }
+    return render(request, 'question_generator.html', context)
+
+def generate_pdf(questions_data, filename):
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=72,
+        leftMargin=72,
+        topMargin=72,
+        bottomMargin=72
+    )
+
+    # Container for the 'Flowable' objects
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    # Custom styles
+    styles.add(ParagraphStyle(
+        name='QuestionStyle',
+        fontSize=12,
+        spaceAfter=20,
+        spaceBefore=20
+    ))
+    
+    # Add title
+    title = Paragraph(filename.split('_')[0], styles['Heading1'])
+    elements.append(title)
+    elements.append(Spacer(1, 12))
+
+    # Process each section
+    for section_index, section in enumerate(questions_data):
+        # Add section header
+        section_title = Paragraph(
+            f"Section {section_index + 1} ({section['marks']} marks per question)", 
+            styles['Heading2']
+        )
+        elements.append(section_title)
+        elements.append(Spacer(1, 12))
+
+        # Process each question in the section
+        for q_index, question in enumerate(section['questions']):
+            # Question text
+            q_text = f"Q{q_index + 1}. {question['question']}"
+            elements.append(Paragraph(q_text, styles['QuestionStyle']))
+
+            # Mark distribution table
+            mark_data = [[Paragraph("Component", styles['Heading4']), 
+                         Paragraph("Marks", styles['Heading4'])]]
+            
+            for dist in question['marks_distribution']:
+                component = dist.split('(')[0].strip()
+                marks = dist.split('(')[1].replace(')', '').strip()
+                mark_data.append([Paragraph(component, styles['Normal']), 
+                                Paragraph(marks, styles['Normal'])])
+
+            table = Table(mark_data, colWidths=[4*inch, 1*inch])
+            table.setStyle(TableStyle([
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 12),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('TOPPADDING', (0, 0), (-1, 0), 12),
+            ]))
+            elements.append(table)
+            elements.append(Spacer(1, 20))
+
+    # Build PDF
+    doc.build(elements)
+    buffer.seek(0)
+    return buffer
+
+@csrf_exempt
+def generate_question(request):
+    if request.method == 'POST':
+        try:
+            # Get teacher ID and course ID
+            teacher_id = request.session.get('teacher_id')
+            course_id = request.POST.get('course_id')
+            document = request.FILES.get('document')
+            paper_title = request.POST.get('title', '')
+            configs = json.loads(request.POST.get('configs', '[]'))
+            
+            if not teacher_id or not course_id:
+                return JsonResponse({'error': 'Teacher ID or Course ID missing'})
+
+            # Get the course object
+            course = get_object_or_404(Course, id=course_id)
+            
+            # Extract text from document
+            text_content = extract_text_from_document(document)
+            all_questions = []
+            total_marks = 0
+            difficulty = 'medium'  # default difficulty
+            
+            for config in configs:
+                question_count = int(config['questionCount'])
+                marks = int(config['marksPerQuestion'])
+                difficulty = config['difficulty']
+                total_marks += marks * question_count
+                
+                if marks >= 10:
+                    difficulty = "hard"
+                elif marks >= 5:
+                    difficulty = "medium" if difficulty == "easy" else difficulty
+                
+                questions = generate_questions_from_text(
+                    text_content,
+                    question_count,
+                    marks,
+                    difficulty
+                )
+                
+                all_questions.append({
+                    'marks': marks,
+                    'questions': questions
+                })
+
+            # Generate PDFs
+            timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+            filename = f'{paper_title}_{timestamp}'
+            
+            question_pdf = generate_pdf(all_questions, filename)
+            answer_key_pdf = generate_answer_key_pdf(all_questions, filename)
+
+            # Save to database
+            question_paper = GeneratedQuestionPaper(
+                title=paper_title,
+                total_marks=total_marks,
+                difficulty=difficulty,
+                teacher_id=teacher_id,
+                course=course
+            )
+            
+            # Save question paper PDF
+            question_paper.pdf_file.save(f'{filename}_questions.pdf', 
+                                       ContentFile(question_pdf.getvalue()))
+            
+            # Save answer key PDF
+            question_paper.answer_key_file.save(f'{filename}_answers.pdf', 
+                                              ContentFile(answer_key_pdf.getvalue()))
+            
+            question_paper.save()
+
+            return JsonResponse({
+                'success': True,
+                'questions': all_questions,
+                'pdf_url': question_paper.pdf_file.url,
+                'answer_key_url': question_paper.answer_key_file.url
+            })
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+def extract_text_from_document(document):
+    """Extract text from various document formats"""
+    file_extension = document.name.split('.')[-1].lower()
+    text_content = ""
+    
+    try:
+        if file_extension == 'pdf':
+            pdf_reader = PyPDF2.PdfReader(document)
+            for page in pdf_reader.pages:
+                text_content += page.extract_text()
+                
+        elif file_extension in ['doc', 'docx']:
+            doc = Document(document)
+            for para in doc.paragraphs:
+                text_content += para.text + "\n"
+                
+        elif file_extension in ['ppt', 'pptx']:
+            prs = Presentation(document)
+            for slide in prs.slides:
+                for shape in slide.shapes:
+                    if hasattr(shape, "text"):
+                        text_content += shape.text + "\n"
+    except Exception as e:
+        raise Exception(f"Error processing document: {str(e)}")
+    
+    return text_content
+
+def generate_questions_from_text(text, count, marks, difficulty):
+    try:
+        model = genai.GenerativeModel('gemini-pro')
+        
+        # Calculate mark distribution
+        concept_marks = marks // 3
+        explanation_marks = marks // 3
+        example_marks = marks - (2 * (marks // 3))
+        
+        prompt = f"""
+        Generate {count} questions based on the following text. Format as a JSON array.
+
+        Each question object must have exactly this structure, no variations:
+        {{
+            "question": "Question text",
+            "marks_distribution": [
+                "concept ({concept_marks} marks)",
+                "explanation ({explanation_marks} marks)",
+                "example ({example_marks} marks)"
+            ],
+            "answer": {{
+                "main_points": ["point 1", "point 2"],
+                "keywords": ["keyword1", "keyword2"],
+                "explanation": "Brief explanation",
+                "examples": ["example1"]
+            }}
+        }}
+
+        Text: {text[:3000]}  # Limiting text length to avoid token limits
+
+        Rules:
+        - Difficulty level: {difficulty}
+        - Generate exactly {count} questions
+        - Use only double quotes, not single quotes
+        - Keep answers concise
+        - Return only the JSON array
+        """
+        
+        response = model.generate_content(prompt)
+        response_text = response.text.strip()
+        
+        # Clean up the response
+        if '```' in response_text:
+            response_text = response_text.split('```')[1].split('```')[0]
+        
+        # Extract just the JSON array
+        start_idx = response_text.find('[')
+        end_idx = response_text.rfind(']') + 1
+        if start_idx != -1 and end_idx != 0:
+            response_text = response_text[start_idx:end_idx]
+        
+        # Clean up common JSON issues
+        response_text = (response_text
+            .replace('\n', ' ')
+            .replace('  ', ' ')
+            .replace('} {', '},{')
+            .replace('}}]"', '}}]')
+            .replace('"}"}', '}}')
+            .replace('\\"', '"')
+            .replace('""', '"')
+            .strip())
+        
+        try:
+            questions = json.loads(response_text)
+            if not isinstance(questions, list):
+                questions = [questions]
+            
+            # Basic validation
+            for q in questions:
+                if not all(key in q for key in ['question', 'marks_distribution', 'answer']):
+                    raise Exception("Question missing required fields")
+                if not all(key in q['answer'] for key in ['main_points', 'keywords', 'explanation', 'examples']):
+                    raise Exception("Answer missing required fields")
+            
+            return questions
+            
+        except json.JSONDecodeError as e:
+            print(f"JSON Error: {str(e)}")
+            print(f"Response text: {response_text[:200]}")
+            raise Exception("Failed to parse AI response as JSON")
+            
+    except Exception as e:
+        raise Exception(f"Error generating questions: {str(e)}")
+
+def view_question_papers(request):
+    """View to list all generated question papers"""
+    teacher_id = request.session.get('teacher_id')
+    if not teacher_id:
+        return redirect('login')
+
+    # Get papers for courses assigned to this teacher
+    assigned_courses = TeacherCourse.objects.filter(teacher_id=teacher_id).values_list('course_id', flat=True)
+    papers = GeneratedQuestionPaper.objects.filter(
+        course_id__in=assigned_courses
+    ).order_by('-created_at')
+    
+    return render(request, 'view_question_papers.html', {'papers': papers})
+
+def delete_question_paper(request, paper_id):
+    """View to delete a question paper"""
+    if request.method == 'POST':
+        paper = get_object_or_404(GeneratedQuestionPaper, id=paper_id)
+        # Delete the file from storage
+        if paper.pdf_file:
+            if os.path.isfile(paper.pdf_file.path):
+                os.remove(paper.pdf_file.path)
+        # Delete the database record
+        paper.delete()
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error'}, status=400)
+
+def download_question_paper(request, paper_id):
+    """View to download a question paper"""
+    paper = get_object_or_404(GeneratedQuestionPaper, id=paper_id)
+    if paper.pdf_file:
+        response = HttpResponse(paper.pdf_file, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{paper.pdf_file.name}"'
+        return response
+    return HttpResponse('PDF not found', status=404)
+
+#pip install google-generativeai
+#pip install PyPDF2 python-docx python-pptx
+#pip install reportlab
+
+from django.shortcuts import get_object_or_404, redirect
+from django.http import HttpResponse
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.lib.colors import tan, black, white
+from .models import Course, CustomUser, Enrollment
+import os
+import io
+from django.conf import settings
+
+def generate_certificate(request, course_id):
+    custom_user_id = request.session.get('custom_user_id')
+    if not custom_user_id:
+        return redirect('login')
+
+    course = get_object_or_404(Course, id=course_id)
+    student = get_object_or_404(CustomUser, id=custom_user_id)
+
+    # Check if the course is completed
+    today = datetime.today().date()
+    if today < course.ending_date:
+        return HttpResponse("Course is not yet completed.", status=403)
+
+    enrollment = Enrollment.objects.filter(student=student, course=course).first()
+    if not enrollment:
+        return HttpResponse("You are not enrolled in this course.", status=403)
+
+    # Create a buffer to hold the PDF data
+    buffer = io.BytesIO()
+
+    # Create a canvas
+    c = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+
+    # Draw a border
+    c.setStrokeColor(tan)
+    c.setLineWidth(10)
+    c.rect(30, 30, width - 60, height - 60)
+
+    # Draw a background rectangle
+    c.setFillColor(white)
+    c.rect(40, 40, width - 80, height - 80, fill=True)
+
+    # Set up the certificate layout
+    c.setFont("Helvetica-Bold", 30)
+    c.setFillColor(tan)
+    c.drawCentredString(width / 2, height - 100, "Certificate of Completion")
+
+    c.setFont("Helvetica", 18)
+    c.setFillColor(black)
+    c.drawCentredString(width / 2, height - 150, "This certificate is presented to")
+    c.setFont("Helvetica-Bold", 24)
+    c.drawCentredString(width / 2, height - 200, f"{student.first_name} {student.last_name}")
+
+    c.setFont("Helvetica", 18)
+    c.drawCentredString(width / 2, height - 250, "For successfully completing the course")
+    c.setFont("Helvetica-Bold", 22)
+    c.drawCentredString(width / 2, height - 300, f"{course.course_name}")
+
+    c.setFont("Helvetica", 16)
+    c.drawCentredString(width / 2, height - 350, f"On: {course.ending_date}")
+
+    # Include the image
+    image_path = os.path.join(settings.BASE_DIR, 'myApp/static/images/academics.jpg')
+    c.drawImage(image_path, 50, height - 150, width=80, height=80, preserveAspectRatio=True, mask='auto')
+
+    # Finalize the PDF
+    c.showPage()
+    c.save()
+
+    # Get the PDF data from the buffer
+    buffer.seek(0)
+
+    # Create a response
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{student.username}_certificate.pdf"'
+
+    return response
+
+from django.shortcuts import get_object_or_404, redirect
+from django.http import HttpResponse
+from reportlab.lib.pagesizes import landscape, letter
+from reportlab.pdfgen import canvas
+from reportlab.lib.colors import blue, black, white
+from .models import Course, CustomUser, Enrollment
+import os
+import io
+from django.conf import settings
+from datetime import datetime
+
+def generate_certificate(request, course_id):
+    custom_user_id = request.session.get('custom_user_id')
+    if not custom_user_id:
+        return redirect('login')
+
+    course = get_object_or_404(Course, id=course_id)
+    student = get_object_or_404(CustomUser, id=custom_user_id)
+
+    # Check if the course is completed
+    today = datetime.today().date()
+    if today < course.ending_date:
+        return HttpResponse("Course is not yet completed.", status=403)
+
+    enrollment = Enrollment.objects.filter(student=student, course=course).first()
+    if not enrollment:
+        return HttpResponse("You are not enrolled in this course.", status=403)
+
+    # Create a buffer to hold the PDF data
+    buffer = io.BytesIO()
+
+    # Create a canvas in landscape mode
+    c = canvas.Canvas(buffer, pagesize=landscape(letter))
+    width, height = landscape(letter)
+
+    # Draw a border
+    c.setStrokeColor(blue)
+    c.setLineWidth(10)
+    c.rect(30, 30, width - 60, height - 60)
+
+    # Draw a background rectangle
+    c.setFillColor(white)
+    c.rect(40, 40, width - 80, height - 80, fill=True)
+
+    # Include the image at the top center
+    image_path = os.path.join(settings.BASE_DIR, 'myApp/static/images/academics.jpg')
+    c.drawImage(image_path, width / 2 - 40, height - 120, width=80, height=80, preserveAspectRatio=True, mask='auto')
+
+    # Set up the certificate layout
+    c.setFont("Helvetica-Bold", 30)
+    c.setFillColor(blue)
+    c.drawCentredString(width / 2, height - 150, "Certificate of Completion")
+
+    c.setFont("Helvetica", 18)
+    c.setFillColor(black)
+    c.drawCentredString(width / 2, height - 200, "This certificate is presented to")
+    c.setFont("Helvetica-Bold", 24)
+    c.drawCentredString(width / 2, height - 250, f"{student.first_name} {student.last_name}")
+
+    c.setFont("Helvetica", 18)
+    c.drawCentredString(width / 2, height - 300, "For successfully completing the course")
+    c.setFont("Helvetica-Bold", 22)
+    c.drawCentredString(width / 2, height - 350, f"{course.course_name}")
+
+    c.setFont("Helvetica", 16)
+    c.drawCentredString(width / 2, height - 400, f"On: {course.ending_date}")
+
+    # Finalize the PDF
+    c.showPage()
+    c.save()
+
+    # Get the PDF data from the buffer
+    buffer.seek(0)
+
+    # Create a response
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{student.username}_certificate.pdf"'
+
+    return response
+
+import requests
+from django.conf import settings
+from django.shortcuts import render
+
+def search_books(request):
+    query = request.GET.get('q', '')
+    books = []
+    error_message = None
+
+    if query:
+        try:
+            # Add fields parameter to get more information including viewability
+            url = f"https://www.googleapis.com/books/v1/volumes?q={query}&maxResults=20&fields=items(volumeInfo/title,volumeInfo/authors,volumeInfo/publishedDate,volumeInfo/imageLinks,volumeInfo/previewLink,volumeInfo/infoLink,volumeInfo/canonicalVolumeLink,accessInfo/pdf,accessInfo/viewability,accessInfo/webReaderLink)"
+            
+            response = requests.get(url)
+            response.raise_for_status()
+            
+            data = response.json()
+            books = data.get("items", [])
+            
+            # Process image URLs and add reading options
+            for book in books:
+                if 'imageLinks' in book.get('volumeInfo', {}):
+                    for key in ['thumbnail', 'smallThumbnail']:
+                        if key in book['volumeInfo']['imageLinks']:
+                            image_url = book['volumeInfo']['imageLinks'][key]
+                            # Convert HTTP to HTTPS and remove edge=curl
+                            if image_url.startswith('http:'):
+                                image_url = image_url.replace('http:', 'https:')
+                            image_url = image_url.replace('&edge=curl', '')
+                            book['volumeInfo']['imageLinks'][key] = image_url + "&zoom=1"
+                
+                # Add reading options based on availability
+                book['reading_options'] = {
+                    'preview_available': bool(book.get('volumeInfo', {}).get('previewLink')),
+                    'web_reader_available': bool(book.get('accessInfo', {}).get('webReaderLink')),
+                    'pdf_available': book.get('accessInfo', {}).get('pdf', {}).get('isAvailable', False),
+                    'viewability': book.get('accessInfo', {}).get('viewability', 'NO_PAGES')
+                }
+            
+        except requests.RequestException as e:
+            error_message = f"An error occurred while searching: {str(e)}"
+            print(f"API Error: {str(e)}")
+        except Exception as e:
+            error_message = "An unexpected error occurred"
+            print(f"Unexpected Error: {str(e)}")
+
+    return render(request, "search_books.html", {
+        "books": books,
+        "query": query,
+        "error_message": error_message
+    })
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
+import os
+from googletrans import Translator
+import PyPDF2
+import io
+from pathlib import Path
+
+@csrf_exempt
+def translate_material(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            file_url = data.get('file_url')
+            target_language = data.get('target_language', 'es')  # Default to Spanish
+            
+            # Map language codes to model names
+            model_map = {
+                'es': 'Helsinki-NLP/opus-mt-en-es',
+                'fr': 'Helsinki-NLP/opus-mt-en-fr',
+                'de': 'Helsinki-NLP/opus-mt-en-de',
+                'it': 'Helsinki-NLP/opus-mt-en-it',
+                'pt': 'Helsinki-NLP/opus-mt-en-pt',
+            }
+            
+            model_name = model_map.get(target_language)
+            if not model_name:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Unsupported target language'
+                })
+            
+            # Get the file path from the URL
+            file_path = os.path.join(settings.MEDIA_ROOT, file_url.split('/media/')[-1])
+
+            # Read PDF content
+            pdf_text = ""
+            try:
+                with open(file_path, 'rb') as file:
+                    pdf_reader = PyPDF2.PdfReader(file)
+                    for page in pdf_reader.pages:
+                        pdf_text += page.extract_text()
+            except Exception as e:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Error reading PDF: {str(e)}'
+                })
+
+            try:
+                # Load the translation model and tokenizer
+                tokenizer = MarianTokenizer.from_pretrained(model_name)
+                model = MarianMTModel.from_pretrained(model_name)
+                
+                # Set device (GPU if available, else CPU)
+                device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+                model = model.to(device)
+                
+                # Split text into smaller chunks (MarianMT has a max length limit)
+                max_chunk_size = 128  # Tokens, not characters
+                chunks = []
+                words = pdf_text.split()
+                current_chunk = []
+                
+                for word in words:
+                    current_chunk.append(word)
+                    if len(current_chunk) >= max_chunk_size:
+                        chunks.append(' '.join(current_chunk))
+                        current_chunk = []
+                if current_chunk:
+                    chunks.append(' '.join(current_chunk))
+                
+                # Translate chunks
+                translated_chunks = []
+                for chunk in chunks:
+                    # Tokenize and translate
+                    inputs = tokenizer(chunk, return_tensors="pt", padding=True, truncation=True, max_length=512)
+                    inputs = inputs.to(device)
+                    
+                    translated = model.generate(**inputs)
+                    translated_text = tokenizer.batch_decode(translated, skip_special_tokens=True)[0]
+                    translated_chunks.append(translated_text)
+
+                translated_text = ' '.join(translated_chunks)
+
+                # Create the translated PDF
+                original_filename = Path(file_path).stem
+                translated_filename = f"{original_filename}_{target_language}_translated.pdf"
+                translations_dir = os.path.join(settings.MEDIA_ROOT, 'translations')
+                os.makedirs(translations_dir, exist_ok=True)
+                translated_file_path = os.path.join(translations_dir, translated_filename)
+
+                # Create PDF with formatting
+                doc = SimpleDocTemplate(
+                    translated_file_path,
+                    pagesize=letter,
+                    rightMargin=72,
+                    leftMargin=72,
+                    topMargin=72,
+                    bottomMargin=72
+                )
+
+                styles = getSampleStyleSheet()
+                normal_style = ParagraphStyle(
+                    'CustomNormal',
+                    parent=styles['Normal'],
+                    fontSize=11,
+                    leading=14,
+                    spaceBefore=6,
+                    spaceAfter=6
+                )
+
+                story = []
+                for para in translated_text.split('\n'):
+                    if para.strip():
+                        cleaned_text = para.strip().replace('&', '&amp;')
+                        p = Paragraph(cleaned_text, normal_style)
+                        story.append(p)
+
+                # Build the PDF
+                doc.build(story)
+                
+                return JsonResponse({
+                    'success': True,
+                    'translated_file_url': f'/media/translations/{translated_filename}'
+                })
+
+            except Exception as e:
+                print(f"Translation error: {str(e)}")
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Translation error: {str(e)}'
+                })
+
+        except Exception as e:
+            print(f"General error: {str(e)}")
+            return JsonResponse({
+                'success': False,
+                'error': f'General error: {str(e)}'
+            })
+
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method'
+    })
+
+from django.http import JsonResponse
+import google.generativeai as genai
+from django.conf import settings
+from PyPDF2 import PdfReader
+import io
+
+def generate_summary(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            material_id = data.get('material_id')
+            regenerate = data.get('regenerate', False)  # New parameter
+            material = Material.objects.get(id=material_id)
+
+            # Check if summary exists and regenerate is not requested
+            existing_summary = MaterialSummary.objects.filter(material=material).first()
+            if existing_summary and not regenerate:
+                return JsonResponse({
+                    'success': True,
+                    'summary': existing_summary.summary_text,
+                    'key_points': existing_summary.key_points.split('\n')
+                })
+
+            # Read PDF content
+            pdf_content = ""
+            pdf_file = material.file
+            pdf_reader = PdfReader(io.BytesIO(pdf_file.read()))
+            for page in pdf_reader.pages:
+                pdf_content += page.extract_text()
+
+            # Configure Google's Generative AI
+            GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
+            genai.configure(api_key=GOOGLE_API_KEY)
+            model = genai.GenerativeModel('gemini-pro')
+
+            # ... rest of the code remains the same until saving ...
+
+            summary_prompt = f"""
+            Please analyze the following educational material and provide a comprehensive summary. 
+            Focus on:
+            1. Main concepts and theories
+            2. Key arguments and their supporting evidence
+            3. Important definitions and terminology
+            4. Practical applications and examples
+            5. Relationships between different concepts
+
+            Text to summarize:
+            {pdf_content}
+
+            Please structure the summary in a clear, educational format suitable for students.
+            """
+
+            key_points_prompt = f"""
+            From the following educational material, extract the most important learning points.
+            For each point:
+            1. Focus on core concepts that students must understand
+            2. Include any critical formulas, definitions, or principles
+            3. Highlight practical applications
+            4. Note any common misconceptions or important clarifications
+            5. Emphasize connections between different topics
+
+            Text to analyze:
+            {pdf_content}
+
+            Please provide the key points in a bullet-point format, with each point being clear and actionable for learning.
+            """
+
+            try:
+                # Generate summary with error handling and retries
+                max_retries = 3
+                for attempt in range(max_retries):
+                    try:
+                        summary_response = model.generate_content(summary_prompt)
+                        summary_text = summary_response.text
+                        break
+                    except Exception as e:
+                        if attempt == max_retries - 1:
+                            raise Exception(f"Failed to generate summary after {max_retries} attempts")
+                        continue
+
+                # Generate key points with error handling and retries
+                for attempt in range(max_retries):
+                    try:
+                        key_points_response = model.generate_content(key_points_prompt)
+                        key_points = key_points_response.text.split('\n')
+                        # Filter out empty lines and clean up bullet points
+                        key_points = [point.strip().lstrip('•-*').strip() for point in key_points if point.strip()]
+                        break
+                    except Exception as e:
+                        if attempt == max_retries - 1:
+                            raise Exception(f"Failed to generate key points after {max_retries} attempts")
+                        continue
+
+                # Post-process the summary
+                summary_text = summary_text.replace('\n', '<br>')
+                
+                # Update or create summary
+                if existing_summary:
+                    existing_summary.summary_text = summary_text
+                    existing_summary.key_points = '\n'.join(key_points)
+                    existing_summary.save()
+                else:
+                    MaterialSummary.objects.create(
+                        material=material,
+                        summary_text=summary_text,
+                        key_points='\n'.join(key_points)
+                    )
+
+                return JsonResponse({
+                    'success': True,
+                    'summary': summary_text,
+                    'key_points': key_points
+                })
+
+            except Exception as e:
+                return JsonResponse({
+                    'success': False,
+                    'error': f"Processing Error: {str(e)}"
+                })
+
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f"System Error: {str(e)}"
+            })
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+
+@csrf_exempt
+def log_violation(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        quiz_id = data.get('quiz_id')
+        violation_type = data.get('violation_type')
+        
+        # Log the violation (you can store this in your database)
+        # Example: Violation.objects.create(
+        #     quiz_id=quiz_id,
+        #     student=request.user,
+        #     violation_type=violation_type
+        # )
+        
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error'}, status=400)
+
+def question_bank(request, course_id):
+    # Check if user is logged in
+    if 'custom_user_id' not in request.session:
+        return redirect('login')
+    
+    custom_user_id = request.session['custom_user_id']
+    
+    # Check if student is enrolled in this course
+    if not Enrollment.objects.filter(student_id=custom_user_id, course_id=course_id).exists():
+        messages.error(request, "You are not enrolled in this course.")
+        return redirect('student_dashboard')
+    
+    # Get the course and its generated questions
+    course = get_object_or_404(Course, id=course_id)
+    question_papers = GeneratedQuestionPaper.objects.filter(course_id=course_id)
+    
+    context = {
+        'course': course,
+        'question_papers': question_papers,
+        'custom_user': CustomUser.objects.get(id=custom_user_id)
+    }
+    
+    return render(request, 'question_bank.html', context)
+
+def generate_answer_key_pdf(questions_data, filename):
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=72,
+        leftMargin=72,
+        topMargin=72,
+        bottomMargin=72
+    )
+
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    # Add title
+    title = Paragraph(f"Answer Key: {filename.split('_')[0]}", styles['Heading1'])
+    elements.append(title)
+    elements.append(Spacer(1, 12))
+
+    # Process each section
+    for section_index, section in enumerate(questions_data):
+        section_title = Paragraph(
+            f"Section {section_index + 1} ({section['marks']} marks per question)", 
+            styles['Heading2']
+        )
+        elements.append(section_title)
+        elements.append(Spacer(1, 12))
+
+        # Process each question
+        for q_index, question in enumerate(section['questions']):
+            # Question text
+            q_text = f"Q{q_index + 1}. {question['question']}"
+            elements.append(Paragraph(q_text, styles['Heading3']))
+            
+            # Answer components
+            answer = question['answer']
+            
+            # Keywords
+            elements.append(Paragraph("Keywords:", styles['Heading4']))
+            keywords_text = ", ".join(answer['keywords'])
+            elements.append(Paragraph(keywords_text, styles['Normal']))
+            elements.append(Spacer(1, 6))
+            
+            # Main points
+            elements.append(Paragraph("Main Points:", styles['Heading4']))
+            for point in answer['main_points']:
+                elements.append(Paragraph(f"• {point}", styles['Normal']))
+            elements.append(Spacer(1, 6))
+            
+            # Detailed explanation
+            elements.append(Paragraph("Detailed Explanation:", styles['Heading4']))
+            elements.append(Paragraph(answer['explanation'], styles['Normal']))
+            elements.append(Spacer(1, 6))
+            
+            # Examples (if any)
+            if 'examples' in answer and answer['examples']:
+                elements.append(Paragraph("Examples:", styles['Heading4']))
+                for example in answer['examples']:
+                    elements.append(Paragraph(f"• {example}", styles['Normal']))
+            
+            elements.append(Spacer(1, 12))
+
+    # Build PDF
+    doc.build(elements)
+    buffer.seek(0)
+    return buffer
+
+from django.utils import timezone
+from datetime import timedelta
+import random
+from transformers import pipeline
+from django.db.models import Q
+
+def check_final_exam_eligibility(request):
+    """Check if student is eligible for final exam and return exam details"""
+    custom_user_id = request.session.get('custom_user_id')
+    if not custom_user_id:
+        return JsonResponse({'eligible': False, 'message': 'Please log in'})
+
+    try:
+        student = CustomUser.objects.get(id=custom_user_id)
+        enrollments = Enrollment.objects.filter(student=student)
+        
+        eligible_exams = []
+        for enrollment in enrollments:
+            course = enrollment.course
+            course_end_date = course.ending_date
+            today = timezone.now().date()
+            
+            # Check if course is completed and 7 days have passed
+            if course_end_date and today >= (course_end_date + timedelta(days=7)):
+                # Check if student hasn't taken final exam yet
+                if not FinalExam.objects.filter(student=student, course=course).exists():
+                    eligible_exams.append({
+                        'course_id': course.id,
+                        'course_name': course.course_name,
+                        'exam_date': (course_end_date + timedelta(days=7)).strftime('%Y-%m-%d')
+                    })
+
+        return JsonResponse({
+            'eligible': len(eligible_exams) > 0,
+            'exams': eligible_exams
+        })
+
+    except CustomUser.DoesNotExist:
+        return JsonResponse({'eligible': False, 'message': 'Student not found'})
+
+def final_exam_setup(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+    custom_user_id = request.session.get('custom_user_id')
+    
+    if not custom_user_id:
+        return redirect('login')
+    
+    student = get_object_or_404(CustomUser, id=custom_user_id)
+    
+    # Check if student has already taken the exam
+    existing_exam = FinalExam.objects.filter(course=course, student=student).first()
+    if existing_exam and existing_exam.completed:
+        messages.warning(request, 'You have already completed this exam.')
+        return redirect('student_dashboard')
+    
+    context = {
+        'course': course,
+        'student': student
+    }
+    
+    return render(request, 'final_exam_setup.html', context)
+
+def start_final_exam(request, course_id):
+    try:
+        course = get_object_or_404(Course, id=course_id)
+        custom_user_id = request.session.get('custom_user_id')
+        
+        if not custom_user_id:
+            messages.error(request, 'Please log in to take the exam.')
+            return redirect('login')
+            
+        student = get_object_or_404(CustomUser, id=custom_user_id)
+        
+        # Check if student has already taken the exam
+        existing_exam = FinalExam.objects.filter(
+            course=course, 
+            student=student, 
+            completed=True
+        ).first()
+        
+        if existing_exam:
+            messages.warning(request, 'You have already completed this exam.')
+            return redirect('student_dashboard')
+        
+        # Get all question papers for this course
+        question_papers = GeneratedQuestionPaper.objects.filter(course=course)
+        
+        if not question_papers.exists():
+            messages.error(request, 'No questions available for this exam.')
+            return redirect('student_dashboard')
+        
+        # Create new exam instance
+        exam = FinalExam.objects.create(
+            course=course,
+            student=student,
+            start_time=timezone.now()
+        )
+        
+        # Collect all questions from all papers
+        all_questions = []
+        for paper in question_papers:
+            try:
+                # Extract text from PDF
+                pdf_reader = PyPDF2.PdfReader(paper.pdf_file.path)
+                text = ""
+                for page in pdf_reader.pages:
+                    text += page.extract_text()
+                
+                # Split text into individual questions (assuming questions are numbered)
+                question_pattern = r'(?:\d+\.|Q\d+\.)(.*?)(?=(?:\d+\.|Q\d+\.|$))'
+                questions = re.findall(question_pattern, text, re.DOTALL)
+                
+                # Add each question with its source paper
+                for q in questions:
+                    q = q.strip()
+                    if q:  # Only add non-empty questions
+                        all_questions.append({
+                            'text': q,
+                            'paper': paper,
+                            'answer_key': extract_answer_key(paper.answer_key_file.path) if paper.answer_key_file else ""
+                        })
+                
+            except Exception as e:
+                print(f"Error processing paper {paper.id}: {str(e)}")
+                continue
+        
+        if len(all_questions) < 10:
+            exam.delete()
+            messages.error(request, 'Not enough questions available for the exam.')
+            return redirect('student_dashboard')
+        
+        # Randomly select exactly 10 questions
+        selected_questions = random.sample(all_questions, 10)
+        
+        # Create question instances
+        exam_questions = []
+        for question in selected_questions:
+            exam_question = FinalExamQuestion.objects.create(
+                exam=exam,
+                question_paper=question['paper'],
+                question_text=question['text'],
+                answer_key=question['answer_key']
+            )
+            exam_questions.append(exam_question)
+        
+        return render(request, 'take_final_exam.html', {
+            'exam': exam,
+            'exam_questions': exam_questions,
+            'time_remaining': 3600,  # 1 hour in seconds
+            'course': course
+        })
+        
+    except Exception as e:
+        print(f"Error starting exam: {str(e)}")
+        messages.error(request, 'An error occurred while starting the exam.')
+        return redirect('student_dashboard')
+
+def extract_answer_key(answer_key_path):
+    try:
+        pdf_reader = PyPDF2.PdfReader(answer_key_path)
+        answer_text = ""
+        for page in pdf_reader.pages:
+            answer_text += page.extract_text()
+        return answer_text.strip()
+    except Exception as e:
+        print(f"Error extracting answer key: {str(e)}")
+        return ""
+
+def take_final_exam(request, exam_id):
+    exam = get_object_or_404(FinalExam, id=exam_id)
+    
+    if request.method == 'POST':
+        # Handle exam submission
+        answers = request.POST.getlist('answers[]')
+        questions = FinalExamQuestion.objects.filter(exam=exam)
+        
+        # Initialize AI model for evaluation
+        qa_evaluator = pipeline("question-answering")
+        
+        total_score = 0
+        for question, answer in zip(questions, answers):
+            # Evaluate answer using AI
+            result = qa_evaluator(
+                question=question.question_text,
+                context=answer,
+                answer_key=question.answer_key
+            )
+            
+            # Calculate score based on AI evaluation
+            score = result['score'] * 10  # Convert to 10-point scale
+            question.marks_obtained = score
+            question.student_answer = answer
+            question.is_correct = score >= 4  # 40% threshold
+            question.save()
+            
+            total_score += score
+
+        # Calculate final score
+        exam.score = total_score / len(questions)
+        exam.completed = True
+        exam.end_time = timezone.now()
+        exam.save()
+
+        # Generate certificate if score >= 40%
+        if exam.score >= 40:
+            generate_certificate(request, exam.course.id)
+            messages.success(request, 'Congratulations! You have passed the exam.')
+        else:
+            messages.warning(request, 'Sorry, you did not achieve the passing score of 40%.')
+
+        return redirect('exam_results', exam_id=exam.id)
+
+    # GET request - show exam
+    if exam.completed:
+        return redirect('exam_results', exam_id=exam.id)
+
+    questions = FinalExamQuestion.objects.filter(exam=exam)
+    time_remaining = 3600 - (timezone.now() - exam.start_time).seconds
+
+    return render(request, 'take_final_exam.html', {
+        'exam': exam,
+        'questions': questions,
+        'time_remaining': time_remaining
+    })
+
+def exam_results(request, exam_id):
+    exam = get_object_or_404(FinalExam, id=exam_id)
+    questions = FinalExamQuestion.objects.filter(exam=exam)
+    
+    return render(request, 'exam_results.html', {
+        'exam': exam,
+        'questions': questions
+    })
+
+def extract_questions_from_pdf(pdf_file):
+    questions = []
+    try:
+        # Open PDF file
+        pdf_reader = PyPDF2.PdfReader(pdf_file)
+        
+        # Extract text from all pages
+        text = ""
+        for page in pdf_reader.pages:
+            text += page.extract_text()
+
+        # Split text into questions (assuming questions start with numbers)
+        # Modify this pattern based on your PDF structure
+        question_pattern = r'\d+\.(.*?)(?=\d+\.|$)'
+        extracted_questions = re.findall(question_pattern, text, re.DOTALL)
+        
+        # Clean up questions
+        questions = [q.strip() for q in extracted_questions if q.strip()]
+        
+    except Exception as e:
+        print(f"Error extracting questions: {str(e)}")
+    
+    return questions
+
+from django.http import HttpResponse
+
+def ping(request):
+    """Simple endpoint for connection testing"""
+    return HttpResponse("pong")
+
+def submit_exam(request, exam_id):
+    exam = get_object_or_404(FinalExam, id=exam_id)
+    
+    total_marks = 0
+    for question in questions:
+        answer = request.POST.get(f'answer_{question.id}')
+        
+        # Check if answer exists
+        if not answer or answer.strip() == "":
+            question.marks_obtained = 0
+        else:
+            question.marks_obtained = grade_exam_question(question, answer)
+            
+        question.student_answer = answer
+        question.save()
+        total_marks += question.marks_obtained
+    
+    exam.score = total_marks
+    exam.completed = True
+    exam.end_time = timezone.now()
+    exam.save()
+    
+    return redirect('exam_results', exam_id=exam.id)
+
+def grade_exam_question(question, answer):
+    if not answer or answer.strip() == "":
+        return 0  # Return 0 if no answer provided
+        
+    # ... rest of grading logic ...
+
+def check_existing_exam(request, course_id):
+    try:
+        custom_user_id = request.session.get('custom_user_id')
+        if not custom_user_id:
+            return JsonResponse({'exists': False, 'message': 'Please log in'})
+            
+        student = get_object_or_404(CustomUser, id=custom_user_id)
+        course = get_object_or_404(Course, id=course_id)
+        
+        # Check if student has already started or completed an exam
+        existing_exam = FinalExam.objects.filter(
+            course=course,
+            student=student
+        ).exists()
+        
+        return JsonResponse({
+            'exists': existing_exam,
+            'message': 'Exam already exists' if existing_exam else 'No existing exam'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'exists': False,
+            'message': str(e)
+        })
+
+
+import numpy as np
+from django.http import JsonResponse
+from .models import StudentFaceData
+
+def face_capture_view(request):
+    # Check if user is logged in and hasn't registered face yet
+    if not request.session.get('custom_user_id'):
+        return redirect('login')
+    
+    user = CustomUser.objects.get(id=request.session['custom_user_id'])
+    face_data = StudentFaceData.objects.filter(user=user).first()
+    
+    if face_data and face_data.is_face_captured:
+        return redirect('available_courses')
+        
+    return render(request, 'face_capture.html')
+
+@csrf_exempt
+def save_face_data(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    
+    try:
+        # Get the uploaded image
+        face_image = request.FILES.get('face_image')
+        if not face_image:
+            return JsonResponse({'success': False, 'error': 'No image provided'})
+
+        # Convert image to numpy array
+        image_array = np.frombuffer(face_image.read(), np.uint8)
+        image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+
+        # Initialize MediaPipe Face Detection
+        mp_face_detection = mp.solutions.face_detection
+        mp_drawing = mp.solutions.drawing_utils
+
+        with mp_face_detection.FaceDetection(min_detection_confidence=0.5) as face_detection:
+            # Convert the BGR image to RGB
+            image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            results = face_detection.process(image_rgb)
+
+            if not results.detections:
+                return JsonResponse({'success': False, 'error': 'No face detected'})
+            
+            if len(results.detections) > 1:
+                return JsonResponse({'success': False, 'error': 'Multiple faces detected'})
+
+            # Get the face bounding box
+            detection = results.detections[0]
+            bboxC = detection.location_data.relative_bounding_box
+            ih, iw, _ = image.shape
+            x, y, w, h = int(bboxC.xmin * iw), int(bboxC.ymin * ih), \
+                        int(bboxC.width * iw), int(bboxC.height * ih)
+
+            # Extract and save face region
+            face_roi = image[y:y+h, x:x+w]
+            
+            # Save the face image
+            _, img_encoded = cv2.imencode('.jpg', face_roi)
+            face_image_content = ContentFile(img_encoded.tobytes())
+
+            # Save to database
+            user = CustomUser.objects.get(id=request.session.get('custom_user_id'))
+            face_data, created = StudentFaceData.objects.get_or_create(user=user)
+            face_data.face_encoding = img_encoded.tobytes()
+            face_data.is_face_captured = True
+            face_data.save()
+
+            return JsonResponse({'success': True})
+
+    except Exception as e:
+        print(f"Error saving face data: {str(e)}")
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def get_face_encoding(image):
+    """Extract face encoding using OpenCV and face-recognition"""
+    # Convert to grayscale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    # Load face detector
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    
+    # Detect faces
+    faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+    
+    if len(faces) == 0:
+        raise ValueError("No face detected")
+    if len(faces) > 1:
+        raise ValueError("Multiple faces detected")
+        
+    # Get the face ROI
+    x, y, w, h = faces[0]
+    face_roi = gray[y:y+h, x:x+w]
+    
+    # Resize to standard size and flatten
+    face_encoding = cv2.resize(face_roi, (128, 128)).flatten()
+    
+    # Normalize the encoding
+    return face_encoding / np.linalg.norm(face_encoding)
+
+def check_face_similarity(new_encoding, stored_encoding, threshold=0.7):
+    """Compare face encodings using cosine similarity"""
+    similarity = 1 - cosine(new_encoding, stored_encoding)
+    return similarity > threshold
+
+def is_face_already_registered(new_encoding):
+    """Check if face is already registered by any user"""
+    all_face_data = StudentFaceData.objects.filter(is_face_captured=True)
+    
+    for face_data in all_face_data:
+        stored_image = cv2.imdecode(
+            np.frombuffer(face_data.face_encoding, np.uint8),
+            cv2.IMREAD_COLOR
+        )
+        stored_encoding = get_face_encoding(stored_image)
+        
+        if check_face_similarity(new_encoding, stored_encoding):
+            return True
+    return False
+
+def compare_faces(face1, face2, threshold=0.5):
+    """
+    Compare two face images using OpenCV's built-in methods
+    Returns True if faces match, False otherwise
+    """
+    # Initialize SIFT detector
+    sift = cv2.SIFT_create()
+    
+    # Detect keypoints and descriptors
+    kp1, des1 = sift.detectAndCompute(face1, None)
+    kp2, des2 = sift.detectAndCompute(face2, None)
+    
+    if des1 is None or des2 is None or len(des1) == 0 or len(des2) == 0:
+        return False
+    
+    # Create BFMatcher object
+    bf = cv2.BFMatcher()
+    matches = bf.knnMatch(des1, des2, k=2)
+    
+    # Apply ratio test
+    good_matches = []
+    for m, n in matches:
+        if m.distance < threshold * n.distance:
+            good_matches.append(m)
+    
+    # If we have enough good matches, consider it the same face
+    return len(good_matches) > 10
+
+@csrf_exempt
+def save_face_data(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    
+    try:
+        # Get the uploaded image
+        face_image = request.FILES.get('face_image')
+        if not face_image:
+            return JsonResponse({'success': False, 'error': 'No image provided'})
+
+        # Convert uploaded image to numpy array
+        image_array = np.frombuffer(face_image.read(), np.uint8)
+        new_face = cv2.imdecode(image_array, cv2.IMREAD_GRAYSCALE)  # Convert to grayscale
+        
+        if new_face is None:
+            return JsonResponse({'success': False, 'error': 'Invalid image data'})
+
+        # Detect face in the new image
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        faces = face_cascade.detectMultiScale(new_face, 1.3, 5)
+        
+        if len(faces) == 0:
+            return JsonResponse({'success': False, 'error': 'No face detected in image'})
+        if len(faces) > 1:
+            return JsonResponse({'success': False, 'error': 'Multiple faces detected'})
+
+        # Get the face region
+        x, y, w, h = faces[0]
+        new_face_roi = new_face[y:y+h, x:x+w]
+        
+        # Check against all existing faces
+        existing_faces = StudentFaceData.objects.filter(is_face_captured=True)
+        for face_data in existing_faces:
+            # Convert stored face data back to image
+            stored_face_bytes = np.frombuffer(face_data.face_encoding, np.uint8)
+            stored_face = cv2.imdecode(stored_face_bytes, cv2.IMREAD_GRAYSCALE)
+            
+            if compare_faces(new_face_roi, stored_face):
+                return JsonResponse({
+                    'success': False,
+                    'error': 'This face is already registered with another account'
+                })
+
+        # If we get here, the face is unique - save it
+        user = CustomUser.objects.get(id=request.session.get('custom_user_id'))
+        face_data, created = StudentFaceData.objects.get_or_create(user=user)
+        
+        # Store the face ROI
+        _, img_encoded = cv2.imencode('.jpg', new_face_roi)
+        face_data.face_encoding = img_encoded.tobytes()
+        face_data.is_face_captured = True
+        face_data.save()
+
+        return JsonResponse({'success': True})
+
+    except Exception as e:
+        print(f"Error saving face data: {str(e)}")
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def face_capture_view(request):
+    if not request.session.get('custom_user_id'):
+        return redirect('login')
+    
+    user = CustomUser.objects.get(id=request.session['custom_user_id'])
+    face_data = StudentFaceData.objects.filter(user=user).first()
+    
+    if face_data and face_data.is_face_captured:
+        return redirect('available_courses')
+        
+    return render(request, 'face_capture.html')
+
+def check_face_similarity(new_face, stored_face, threshold=0.7):
+    """
+    Compare two face images and return similarity score
+    """
+    try:
+        # Resize images to same size
+        new_face = cv2.resize(new_face, (128, 128))
+        stored_face = cv2.resize(stored_face, (128, 128))
+        
+        # Calculate similarity using normalized correlation
+        similarity = cv2.matchTemplate(new_face, stored_face, cv2.TM_CCOEFF_NORMED)[0][0]
+        
+        return similarity > threshold
+    except Exception as e:
+        print(f"Error in face comparison: {str(e)}")
+        return False
+
+@csrf_exempt
+def save_face_data(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    
+    try:
+        # Get the uploaded image
+        face_image = request.FILES.get('face_image')
+        if not face_image:
+            return JsonResponse({'success': False, 'error': 'No image provided'})
+
+        # Convert image to numpy array
+        image_array = np.frombuffer(face_image.read(), np.uint8)
+        new_face = cv2.imdecode(image_array, cv2.IMREAD_GRAYSCALE)
+        
+        if new_face is None:
+            return JsonResponse({'success': False, 'error': 'Invalid image data'})
+
+        # Detect face in the new image
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        faces = face_cascade.detectMultiScale(new_face, 1.1, 4)
+        
+        if len(faces) == 0:
+            return JsonResponse({'success': False, 'error': 'No face detected in image'})
+        if len(faces) > 1:
+            return JsonResponse({'success': False, 'error': 'Multiple faces detected'})
+
+        # Extract the face region
+        x, y, w, h = faces[0]
+        new_face_roi = new_face[y:y+h, x:x+w]
+
+        # Check against all existing faces in database
+        existing_faces = StudentFaceData.objects.filter(is_face_captured=True).exclude(
+            user_id=request.session.get('custom_user_id')
+        )
+
+        for existing_face in existing_faces:
+            try:
+                # Convert stored face data back to image
+                stored_face_bytes = np.frombuffer(existing_face.face_encoding, np.uint8)
+                stored_face = cv2.imdecode(stored_face_bytes, cv2.IMREAD_GRAYSCALE)
+                
+                if stored_face is not None and check_face_similarity(new_face_roi, stored_face):
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'This face is already registered with another account. Each student must have a unique face.'
+                    })
+            except Exception as e:
+                print(f"Error processing stored face: {str(e)}")
+                continue
+
+        # If we get here, the face is unique - save it
+        try:
+            user = CustomUser.objects.get(id=request.session.get('custom_user_id'))
+            face_data, created = StudentFaceData.objects.get_or_create(user=user)
+            
+            # Store the face ROI
+            _, img_encoded = cv2.imencode('.jpg', new_face_roi)
+            face_data.face_encoding = img_encoded.tobytes()
+            face_data.is_face_captured = True
+            face_data.save()
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Face registered successfully!'
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'Error saving face data: {str(e)}'
+            })
+
+    except Exception as e:
+        print(f"Error in face capture: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': f'Face capture failed: {str(e)}'
+        })
+
+def face_capture_view(request):
+    """View for the face capture page"""
+    if not request.session.get('custom_user_id'):
+        return redirect('login')
+    
+    try:
+        user = CustomUser.objects.get(id=request.session['custom_user_id'])
+        face_data = StudentFaceData.objects.filter(user=user).first()
+        
+        if face_data and face_data.is_face_captured:
+            return redirect('available_courses')
+            
+        return render(request, 'face_capture.html')
+        
+    except CustomUser.DoesNotExist:
+        return redirect('login')
+    except Exception as e:
+        print(f"Error in face_capture_view: {str(e)}")
+        return redirect('login')
+from django.shortcuts import render
+
+def whiteboard(request):
+    session_id = request.GET.get('session') or str(uuid.uuid4())
+    teacher_id = request.session.get('teacher_id')
+    
+    if teacher_id:
+        teacher = get_object_or_404(Teacher, id=teacher_id)
+        context = {
+            'is_teacher': True,
+            'session_id': session_id,
+            'teacher_courses': TeacherCourse.objects.filter(teacher=teacher)
+        }
+    else:
+        context = {
+            'is_teacher': False,
+            'session_id': session_id
+        }
+    
+    return render(request, 'whiteboard.html', context)
+
+import cv2
+import numpy as np
+from scipy.spatial.distance import cosine
+from django.shortcuts import render, redirect
+from .models import Attendance, StudentFaceData, ClassSchedule
+from django.utils import timezone
+
+def mark_attendance(request, schedule_id):
+    custom_user_id = request.session.get('custom_user_id')
+    if not custom_user_id:
+        messages.error(request, "You need to log in to join the class.")
+        return redirect('login')
+
+    try:
+        student = CustomUser.objects.get(id=custom_user_id)
+        class_schedule = ClassSchedule.objects.get(id=schedule_id)
+        current_time = timezone.localtime(timezone.now())
+
+        # Check if student has registered face data
+        try:
+            face_data = StudentFaceData.objects.get(user=student)
+            if not face_data.is_face_captured:
+                messages.error(request, "Please register your face first.")
+                return redirect('face_capture')
+        except StudentFaceData.DoesNotExist:
+            messages.error(request, "Please register your face first.")
+            return redirect('face_capture')
+
+        # Check if within class time
+        if class_schedule.start_time <= current_time.time() <= class_schedule.end_time and current_time.date() == class_schedule.date:
+            # Show face verification page
+            return render(request, 'face_verification.html', {
+                'schedule_id': schedule_id,
+                'meeting_link': class_schedule.meeting_link
+            })
+        else:
+            # If outside class time, mark as absent
+            Attendance.objects.create(
+                student=student,
+                class_schedule=class_schedule,
+                check_in_time=current_time,
+                status='absent'
+            )
+            messages.error(request, "Class is not active at this time.")
+            return redirect('view_scheduled_classes')
+
+    except CustomUser.DoesNotExist:
+        messages.error(request, "Student not found.")
+        return redirect('login')
+    except ClassSchedule.DoesNotExist:
+        messages.error(request, "Class schedule not found.")
+        return redirect('student_dashboard')
+    except Exception as e:
+        messages.error(request, str(e))
+        return redirect('view_scheduled_classes')
+
+@csrf_exempt
+def verify_face_and_mark_attendance(request, schedule_id):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+    try:
+        # Get current user and schedule
+        student = CustomUser.objects.get(id=request.session.get('custom_user_id'))
+        class_schedule = ClassSchedule.objects.get(id=schedule_id)
+        stored_face_data = StudentFaceData.objects.get(user=student)
+
+        # Get captured face image
+        face_image = request.FILES.get('face_image')
+        if not face_image:
+            return JsonResponse({'success': False, 'error': 'No image provided'})
+
+        # Convert to numpy array
+        image_array = np.frombuffer(face_image.read(), np.uint8)
+        current_image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+
+        # Initialize MediaPipe Face Detection
+        mp_face_detection = mp.solutions.face_detection
+        with mp_face_detection.FaceDetection(min_detection_confidence=0.5) as face_detection:
+            # Process current image
+            current_rgb = cv2.cvtColor(current_image, cv2.COLOR_BGR2RGB)
+            current_results = face_detection.process(current_rgb)
+
+            if not current_results.detections:
+                return JsonResponse({'success': False, 'error': 'No face detected in current image'})
+
+            # Get stored face image
+            stored_face_bytes = np.frombuffer(stored_face_data.face_encoding, np.uint8)
+            stored_image = cv2.imdecode(stored_face_bytes, cv2.IMREAD_COLOR)
+
+            # Process stored image
+            stored_rgb = cv2.cvtColor(stored_image, cv2.COLOR_BGR2RGB)
+            stored_results = face_detection.process(stored_rgb)
+
+            if not stored_results.detections:
+                return JsonResponse({'success': False, 'error': 'No face detected in stored image'})
+
+            # Extract and compare face landmarks
+            current_landmarks = current_results.detections[0].location_data.relative_keypoints
+            stored_landmarks = stored_results.detections[0].location_data.relative_keypoints
+
+            # Calculate similarity based on landmark positions
+            similarity_score = calculate_landmark_similarity(current_landmarks, stored_landmarks)
+            
+            threshold = 0.75
+            if similarity_score >= threshold:
+                # Mark attendance as present
+                Attendance.objects.create(
+                    student=student,
+                    class_schedule=class_schedule,
+                    check_in_time=timezone.now(),
+                    status='present'
+                )
+                return JsonResponse({
+                    'success': True,
+                    'meeting_link': class_schedule.meeting_link
+                })
+            else:
+                # Mark as absent
+                Attendance.objects.create(
+                    student=student,
+                    class_schedule=class_schedule,
+                    check_in_time=timezone.now(),
+                    status='absent'
+                )
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Face verification failed. Score: {similarity_score:.2f}'
+                })
+
+    except Exception as e:
+        print(f"Error in face verification: {str(e)}")
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def calculate_landmark_similarity(landmarks1, landmarks2):
+    """Calculate similarity between two sets of facial landmarks"""
+    try:
+        # Convert landmarks to numpy arrays
+        points1 = np.array([[p.x, p.y] for p in landmarks1])
+        points2 = np.array([[p.x, p.y] for p in landmarks2])
+        
+        # Calculate Euclidean distances between corresponding points
+        distances = np.linalg.norm(points1 - points2, axis=1)
+        
+        # Convert distances to similarity score (inverse relationship)
+        similarity = 1 / (1 + np.mean(distances))
+        
+        return similarity
+    except Exception as e:
+        print(f"Error calculating landmark similarity: {str(e)}")
+        return 0.0
+
+
+
+import os
+from django.conf import settings
+from ml_code.create_db import create_data
+from ml_code.face_recognition import face_recognize
+from .models import StudentFaceData, CustomUser
+
+@csrf_exempt
+def save_face_data(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    
+    try:
+        user = CustomUser.objects.get(id=request.session.get('custom_user_id'))
+        
+        # Create directory for user if it doesn't exist
+        user_dir = f"ml_code/database/{user.username}"
+        if not os.path.exists(user_dir):
+            os.makedirs(user_dir)
+
+        # Call create_data function to capture and save face images
+        face_image_path = create_data(str(user.id))
+
+        if face_image_path and os.path.exists(face_image_path):
+            # Save to StudentFaceData model
+            with open(face_image_path, 'rb') as f:
+                face_data, created = StudentFaceData.objects.get_or_create(user=user)
+                face_data.face_image.save(
+                    f'{user.username}_face.jpg',
+                    ContentFile(f.read()),
+                    save=True
+                )
+                face_data.is_face_captured = True
+                face_data.save()
+
+            return JsonResponse({
+                'success': True, 
+                'message': 'Face registered successfully'
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'Face image capture failed'
+            })
+
+    except Exception as e:
+        print(f"Error saving face data: {str(e)}")
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@csrf_exempt
+def verify_face_and_mark_attendance(request, schedule_id):
+    if request.method != 'POST':
+    
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+    try:
+        print("verify_face_and_mark_attendance")
+        student = CustomUser.objects.get(id=request.session.get('custom_user_id'))
+        class_schedule = ClassSchedule.objects.get(id=schedule_id)
+
+        # Get the student's face data
+        # try:
+        #     face_data = StudentFaceData.objects.get(user=student)
+        #     if not face_data.is_face_captured:
+        #         return JsonResponse({
+        #             'success': False,
+        #             'error': 'Face data not registered. Please register your face first.'
+        #         })
+        # except StudentFaceData.DoesNotExist:
+        #     return JsonResponse({
+        #         'success': False,
+        #         'error': 'Face data not found. Please register your face first.'
+        #     })
+
+        # Verify face using face_recognition.py
+        verification_result = face_recognize(str(student.id))
+        
+        if verification_result:
+            # Mark attendance as present
+            # attendance = Attendance.objects.create(
+            #     student=student,
+            #     class_schedule=class_schedule,
+            #     check_in_time=timezone.now(),
+            #     status='present'
+            # )
+            return JsonResponse({
+                'success': True,
+                'meeting_link': class_schedule.meeting_link,
+                'message': 'Attendance marked successfully'
+            })
+        else:
+            # Mark as absent
+            # attendance = Attendance.objects.create(
+            #     student=student,
+            #     class_schedule=class_schedule,
+            #     check_in_time=timezone.now(),
+            #     status='absent'
+            # )
+            return JsonResponse({
+                'success': False,
+                'error': 'Face verification failed. Attendance marked as absent.'
+            })
+
+    except Exception as e:
+        print(f"Error in face verification: {str(e)}")
+        return JsonResponse({'success': False, 'error': str(e)})
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.http import JsonResponse
+from django.core.paginator import Paginator
+from .models import ParentTeacherMessage, Teacher, Parent
+from django.db.models import Q
+from django.utils import timezone
+
+def parent_message_center(request):
+    parent_id = request.session.get('parent_id')
+    if not parent_id:
+        return redirect('login')
+
+    parent = get_object_or_404(Parent, id=parent_id)
+    
+    # Get all messages for this parent
+    messages_list = ParentTeacherMessage.objects.filter(parent=parent).order_by('-date')
+    
+    # Get unique teachers this parent has communicated with
+    teachers = Teacher.objects.filter(
+        Q(parent_messages__parent=parent) | 
+        Q(teachercourse__course__students__username=parent.student_username)
+    ).distinct()
+
+    # Pagination
+    paginator = Paginator(messages_list, 10)
+    page = request.GET.get('page')
+    messages_page = paginator.get_page(page)
+
+    context = {
+        'messages_page': messages_page,
+        'teachers': teachers,
+        'parent': parent,
+        'unread_count': messages_list.filter(is_read=False, message_type='teacher_to_parent').count()
+    }
+    return render(request, 'parent_message_center.html', context)
+
+def send_parent_message(request):
+    if request.method == 'POST':
+        parent_id = request.session.get('parent_id')
+        if not parent_id:
+            return JsonResponse({'status': 'error', 'message': 'Not logged in'})
+
+        parent = get_object_or_404(Parent, id=parent_id)
+        teacher_id = request.POST.get('teacher_id')
+        content = request.POST.get('content')
+        subject = request.POST.get('subject', 'No Subject')
+
+        if not all([teacher_id, content]):
+            return JsonResponse({'status': 'error', 'message': 'Missing required fields'})
+
+        try:
+            teacher = Teacher.objects.get(id=teacher_id)
+            message = ParentTeacherMessage.objects.create(
+                teacher=teacher,
+                parent=parent,
+                content=content,
+                subject=subject,
+                message_type='parent_to_teacher'
+            )
+
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Message sent successfully',
+                'data': {
+                    'id': message.id,
+                    'date': message.date.strftime('%Y-%m-%d %H:%M'),
+                    'content': message.content,
+                    'subject': message.subject,
+                    'teacher_name': f"{teacher.first_name} {teacher.last_name}"
+                }
+            })
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+def mark_message_read(request, message_id):
+    if request.method == 'POST':
+        message = get_object_or_404(ParentTeacherMessage, id=message_id)
+        message.is_read = True
+        message.save()
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error'})
+
+def delete_message(request, message_id):
+    if request.method == 'POST':
+        message = get_object_or_404(ParentTeacherMessage, id=message_id)
+        message.delete()
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error'})
+
+from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import Group, Message, CustomUser
+
+@csrf_exempt
+def upload_media_message(request, group_id):
+    if request.method == 'POST' and request.FILES.get('media_file'):
+        try:
+            group = get_object_or_404(Group, id=group_id)
+            custom_user_id = request.session.get('custom_user_id')
+            user = get_object_or_404(CustomUser, id=custom_user_id)
+            
+            media_file = request.FILES['media_file']
+            message_type = request.POST.get('message_type')
+            
+            message = Message.objects.create(
+                group=group,
+                sender=user,
+                message_type=message_type,
+                media_file=media_file,
+                content=None  # No text content for media messages
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message_id': message.id
+            })
+            
+        except Exception as e:
+            print(f"Error in upload_media_message: {str(e)}")
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=400)
+            
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request'
+    }, status=400)
+
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+
+from .models import Course, CustomUser, WhiteboardShare, Teacher, Notification, TeacherCourse, Enrollment
+import json
+
+@require_POST
+def share_whiteboard(request):
+    try:
+        # Get the logged-in teacher from session
+        teacher_id = request.session.get('teacher_id')
+        if not teacher_id:
+            return JsonResponse({
+                'success': False,
+                'error': 'Teacher not logged in'
+            }, status=401)
+            
+        teacher = get_object_or_404(Teacher, id=teacher_id)
+        data = json.loads(request.body)
+        course_id = data.get('course_id')
+        session_id = data.get('session_id')
+        whiteboard_url = data.get('whiteboard_url')
+
+        # Get the course and verify teacher is assigned to it
+        course = get_object_or_404(Course, id=course_id)
+        teacher_course = TeacherCourse.objects.filter(teacher=teacher, course=course).first()
+        if not teacher_course:
+            return JsonResponse({
+                'success': False,
+                'error': 'You are not assigned to this course'
+            }, status=403)
+
+        # Get enrolled students - just get all enrollments for the course
+        enrolled_students = Enrollment.objects.filter(
+            course=course
+        ).select_related('student')
+
+        # Create whiteboard share record
+        whiteboard_share = WhiteboardShare.objects.create(
+            teacher=teacher,
+            course=course,
+            session_id=session_id,
+            whiteboard_url=whiteboard_url
+        )
+
+        # Create notifications for enrolled students
+        for enrollment in enrolled_students:
+            Notification.objects.create(
+                user=enrollment.student,
+                title=f"New Whiteboard Session - {course.course_name}",
+                message=f"Teacher {teacher.first_name} {teacher.last_name} has started a whiteboard session",
+                link=whiteboard_url
+            )
+
+        return JsonResponse({
+            'success': True,
+            'course_name': course.course_name,
+            'student_count': enrolled_students.count(),
+            'teacher_name': f"{teacher.first_name} {teacher.last_name}"
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid JSON data'
+        }, status=400)
+    except Exception as e:
+        print(f"Error in share_whiteboard: {str(e)}")  # Add debugging
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+def get_notifications(request):
+    if not request.session.get('custom_user_id'):
+        return JsonResponse({'error': 'Not logged in'}, status=401)
+        
+    user_id = request.session.get('custom_user_id')
+    notifications = Notification.objects.filter(
+        user_id=user_id,
+        title__contains='Whiteboard Session'
+    ).order_by('-created_at')[:5]  # Get last 5 whiteboard notifications
+    
+    notifications_data = [{
+        'id': notif.id,
+        'title': notif.title,
+        'message': notif.message,
+        'link': notif.link,
+        'created_at': notif.created_at.isoformat(),
+        'is_read': notif.is_read
+    } for notif in notifications]
+    
+    return JsonResponse(notifications_data, safe=False)
+
+from django.http import JsonResponse
+from .models import EventSuggestion, CalendarEvent
+
+@require_POST
+def send_event_suggestion(request):
+    try:
+        event_id = request.POST.get('event_id')
+        suggestion_text = request.POST.get('suggestion_text')
+        parent_id = request.session.get('parent_id')
+
+        if not all([event_id, suggestion_text, parent_id]):
+            return JsonResponse({
+                'success': False,
+                'message': 'Missing required information'
+            })
+
+        parent = Parent.objects.get(id=parent_id)
+        event = CalendarEvent.objects.get(id=event_id)
+        student = CustomUser.objects.get(username=parent.student_username)
+
+        suggestion = EventSuggestion.objects.create(
+            parent=parent,
+            student=student,
+            event=event,
+            suggestion_text=suggestion_text
+        )
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Suggestion sent successfully',
+            'suggestion': {
+                'id': suggestion.id,
+                'created_at': suggestion.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            }
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        })
+
+from django.http import JsonResponse
+from .models import EventSuggestion
+
+def get_event_suggestions(request, event_id):
+    suggestions = EventSuggestion.objects.filter(
+        event_id=event_id,
+        parent=request.user
+    ).order_by('-created_at')
+    
+    suggestions_data = [{
+        'suggestion_text': suggestion.suggestion_text,
+        'created_at': suggestion.created_at.strftime('%b %d, %Y %H:%M'),
+        'is_read': suggestion.is_read
+    } for suggestion in suggestions]
+    
+    return JsonResponse({
+        'success': True,
+        'suggestions': suggestions_data
+    })
+
+from django.http import JsonResponse
+from .models import MindMap
+import json
+
+def save_mind_map(request):
+    if not request.session.get('custom_user_id'):
+        return JsonResponse({
+            'success': False,
+            'error': 'Not authenticated'
+        })
+        
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            student = CustomUser.objects.get(id=request.session.get('custom_user_id'))
+            
+            # Validate the data
+            if not data.get('name') or not data.get('data'):
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Missing required fields'
+                })
+            
+            # Create new mind map
+            mind_map = MindMap.objects.create(
+                student=student,
+                name=data['name'],
+                data=data['data']
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'map_id': mind_map.id
+            })
+            
+        except CustomUser.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'User not found'
+            })
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid JSON data'
+            })
+        except Exception as e:
+            print(f"Error saving mind map: {str(e)}")  # Add logging
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+            
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method'
+    })
+
+def get_mind_maps(request):
+    if not request.session.get('custom_user_id'):
+        return JsonResponse({
+            'success': False,
+            'error': 'Not authenticated',
+            'maps': []
+        })
+    
+    try:
+        student = CustomUser.objects.get(id=request.session.get('custom_user_id'))
+        maps = MindMap.objects.filter(student=student)
+        maps_data = [{
+            'id': map.id,
+            'name': map.name,
+            'data': map.data,
+            'created_at': map.created_at.isoformat()
+        } for map in maps]
+        return JsonResponse({
+            'success': True,
+            'maps': maps_data
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'maps': []
+        })
+
+def delete_mind_map(request, map_id):
+    if not request.session.get('custom_user_id'):
+        return JsonResponse({
+            'success': False,
+            'error': 'Not authenticated'
+        })
+    
+    if request.method == 'DELETE':
+        try:
+            student = CustomUser.objects.get(id=request.session.get('custom_user_id'))
+            mind_map = MindMap.objects.get(id=map_id, student=student)
+            mind_map.delete()
+            return JsonResponse({'success': True})
+        except MindMap.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Mind map not found'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method'
+    })

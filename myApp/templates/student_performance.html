@@ -1,0 +1,27 @@
+<h2>Student Performance for {{ student.first_name }} {{ student.last_name }}</h2>
+
+<!-- Quiz Performance -->
+<h3>Quiz Performance</h3>
+<ul>
+  {% for performance in quiz_performance %}
+    <li>{{ performance.date|date:"Y-m-d H:i" }} - {{ performance.course_name }} - Marks: {{ performance.marks }}</li>
+  {% endfor %}
+</ul>
+<p>Average Quiz Marks: {{ average_quiz_marks }}</p>
+
+<!-- Assignment Performance -->
+<h3>Assignment Performance</h3>
+<ul>
+  {% for performance in assignment_performance %}
+    <li>{{ performance.date|date:"Y-m-d H:i" }} - {{ performance.course_name }} - Grade: {{ performance.grade }}</li>
+  {% endfor %}
+</ul>
+<p>Average Assignment Grade: {{ average_assignment_grade }}</p>
+
+<!-- Enrolled Courses -->
+<h3>Enrolled Courses</h3>
+<ul>
+  {% for course, enroll_date, enroll_time in enrolled_courses_with_dates %}
+    <li>{{ course.course_name }} - Enrolled on {{ enroll_date|date:"Y-m-d" }} at {{ enroll_time|time:"H:i" }}</li>
+  {% endfor %}
+</ul>

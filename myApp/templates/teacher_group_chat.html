@@ -280,6 +280,102 @@
                 margin-top: 10px;
             }
         }
+
+        /* Media Controls Styling */
+        .media-controls, .file-upload-controls {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .media-controls button, .file-upload-controls button {
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        #voiceBtn {
+            background-color: #00897b;
+            border: none;
+            color: white;
+        }
+
+        #voiceBtn:hover {
+            background-color: #00695c;
+            transform: scale(1.1);
+        }
+
+        #videoBtn {
+            background-color: #e53935;
+            border: none;
+            color: white;
+        }
+
+        #videoBtn:hover {
+            background-color: #c62828;
+            transform: scale(1.1);
+        }
+
+        #imageBtn {
+            background-color: #2ecc71;
+            border: none;
+            color: white;
+        }
+
+        #imageBtn:hover {
+            background-color: #27ae60;
+            transform: scale(1.1);
+        }
+
+        #pdfBtn {
+            background-color: #e74c3c;
+            border: none;
+            color: white;
+        }
+
+        #pdfBtn:hover {
+            background-color: #c0392b;
+            transform: scale(1.1);
+        }
+
+        /* Message content styling for media */
+        .message-content img {
+            max-width: 200px;
+            border-radius: 8px;
+            margin-top: 5px;
+            cursor: pointer;
+        }
+
+        .message-content audio,
+        .message-content video {
+            max-width: 250px;
+            border-radius: 8px;
+            margin-top: 5px;
+        }
+
+        .message-content .pdf-preview {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            margin-top: 5px;
+        }
+
+        .recording {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
     </style>
 
     <script type="text/javascript">
@@ -384,17 +480,77 @@
                     <div class="chat-box">
                         {% for message in messages %}
                         <div class="message {% if message.sender %}student-message{% elif message.teacher %}teacher-message{% endif %}">
-                            <p class="sender">
-                                {% if message.sender %}
-                                    {{ message.sender.username }}:
-                                {% elif message.teacher %}
-                                    <strong>Teacher {{ message.teacher.first_name }} {{ message.teacher.last_name }}:</strong>
+                            <div class="message-content">
+                                <p class="sender">
+                                    {% if message.sender %}
+                                        {{ message.sender.username }}:
+                                    {% elif message.teacher %}
+                                        <strong>Teacher {{ message.teacher.first_name }} {{ message.teacher.last_name }}:</strong>
+                                    {% endif %}
+                                </p>
+                                {% if message.message_type == 'voice' %}
+                                    <audio controls>
+                                        <source src="{{ message.media_file.url }}" type="audio/webm">
+                                        Your browser does not support audio playback.
+                                    </audio>
+                                {% elif message.message_type == 'video' %}
+                                    <video controls width="250">
+                                        <source src="{{ message.media_file.url }}" type="video/webm">
+                                        Your browser does not support video playback.
+                                    </video>
+                                {% elif message.message_type == 'image' %}
+                                    <img src="{{ message.media_file.url }}" alt="Shared image" onclick="showImagePreview(this.src)">
+                                {% elif message.message_type == 'pdf' %}
+                                    <div class="pdf-preview">
+                                        <i class="fas fa-file-pdf"></i>
+                                        <a href="{{ message.media_file.url }}" target="_blank">View PDF Document</a>
+                                    </div>
+                                {% else %}
+                                    <p>{{ message.content }}</p>
                                 {% endif %}
-                            </p>
-                            <p>{{ message.content }}</p>
-                            <p class="timestamp">{{ message.timestamp }}</p>
+                                <p class="timestamp">{{ message.timestamp }}</p>
+                            </div>
                         </div>
                         {% endfor %}
+                    </div>
+
+                    <div class="media-controls mb-3">
+                        <button type="button" id="voiceBtn" class="btn btn-secondary" onclick="startRecording('voice')">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                        <button type="button" id="videoBtn" class="btn btn-secondary" onclick="startRecording('video')">
+                            <i class="fas fa-video"></i>
+                        </button>
+                    </div>
+
+                    <div class="file-upload-controls mb-3">
+                        <button type="button" id="imageBtn" class="btn btn-secondary" onclick="document.getElementById('imageInput').click()">
+                            <i class="fas fa-image"></i>
+                        </button>
+                        <button type="button" id="pdfBtn" class="btn btn-secondary" onclick="document.getElementById('pdfInput').click()">
+                            <i class="fas fa-file-pdf"></i>
+                        </button>
+                        <input type="file" id="imageInput" accept="image/*" style="display: none" onchange="uploadFile(this, 'image')">
+                        <input type="file" id="pdfInput" accept=".pdf" style="display: none" onchange="uploadFile(this, 'pdf')">
+                    </div>
+
+                    <div class="modal fade" id="recordingModal" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Recording</h5>
+                                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                </div>
+                                <div class="modal-body text-center">
+                                    <div class="timer mb-3">00:00</div>
+                                    <video id="videoPreview" autoplay muted style="display: none; width: 100%; max-width: 400px;"></video>
+                                    <div class="mt-3">
+                                        <button id="startRecordingBtn" class="btn btn-primary">Start Recording</button>
+                                        <button id="stopRecordingBtn" class="btn btn-danger" style="display: none;">Stop Recording</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <form method="POST">

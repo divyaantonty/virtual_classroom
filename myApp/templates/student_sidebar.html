@@ -1,0 +1,309 @@
+{% load static %}
+<!-- Include the header -->
+{% include 'base_header.html' with dashboard_title='Student Dashboard' %}
+
+<div class="dashboard-sidebar">
+    <div class="dashboard-options">
+        <div class="menu-items">
+            <a href="{% url 'whiteboard' %}" class="menu-item">
+                <div class="menu-icon">
+                    <i class="fas fa-chalkboard"></i>
+                </div>
+                <span>Interactive Whiteboard</span>
+            </a>
+
+            <a href="{% url 'view_scheduled_classes' %}" class="menu-item">
+                <div class="menu-icon">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <span>Join Classes</span>
+            </a>
+
+            <a href="{% url 'assignment_detail' %}" class="menu-item">
+                <div class="menu-icon">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <span>Submit Assignments</span>
+            </a>
+
+            <a href="{% url 'view_materials' %}" class="menu-item">
+                <div class="menu-icon">
+                    <i class="fas fa-book"></i>
+                </div>
+                <span>Study Materials</span>
+            </a>
+
+            <a href="{% url 'discussion_forum' %}" class="menu-item">
+                <div class="menu-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <span>Discussion Forum</span>
+            </a>
+
+            <div class="menu-item dropdown">
+                <div class="menu-icon">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <span class="dropdown-toggle" data-toggle="dropdown">View Quizzes</span>
+                <div class="dropdown-menu">
+                    <a class="dropdown-item" href="{% url 'available_quizzes' %}">Available Quizzes</a>
+                    <a class="dropdown-item" href="{% url 'quiz_marks' %}">View Marks</a>
+                </div>
+            </div>
+
+            <a href="{% url 'feedback_form' %}" class="menu-item">
+                <div class="menu-icon">
+                    <i class="fas fa-comment-alt"></i>
+                </div>
+                <span>Feedback</span>
+            </a>
+
+            <a href="{% url 'student_event' %}" class="menu-item">
+                <div class="menu-icon">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <span>Events</span>
+            </a>
+
+            <div class="menu-item dropdown">
+                <div class="menu-icon">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <span class="dropdown-toggle" data-toggle="dropdown">Leave</span>
+                <div class="dropdown-menu">
+                    <a class="dropdown-item" href="{% url 'apply_leave' %}">Apply for Leave</a>
+                    <a class="dropdown-item" href="{% url 'student_leave_requests' %}">View Leave Status</a>
+                </div>
+            </div>
+
+            <a href="{% url 'available_courses' %}" class="menu-item">
+                <div class="menu-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <span>Available Courses</span>
+            </a>
+
+            <a href="{% url 'search_books' %}" class="menu-item">
+                <div class="menu-icon">
+                    <i class="fas fa-book-reader"></i>
+                </div>
+                <span>Library</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.dashboard-sidebar {
+    width: 250px;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 64px;
+    background: #ffffff;
+    color: #2c3e50;
+    transition: all 0.3s ease;
+    z-index: 999;
+    box-shadow: 2px 0 15px rgba(0,0,0,0.1);
+}
+
+.menu-items {
+    padding: 15px 0;
+    overflow-y: auto;
+    height: calc(100vh - 64px);
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    color: #2c3e50;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border-radius: 0 25px 25px 0;
+    margin: 5px 0;
+    margin-right: 10px;
+    position: relative;
+}
+
+.menu-item:hover {
+    background: #f8f9fa;
+    color: #3498db;
+    text-decoration: none;
+    transform: translateX(5px);
+    box-shadow: 0 2px 5px rgba(52, 152, 219, 0.1);
+}
+
+.menu-icon {
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+    background: rgba(52, 152, 219, 0.1);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.menu-item:hover .menu-icon {
+    background: #3498db;
+}
+
+.menu-icon i {
+    font-size: 16px;
+    color: #3498db;
+    transition: all 0.3s ease;
+}
+
+.menu-item:hover .menu-icon i {
+    color: #ffffff;
+}
+
+.menu-item span {
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+/* Dropdown styling */
+.dropdown-toggle::after {
+    margin-left: auto;
+    color: #3498db;
+}
+
+.dropdown-menu {
+    background: #ffffff;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    padding: 8px;
+    min-width: 200px;
+    margin-top: 5px;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-item {
+    color: #2c3e50;
+    padding: 10px 15px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.dropdown-item:hover {
+    background: #f8f9fa;
+    color: #3498db;
+    transform: translateX(5px);
+}
+
+/* Active state */
+.menu-item.active {
+    background: #f8f9fa;
+    color: #3498db;
+    font-weight: 600;
+}
+
+.menu-item.active .menu-icon {
+    background: #3498db;
+}
+
+.menu-item.active .menu-icon i {
+    color: #ffffff;
+}
+
+/* Scrollbar styling */
+.menu-items::-webkit-scrollbar {
+    width: 5px;
+}
+
+.menu-items::-webkit-scrollbar-track {
+    background: #f8f9fa;
+}
+
+.menu-items::-webkit-scrollbar-thumb {
+    background: #3498db;
+    border-radius: 10px;
+}
+
+/* Main content adjustment */
+.main-content {
+    margin-left: 250px;
+    margin-top: 94px;
+    padding: 30px;
+    min-height: calc(100vh - 64px);
+    background: #f8f9fa;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .dashboard-sidebar {
+        width: 70px;
+    }
+
+    .menu-item {
+        padding: 12px;
+        justify-content: center;
+    }
+
+    .menu-item span {
+        display: none;
+    }
+
+    .menu-icon {
+        margin-right: 0;
+    }
+
+    .main-content {
+        margin-left: 70px;
+    }
+
+    .dropdown-menu {
+        position: fixed;
+        left: 70px;
+        margin-top: 0;
+    }
+}
+
+/* Add hover indicator */
+.menu-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 3px;
+    background: #3498db;
+    transform: scaleY(0);
+    transition: transform 0.3s ease;
+}
+
+.menu-item:hover::before,
+.menu-item.active::before {
+    transform: scaleY(1);
+}
+</style>
+
+<script>
+document.querySelector('.menu-toggle').addEventListener('click', function() {
+    const sidebar = document.querySelector('.dashboard-sidebar');
+    sidebar.classList.toggle('collapsed');
+    if(sidebar.classList.contains('collapsed')) {
+        sidebar.style.width = '70px';
+        document.querySelector('.main-content').style.marginLeft = '70px';
+    } else {
+        sidebar.style.width = '250px';
+        document.querySelector('.main-content').style.marginLeft = '250px';
+    }
+});
+</script> 

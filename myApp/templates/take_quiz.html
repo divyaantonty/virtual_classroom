@@ -47,6 +47,8 @@
             }
         };
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.0.7/dist/blazeface.min.js"></script>
     <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
@@ -185,6 +187,8 @@
 
         h2 {
             color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 20px;
         }
 
         .question {
@@ -244,6 +248,334 @@
                 padding: 15px;
             }
         }
+
+        #webcam-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+            height: 150px;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            overflow: hidden;
+            z-index: 1000;
+        }
+
+        #webcam-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .warning-message {
+            position: fixed;
+            top: 120px;
+            right: 20px;
+            background-color: #ff4444;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .violation-counter {
+            position: fixed;
+            top: 120px;
+            left: 20px;
+            background-color: #ff9800;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 1000;
+        }
+
+        .setup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .setup-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 700px;
+            width: 90%;
+            text-align: center;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .setup-step {
+            margin: 15px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+        }
+
+        .setup-step.active {
+            border-color: #3498db;
+            background: #f8f9fa;
+        }
+
+        .setup-step.completed {
+            border-color: #2ecc71;
+            background: #f0fff0;
+        }
+
+        #face-guide {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px;
+            height: 250px;
+            border: 4px dashed #3498db;
+            border-radius: 50%;
+            pointer-events: none;
+            box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.3);
+        }
+
+        #face-guide::after {
+            display: none;
+        }
+
+        .sound-meter {
+            width: 100%;
+            height: 20px;
+            background: #eee;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .sound-level {
+            width: 0%;
+            height: 100%;
+            background: #3498db;
+            transition: width 0.1s ease;
+        }
+
+        .btn-verify {
+            background: #3498db;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 15px;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .btn-verify:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .camera-container {
+            position: relative;
+            width: 480px;
+            height: 360px;
+            margin: 15px auto;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        #setup-webcam-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .face-position-indicator {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: red;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        h3 {
+            color: #2c3e50;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: #666;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+
+        .start-button-container {
+            position: sticky;
+            bottom: 0;
+            background: white;
+            padding: 15px 0;
+            border-top: 1px solid #eee;
+            margin-top: 15px;
+        }
+
+        .setup-container h2 {
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .setup-step h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        /* Exam mode styles */
+        .exam-mode {
+            background: #f5f5f5;
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .exam-header {
+            background: #fff;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .timer-display {
+            background: #2c3e50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .question-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+
+        .webcam-monitor {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 180px;
+            height: 135px;
+            border: 3px solid #2c3e50;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        /* Hide sidebar in exam mode */
+        .dashboard-sidebar {
+            display: none;
+        }
+
+        /* Full width content in exam mode */
+        .dashboard-content {
+            padding: 20px;
+            width: 100%;
+        }
+
+        /* Style radio buttons */
+        .option-label {
+            display: block;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .option-label:hover {
+            background-color: #f8f9fa;
+        }
+
+        .option-label input[type="radio"] {
+            margin-right: 10px;
+        }
+
+        /* Submit button */
+        .submit-btn {
+            background: #2c3e50;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .submit-btn:hover {
+            background: #34495e;
+        }
+
+        .violation-message {
+            position: fixed;
+            top: 120px;
+            right: 20px;
+            background-color: #ff4444;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            max-width: 300px;
+        }
+
+        .violation-counter {
+            position: fixed;
+            top: 120px;
+            left: 20px;
+            background-color: #ff9800;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            z-index: 1000;
+        }
+
+        .network-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 15px;
+            border-radius: 5px;
+            z-index: 1000;
+        }
+
+        .network-status.online {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .network-status.offline {
+            background-color: #f44336;
+            color: white;
+        }
     </style>
 </head>
 
@@ -300,79 +632,506 @@
             </div>
 
             <div class="dashboard-content">
-                <div class="container">
-                    <h2>{{ quiz.title }}</h2>
-                    <p><strong>Course:</strong> {{ quiz.course.course_name }}</p>
+                <div class="exam-mode">
+                    <div class="exam-header">
+                        <h2>{{ quiz.title }}</h2>
+                        <div class="timer-display">
+                            Time Remaining: <span id="time">--:--</span>
+                        </div>
+                    </div>
 
-                    <!-- Timer -->
-                    <h3>Time Remaining: <span id="time" class="timer">00:00</span></h3>
-
-                    <!-- Quiz Form -->
-                    <form id="quiz-form" method="post" action="{% url 'submit_quiz' quiz.id %}" onsubmit="localStorage.removeItem('remainingTime');">
+                    <form id="quiz-form" method="post" action="{% url 'submit_quiz' quiz.id %}">
                         {% csrf_token %}
                         {% for question in quiz.questions.all %}
-                            <div class="question">
+                            <div class="question-container">
                                 <p><strong>{{ forloop.counter }}. {{ question.text }}</strong></p>
-                                <label><input type="radio" name="question_{{ question.id }}" value="A"> {{ question.option_a }}</label>
-                                <label><input type="radio" name="question_{{ question.id }}" value="B"> {{ question.option_b }}</label>
-                                <label><input type="radio" name="question_{{ question.id }}" value="C"> {{ question.option_c }}</label>
-                                <label><input type="radio" name="question_{{ question.id }}" value="D"> {{ question.option_d }}</label>
+                                <label class="option-label">
+                                    <input type="radio" name="question_{{ question.id }}" value="A" required>
+                                    {{ question.option_a }}
+                                </label>
+                                <label class="option-label">
+                                    <input type="radio" name="question_{{ question.id }}" value="B" required>
+                                    {{ question.option_b }}
+                                </label>
+                                <label class="option-label">
+                                    <input type="radio" name="question_{{ question.id }}" value="C" required>
+                                    {{ question.option_c }}
+                                </label>
+                                <label class="option-label">
+                                    <input type="radio" name="question_{{ question.id }}" value="D" required>
+                                    {{ question.option_d }}
+                                </label>
                             </div>
                         {% endfor %}
-                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <button type="submit" class="submit-btn">Submit Quiz</button>
                     </form>
+
+                    <div class="webcam-monitor">
+                        <video id="webcam-feed" autoplay playsinline></video>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <div class="setup-overlay" id="setup-overlay">
+        <div class="setup-container">
+            <h2>Quiz Setup</h2>
+            <p>Please complete the following steps before starting the quiz:</p>
+
+            <div class="setup-step active" id="camera-step">
+                <h3>1. Camera Position Setup</h3>
+                <div class="camera-container">
+                    <video id="setup-webcam-feed" autoplay playsinline></video>
+                    <div id="face-guide"></div>
+                </div>
+                <p>Position your face within the circle</p>
+                <button class="btn-verify" onclick="verifyCameraPosition()">Verify Camera Position</button>
+            </div>
+
+            <div class="setup-step" id="sound-step">
+                <h3>2. Sound Check</h3>
+                <div class="sound-meter">
+                    <div class="sound-level" id="sound-level"></div>
+                </div>
+                <p id="sound-status">Waiting to start sound check...</p>
+                <button class="btn-verify" onclick="startSoundCheck()" id="sound-check-btn">Start Sound Check</button>
+            </div>
+
+            <div class="start-button-container">
+                <button class="btn-verify" onclick="startQuiz()" id="start-quiz-btn" disabled>
+                    Start Quiz
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="violation-message" id="violation-message"></div>
+    <div class="violation-counter" id="violation-counter">Violations: 0</div>
+    <div class="network-status" id="network-status">Online</div>
+
     <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.min.js' %}"></script>
     <script>
-        function startTimer(duration, display) {
-        var timer = duration, minutes, seconds;
-    
-        var countdown = setInterval(function () {
-            minutes = parseInt(timer / 60, 10);
-            seconds = parseInt(timer % 60, 10);
-    
-            minutes = minutes < 10 ? "0" + minutes : minutes;
-            seconds = seconds < 10 ? "0" + seconds : seconds;
-    
-            display.textContent = minutes + ":" + seconds;
-    
-            if (--timer < 0) {
-                clearInterval(countdown);
-                alert("Time's up! Submitting your quiz.");
-                setTimeout(function() {
-                    document.getElementById('quiz-form').submit();  // Submit after alert
-                }, 500);  // Add a small delay to ensure the alert is shown before submitting
+        let faceDetector = null;
+        let timerStarted = false;
+        
+        // Prevent page reload
+        window.onbeforeunload = function(e) {
+            if (timerStarted) {
+                e.preventDefault();
+                e.returnValue = '';
+                return 'Are you sure you want to leave the exam? This action will be recorded as a violation.';
             }
-    
-            if (timer <= 60) {
-                display.style.color = "red";  // Change color when there's less than 1 minute left
+        };
+
+        async function setupWebcam() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        facingMode: "user"
+                    }
+                });
+                
+                // Set up the setup webcam feed
+                const setupVideo = document.getElementById('setup-webcam-feed');
+                setupVideo.srcObject = stream;
+                await setupVideo.play();
+
+                // Set up the monitoring webcam feed
+                const monitorVideo = document.getElementById('webcam-feed');
+                monitorVideo.srcObject = stream;
+                await monitorVideo.play();
+
+                // Initialize face detector
+                try {
+                    console.log('Loading BlazeFace model...');
+                    faceDetector = await blazeface.load();
+                    console.log('BlazeFace model loaded successfully');
+                } catch (error) {
+                    console.error('Error loading face detector:', error);
+                    showWarning('Error initializing face detection. Please refresh the page.');
+                }
+
+            } catch (error) {
+                console.error('Error accessing webcam:', error);
+                showWarning('Webcam access is required for this quiz');
             }
-    
-            localStorage.setItem('remainingTime', timer);  // Save time to localStorage
-        }, 1000);
-    }
-    
-    window.onload = function () {
-        var savedTime = localStorage.getItem('remainingTime');
-        var duration = savedTime ? parseInt(savedTime, 10) : {{ quiz.duration }} * 60; // Use quiz.duration from Django context
-    
-        var display = document.querySelector('#time');
-        startTimer(duration, display);
-    };
-    
-    window.onbeforeunload = function () {
-        if (document.getElementById('quiz-form').submitted) {
-            localStorage.removeItem('remainingTime');
         }
-    };
-</script>
-    
-    
+
+        async function verifyCameraPosition() {
+            const video = document.getElementById('setup-webcam-feed');
+            const verifyButton = document.querySelector('#camera-step .btn-verify');
+            
+            try {
+                // Disable the verify button while checking
+                verifyButton.disabled = true;
+                verifyButton.textContent = 'Checking...';
+                
+                if (!faceDetector) {
+                    console.log('Face detector not initialized, attempting to load...');
+                    faceDetector = await blazeface.load();
+                }
+
+                // Create a temporary canvas to get the video frame
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0);
+
+                console.log('Detecting faces...');
+                const predictions = await faceDetector.estimateFaces(video, false);
+                console.log('Face detection result:', predictions);
+                
+                if (!predictions || predictions.length === 0) {
+                    showWarning('No face detected. Please position your face in the circle.');
+                    return;
+                }
+                
+                if (predictions.length > 1) {
+                    showWarning('Multiple faces detected. Only one person should be visible.');
+                    return;
+                }
+
+                const face = predictions[0];
+                
+                // Calculate face position relative to video dimensions
+                const faceCenterX = (face.topLeft[0] + face.bottomRight[0]) / 2;
+                const faceCenterY = (face.topLeft[1] + face.bottomRight[1]) / 2;
+                const faceWidth = face.bottomRight[0] - face.topLeft[0];
+                const faceHeight = face.bottomRight[1] - face.topLeft[1];
+
+                // Calculate relative positions
+                const relativeX = faceCenterX / video.videoWidth;
+                const relativeY = faceCenterY / video.videoHeight;
+                const relativeFaceSize = faceWidth / video.videoWidth;
+
+                console.log('Face measurements:', {
+                    centerX: relativeX,
+                    centerY: relativeY,
+                    size: relativeFaceSize
+                });
+
+                // Check position and size
+                const isCentered = Math.abs(relativeX - 0.5) < 0.2 && Math.abs(relativeY - 0.5) < 0.2;
+                const isRightSize = relativeFaceSize > 0.2 && relativeFaceSize < 0.7;
+
+                if (isCentered && isRightSize) {
+                    document.getElementById('camera-step').classList.remove('active');
+                    document.getElementById('camera-step').classList.add('completed');
+                    document.getElementById('sound-step').classList.add('active');
+                    isCameraPositionVerified = true;
+                    updateStartButton();
+                    showWarning('Camera position verified successfully!');
+                } else {
+                    if (!isCentered) {
+                        showWarning('Please center your face in the circle');
+                    } else {
+                        showWarning('Please adjust your distance from the camera');
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error during face detection:', error);
+                showWarning('Error verifying camera position. Please try again.');
+            } finally {
+                // Re-enable the verify button
+                verifyButton.disabled = false;
+                verifyButton.textContent = 'Verify Camera Position';
+            }
+        }
+
+        function startTimer(duration, display) {
+            var timer = duration, minutes, seconds;
+        
+            var countdown = setInterval(function () {
+                minutes = parseInt(timer / 60, 10);
+                seconds = parseInt(timer % 60, 10);
+        
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+        
+                display.textContent = minutes + ":" + seconds;
+        
+                if (--timer < 0) {
+                    clearInterval(countdown);
+                    alert("Time's up! Submitting your quiz.");
+                    setTimeout(function() {
+                        document.getElementById('quiz-form').submit();  // Submit after alert
+                    }, 500);  // Add a small delay to ensure the alert is shown before submitting
+                }
+        
+                if (timer <= 60) {
+                    display.style.color = "red";  // Change color when there's less than 1 minute left
+                }
+        
+                localStorage.setItem('remainingTime', timer);  // Save time to localStorage
+            }, 1000);
+        }
+        
+        window.onload = async function () {
+            await setupWebcam();
+            await setupAudio();
+        };
+
+        let violationCount = 0;
+        const MAX_VIOLATIONS = 4;
+        let lastViolationTime = 0;
+        const VIOLATION_COOLDOWN = 3000; // 3 seconds cooldown between violations
+
+        // Network monitoring
+        function updateNetworkStatus() {
+            const status = document.getElementById('network-status');
+            if (navigator.onLine) {
+                status.textContent = 'Online';
+                status.classList.remove('offline');
+                status.classList.add('online');
+            } else {
+                status.textContent = 'Offline';
+                status.classList.remove('online');
+                status.classList.add('offline');
+                incrementViolation('Network connection lost');
+            }
+        }
+
+        window.addEventListener('online', updateNetworkStatus);
+        window.addEventListener('offline', updateNetworkStatus);
+
+        // Enhanced violation detection
+        function showViolation(message) {
+            const violationMsg = document.getElementById('violation-message');
+            violationMsg.textContent = message;
+            violationMsg.style.display = 'block';
+            
+            // Hide after 3 seconds
+            setTimeout(() => {
+                violationMsg.style.display = 'none';
+            }, 3000);
+        }
+
+        function incrementViolation(message) {
+            const currentTime = Date.now();
+            if (currentTime - lastViolationTime < VIOLATION_COOLDOWN) {
+                return; // Prevent spam of violations
+            }
+            
+            lastViolationTime = currentTime;
+            violationCount++;
+            
+            document.getElementById('violation-counter').textContent = `Violations: ${violationCount}`;
+            showViolation(message);
+
+            // Log violation to server
+            fetch('{% url "log_violation" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({
+                    quiz_id: {{ quiz.id }},
+                    violation_type: message,
+                    timestamp: new Date().toISOString()
+                })
+            });
+
+            if (violationCount >= MAX_VIOLATIONS) {
+                alert('Maximum violations reached. Quiz will be submitted automatically.');
+                document.getElementById('quiz-form').submit();
+            }
+        }
+
+        // Audio context for sound detection
+        let audioContext;
+        let analyser;
+        let microphone;
+        let soundCheckInterval;
+        
+        // Camera position verification state
+        let isCameraPositionVerified = false;
+        let isSoundCheckComplete = false;
+
+        async function setupAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                microphone = audioContext.createMediaStreamSource(stream);
+                microphone.connect(analyser);
+                analyser.fftSize = 256;
+            } catch (error) {
+                console.error('Error accessing microphone:', error);
+                showWarning('Microphone access is required for this quiz');
+            }
+        }
+
+        function startSoundCheck() {
+            let soundCheckDuration = 5; // 5 seconds check
+            const soundLevel = document.getElementById('sound-level');
+            const soundStatus = document.getElementById('sound-status');
+            const soundCheckBtn = document.getElementById('sound-check-btn');
+            
+            soundCheckBtn.disabled = true;
+            soundStatus.textContent = 'Checking background noise...';
+            
+            let maxVolume = 0;
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            
+            soundCheckInterval = setInterval(() => {
+                analyser.getByteFrequencyData(dataArray);
+                const volume = dataArray.reduce((a, b) => a + b) / dataArray.length;
+                maxVolume = Math.max(maxVolume, volume);
+                
+                // Update sound meter
+                soundLevel.style.width = `${(volume / 255) * 100}%`;
+                
+                if (--soundCheckDuration === 0) {
+                    clearInterval(soundCheckInterval);
+                    const isSoundOk = maxVolume < 50; // Threshold for acceptable background noise
+                    
+                    if (isSoundOk) {
+                        soundStatus.textContent = 'Sound check passed!';
+                        document.getElementById('sound-step').classList.remove('active');
+                        document.getElementById('sound-step').classList.add('completed');
+                        isSoundCheckComplete = true;
+                    } else {
+                        soundStatus.textContent = 'Too much background noise. Please try again in a quieter environment.';
+                        soundCheckBtn.disabled = false;
+                    }
+                    updateStartButton();
+                }
+            }, 1000);
+        }
+
+        function updateStartButton() {
+            const startQuizBtn = document.getElementById('start-quiz-btn');
+            startQuizBtn.disabled = !(isCameraPositionVerified && isSoundCheckComplete);
+        }
+
+        function startQuiz() {
+            document.getElementById('setup-overlay').style.display = 'none';
+            document.querySelector('.dashboard-sidebar').style.display = 'none';
+            document.querySelector('.dashboard-content').style.width = '100%';
+            
+            // Start the timer only when quiz starts
+            timerStarted = true;
+            var duration = {{ quiz.duration }} * 60;
+            var display = document.querySelector('#time');
+            startTimer(duration, display);
+            
+            // Start all monitoring
+            monitorFace();
+            startMovementDetection();
+            startSoundMonitoring();
+            updateNetworkStatus();
+            
+            // Prevent tab switching
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    incrementViolation('Tab switching detected');
+                }
+            });
+
+            // Prevent copy-paste
+            document.addEventListener('copy', (e) => {
+                e.preventDefault();
+                incrementViolation('Copy action detected');
+            });
+
+            document.addEventListener('paste', (e) => {
+                e.preventDefault();
+                incrementViolation('Paste action detected');
+            });
+
+            // Prevent right-click
+            document.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                incrementViolation('Right-click detected');
+            });
+        }
+
+        function startSoundMonitoring() {
+            const NOISE_THRESHOLD = 50;
+            setInterval(() => {
+                const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                analyser.getByteFrequencyData(dataArray);
+                const volume = dataArray.reduce((a, b) => a + b) / dataArray.length;
+                
+                if (volume > NOISE_THRESHOLD) {
+                    incrementViolation('Voice or high background noise detected');
+                }
+            }, 2000);
+        }
+
+        // Enhanced face detection monitoring
+        async function monitorFace() {
+            const video = document.getElementById('webcam-feed');
+            
+            setInterval(async () => {
+                try {
+                    const predictions = await faceDetector.estimateFaces(video, false);
+                    
+                    if (!predictions || predictions.length === 0) {
+                        incrementViolation('Face not detected - please face the camera');
+                    } else if (predictions.length > 1) {
+                        incrementViolation('Multiple faces detected');
+                    } else {
+                        const face = predictions[0];
+                        
+                        // Check face rotation (rough estimation)
+                        const landmarks = face.landmarks;
+                        if (landmarks) {
+                            const leftEye = landmarks[0];
+                            const rightEye = landmarks[1];
+                            const eyeAngle = Math.abs(Math.atan2(rightEye[1] - leftEye[1], rightEye[0] - leftEye[0]));
+                            
+                            if (eyeAngle > 0.3) { // About 17 degrees
+                                incrementViolation('Please face the camera directly');
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Face monitoring error:', error);
+                }
+            }, 2000); // Check every 2 seconds
+        }
+
+        // Phone detection (movement detection)
+        function startMovementDetection() {
+            const sensitivity = 30; // Adjust as needed
+            let lastImageData = null;
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const video = document.getElementById('webcam-feed');
+
+            setInterval(() => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                
+                if (lastImageData) {
+                    const movement = detectMovement(imageData.data, lastImageData.data);
+                    if (movement > sensitivity) {
+                        incrementViolation('Suspicious movement detected - possible phone use');
+                    }
+                }
+                
+                lastImageData = imageData;
+            }, 1000);
+        }
+
+        function detectMovement(current, previous) {
+            let movement = 0;
+            for (let i = 0; i < current.length; i += 4) {
+                movement += Math.abs(current[i] - previous[i]);
+            }
+            return movement / current.length;
+        }
+    </script>
 </body>
 
 </html>

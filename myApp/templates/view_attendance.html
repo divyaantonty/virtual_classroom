@@ -377,6 +377,9 @@
                     <a href="{% url 'manage_leave' %}" class="dashboard-box">
                         <i class="fas fa-clipboard-check mr-2"></i>Manage Leave
                     </a>
+                    <a href="{% url 'question_generator' %}" class="dashboard-box">
+                        <i class="fas fa-plus mr-2"></i>Generate question
+                    </a>
                 </div>
             </div>
 
@@ -391,7 +394,7 @@
                             <option value="">-- Select Class Schedule --</option>
                             {% for schedule in class_schedules %}
                                 <option value="{{ schedule.id }}" {% if schedule.id == selected_class_schedule %}selected{% endif %}>
-                                    {{ schedule.class_name }}
+                                {{ schedule.course_name }} - {{ schedule.date }}
                                 </option>
                             {% endfor %}
                         </select>

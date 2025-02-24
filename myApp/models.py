@@ -2,6 +2,7 @@ import datetime
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager # type: ignore
 from django.db import models  # type: ignore
 from django.utils import timezone # type: ignore
+from datetime import timedelta
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, username, email, password=None):
@@ -42,7 +43,6 @@ class CustomUser(AbstractBaseUser):
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)  # Explicit superuser field
     course = models.ForeignKey('Course', on_delete=models.SET_NULL, null=True, blank=True, related_name='students')
-
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'username'
@@ -258,10 +258,13 @@ class UserAnswers(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     question = models.ForeignKey(Question, related_name='user_answers', on_delete=models.CASCADE)
     selected_option = models.CharField(max_length=1, choices=[('A', 'A'), ('B', 'B'), ('C', 'C'), ('D', 'D')])
-     
+    marks_obtained = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # To store marks
+    percentage = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # Optional: store percentage
+    grade = models.CharField(max_length=10, null=True, blank=True)  # Optional: store grade
+    attempt_date = models.DateTimeField(null=True, blank=True, auto_now_add=True)  # To track when the quiz was attempted
+
     def __str__(self):
         return f"{self.user.username} - {self.question.text}: {self.selected_option}"
-
 
 from django.db import models # type: ignore
 from django.utils import timezone # type: ignore
@@ -335,6 +338,7 @@ class CalendarEvent(models.Model):
     def __str__(self):
         return self.title
     
+
 from django.db import models
 from django.utils import timezone
 
@@ -381,22 +385,39 @@ class Group(models.Model):
 
 
 class Message(models.Model):
+    MESSAGE_TYPES = [
+        ('text', 'Text Message'),
+        ('voice', 'Voice Message'),
+        ('video', 'Video Message'),
+        ('image', 'Image Message'),
+        ('pdf', 'PDF Document')
+    ]
+    
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='messages')
     sender = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    
-    content = models.TextField()
+    content = models.TextField(null=True, blank=True)  # For text messages
+    media_file = models.FileField(upload_to='chat_media/', null=True, blank=True)  # For voice/video files
+    message_type = models.CharField(max_length=10, choices=MESSAGE_TYPES, default='text')
     timestamp = models.DateTimeField(default=timezone.now)
 
-    
-
     def __str__(self):
-        return f"Message by {self.sender.username} in {self.group.course.course_name}"
+        return f"{self.message_type} by {self.sender.username} in {self.group.course.course_name}"
     
 
 class TeacherMessage(models.Model):
+    MESSAGE_TYPES = [
+        ('text', 'Text Message'),
+        ('voice', 'Voice Message'),
+        ('video', 'Video Message'),
+        ('image', 'Image Message'),
+        ('pdf', 'PDF Document')
+    ]
+    
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='teacher_messages')
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
-    content = models.TextField()
+    content = models.TextField(null=True, blank=True)
+    media_file = models.FileField(upload_to='teacher_chat_media/', null=True, blank=True)
+    message_type = models.CharField(max_length=10, choices=MESSAGE_TYPES, default='text')
     timestamp = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
@@ -420,10 +441,6 @@ class EventRegistration(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.event.title}"
 
-class UploadedMaterial(models.Model):
-    file = models.FileField(upload_to='qun_materials/')
-    uploaded_at = models.DateTimeField(auto_now_add=True)
-
 
 # models.py
 from django.db import models
@@ -436,3 +453,145 @@ class TeacherStudent(models.Model):
     class Meta:
         unique_together = ('teacher', 'student')  # Prevent duplicate entries
 
+class GeneratedQuestionPaper(models.Model):
+    title = models.CharField(max_length=255)
+    pdf_file = models.FileField(upload_to='question_papers/')
+    answer_key_file = models.FileField(upload_to='answer_keys/', null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    total_marks = models.IntegerField()
+    difficulty = models.CharField(max_length=50)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, null=True)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, null=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.created_at.strftime('%Y-%m-%d')}"
+    
+
+class MaterialSummary(models.Model):
+    material = models.OneToOneField(Material, on_delete=models.CASCADE, related_name='summary')
+    summary_text = models.TextField()
+    key_points = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Summary for {self.material.description}"
+    
+
+from django.db import models
+from django.conf import settings  # Import settings to reference CustomUser
+
+class StudentFaceData(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    face_image = models.ImageField(upload_to='face_images/',default='default_face.jpg')  # Store actual image file
+    is_face_captured = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Face data for {self.user.username}"
+
+class FinalExam(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    student = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    score = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    date_taken = models.DateTimeField(auto_now_add=True)
+    completed = models.BooleanField(default=False)
+    start_time = models.DateTimeField(null=True)  # Track when student starts exam
+    end_time = models.DateTimeField(null=True)    # Track when student finishes exam
+
+    class Meta:
+        unique_together = ['course', 'student']
+
+class FinalExamQuestion(models.Model):
+    exam = models.ForeignKey(FinalExam, on_delete=models.CASCADE)
+    question_paper = models.ForeignKey(GeneratedQuestionPaper, on_delete=models.CASCADE)
+    student_answer = models.TextField(null=True, blank=True)
+    is_correct = models.BooleanField(null=True)
+    marks_obtained = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    question_text = models.TextField()  # Store the actual question text
+    answer_key = models.TextField()     # Store the answer key for this question
+
+    def __str__(self):
+        return f"Question for {self.exam.student} in {self.exam.course}"  
+
+
+class ParentTeacherMessage(models.Model):
+    MESSAGE_TYPES = [
+        ('parent_to_teacher', 'Parent to Teacher'),
+        ('teacher_to_parent', 'Teacher to Parent'),
+    ]
+
+    teacher = models.ForeignKey('Teacher', on_delete=models.CASCADE, related_name='parent_messages')
+    parent = models.ForeignKey('Parent', on_delete=models.CASCADE, related_name='teacher_messages')
+    content = models.TextField()
+    date = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+    message_type = models.CharField(max_length=20, choices=MESSAGE_TYPES)
+    subject = models.CharField(max_length=200, default="No Subject")
+
+    class Meta:
+        ordering = ['-date']
+        verbose_name = "Parent-Teacher Message"
+        verbose_name_plural = "Parent-Teacher Messages"
+
+    def __str__(self):
+        return f"Message from {self.get_sender()} to {self.get_receiver()}"
+
+    def get_sender(self):
+        return self.parent if self.message_type == 'parent_to_teacher' else self.teacher
+
+    def get_receiver(self):
+        return self.teacher if self.message_type == 'parent_to_teacher' else self.parent
+    
+
+class WhiteboardShare(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    session_id = models.CharField(max_length=50)
+    whiteboard_url = models.URLField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Whiteboard share by {self.teacher.first_name} for {self.course.course_name}"
+    
+
+class Notification(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    link = models.URLField(max_length=500)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.title} - {self.user.username}"
+    
+class EventSuggestion(models.Model):
+    parent = models.ForeignKey('Parent', on_delete=models.CASCADE, related_name='event_suggestions')
+    student = models.ForeignKey('CustomUser', on_delete=models.CASCADE, related_name='event_suggestions')
+    event = models.ForeignKey('CalendarEvent', on_delete=models.CASCADE, related_name='suggestions')
+    suggestion_text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Suggestion from {self.parent} for {self.student.username} - {self.event.title}"
+
+class MindMap(models.Model):
+    student = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200)
+    data = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f"{self.name} - {self.student.username}"

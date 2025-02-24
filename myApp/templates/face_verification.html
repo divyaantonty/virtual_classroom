@@ -1,0 +1,62 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Face Verification</title>
+    <style>
+        .container {
+            text-align: center;
+            margin-top: 50px;
+        }
+        #video {
+            width: 640px;
+            height: 480px;
+            margin-bottom: 20px;
+            border: 2px solid #333;
+        }
+        .btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <video id="video" autoplay></video>
+        <br>
+        <button class="btn" onclick="verifyFace()">Verify Face</button>
+    </div>
+
+    <script>
+        // Start video stream when page loads
+        {% comment %} navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function(stream) {
+                document.getElementById('video').srcObject = stream;
+            })
+            .catch(function(err) {
+                console.log("Error: " + err);
+                alert("Could not access webcam");
+            }); {% endcomment %}
+
+        function verifyFace() {
+            // Get CSRF token
+            const csrftoken = document.cookie.split('csrftoken=')[1].split(';')[0];
+
+            fetch('/verify-face-attendance/{{ schedule_id }}/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken
+                }
+            });
+        }
+    </script>
+</body>
+</html> 

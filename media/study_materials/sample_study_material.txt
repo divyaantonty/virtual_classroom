@@ -1,0 +1,12 @@
+Artificial intelligence (AI) is intelligence demonstrated by machines, in contrast to the natural intelligence displayed by humans and animals.
+Leading AI textbooks define the field as the study of "intelligent agents": any device that perceives its environment and takes actions that maximize its chance of successfully achieving its goals.
+
+AI research has been divided into subfields that often fail to communicate with each other. These include:
+- Machine learning (ML)
+- Robotics
+- Natural language processing (NLP)
+- Computer vision
+- Expert systems
+- Neural networks
+
+One of the goals of AI is to create systems that can solve complex problems in a human-like manner, such as recognizing speech, understanding language, and making decisions.

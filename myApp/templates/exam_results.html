@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Results</title>
+    {% load static %}
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        .result-header {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .score-display {
+            font-size: 2em;
+            font-weight: bold;
+            color: #28a745;
+        }
+        .failed {
+            color: #dc3545;
+        }
+        .question-card {
+            margin-bottom: 20px;
+        }
+        .correct-answer {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .incorrect-answer {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        unanswered-question {
+            background-color: #ffebee;  /* Light red background */
+            border-left: 4px solid #dc3545;  /* Red border */
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .question-status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        .status-unanswered {
+            background-color: #dc3545;
+            color: white;
+        }
+        .status-answered {
+            background-color: #28a745;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h2>Exam Results - {{ exam.course.course_name }}</h2>
+            </div>
+            
+            <div class="card-body">
+                <div class="result-header text-center">
+                    <h3>Final Score</h3>
+                    <div class="score-display {% if exam.score < 40 %}failed{% endif %}">
+                        {{ exam.score|floatformat:2 }}%
+                    </div>
+                    <p class="mt-3">
+                        {% if exam.score >= 40 %}
+                            <i class="fas fa-check-circle text-success"></i> Congratulations! You have passed the exam.
+                        {% else %}
+                            <i class="fas fa-times-circle text-danger"></i> Sorry, you did not achieve the passing score of 40%.
+                        {% endif %}
+                    </p>
+                    <div class="exam-info mt-3">
+                        <p><strong>Start Time:</strong> {{ exam.start_time|date:"F j, Y, g:i a" }}</p>
+                        <p><strong>End Time:</strong> {{ exam.end_time|date:"F j, Y, g:i a" }}</p>
+                        <p><strong>Duration:</strong> 
+                            {% with duration=exam.end_time|timeuntil:exam.start_time %}
+                                {% if duration %}
+                                    {{ duration }}
+                                {% else %}
+                                    Less than a minute
+                                {% endif %}
+                            {% endwith %}
+                        </p>
+                    </div>
+                </div>
+
+                <h3 class="mb-4">Question Details</h3>
+                {% for question in questions %}
+                <div class="question-card">
+                    <h5>Question {{ forloop.counter }}</h5>
+                    <p><strong>Question:</strong> {{ question.question_text }}</p>
+                    
+                    {% if question.student_answer %}
+                        <p><strong>Your Answer:</strong> {{ question.student_answer }}</p>
+                        <p><strong>Marks Obtained:</strong> {{ question.marks_obtained|floatformat:2 }}/10</p>
+                    {% else %}
+                        <p><strong>Your Answer:</strong> No answer provided</p>
+                        <p><strong>Marks Obtained:</strong> 0/10</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <div class="text-center mt-4">
+                    <a href="{% url 'student_dashboard' %}" class="btn btn-primary">
+                        <i class="fas fa-home"></i> Return to Dashboard
+                    </a>
+                    {% if exam.score >= 40 %}
+                    <a href="{% url 'download_certificate' exam.course.id %}" class="btn btn-success">
+                        <i class="fas fa-certificate"></i> Download Certificate
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

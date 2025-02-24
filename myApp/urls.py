@@ -9,6 +9,7 @@ from .views import (
     CustomPasswordResetConfirmView,
     CustomPasswordResetCompleteView,
     course_enrollment_view,
+  
 )
 urlpatterns = [
     path('', views.index_view, name='index'),
@@ -46,11 +47,13 @@ urlpatterns = [
     path('view-scheduled-classes/', views.view_scheduled_classes, name='view_scheduled_classes'),
     path('view-materials/', views.view_materials, name='view_materials'),
     path('assignment_detail/', views.assignment_submission_view, name='assignment_detail'),
+
     path('quiz/<int:quiz_id>/', views.take_quiz, name='take_quiz'),
     path('available_quizzes/', views.available_quizzes, name='available_quizzes'),
     path('quiz/<int:quiz_id>/', views.quiz_questions, name='quiz_questions'),
     path('quiz/submit/<int:quiz_id>/', views.submit_quiz, name='submit_quiz'),
     path('quiz/<int:quiz_id>/', views.quiz_result, name='quiz_result'),
+    
     path('feedback/', views.feedback_view, name='feedback_form'),
     path('available-courses/', views.available_courses, name='available_courses'),
     path('enroll/<int:course_id>/', views.enroll_course, name='enroll_course'),
@@ -133,14 +136,73 @@ urlpatterns = [
     path('assign_students/', views.assign_students_to_teacher, name='assign_students_to_teacher'),
     path('assign_students/<int:teacher_id>/', views.select_course_for_teacher, name='select_course_for_teacher'),
     path('assign_students/<int:teacher_id>/<int:course_id>/', views.assign_students, name='assign_students_with_course'),
-
+    
+    path('check-course-name/', views.check_course_name, name='check_course_name'),
     path('upload/', views.upload_material, name='upload_material'),
-
-    # path('upload_pdf_material/', views.upload_pdf_material, name='upload_pdf_material'),
-    # path('generated_questions_list/', views.generated_questions_list, name='generated_questions_list'),
-    # path('download_answer_key/', views.download_answer_key, name='download_answer_key'),
-    # path('filter_questions/', views.filter_questions, name='filter_questions'),
     path('course-enrollment/', views.course_enrollment_view, name='course_enrollment'),  # New URL for course enrollment
+    path('evaluate-answers/', views.evaluate_answers, name='evaluate_answers'),
+    
+
+    # path('student_performance_dashboard/', views.student_performance_dashboard, name='student_performance_dashboard'),
+    path('chatbot/', views.chatbot_response, name='chatbot_response'),
+    path('generate-image/', views.generate_image, name='generate_image'),
+    
+    path('student_performance/', views.student_performance_view, name='student_performance'),
+    path('quiz_marks/', views.quiz_marks_view, name='quiz_marks'),
+    path('certificate_template/<int:course_id>/', views.generate_certificate, name='certificate_template'),
+    
+    path('question-generator/', views.question_generator, name='question_generator'),
+    path('generate-question/', views.generate_question, name='generate_question'),
+    path('question-papers/', views.view_question_papers, name='view_question_papers'),
+    path('delete-paper/<int:paper_id>/', views.delete_question_paper, name='delete_question_paper'),
+    path('download-paper/<int:paper_id>/', views.download_question_paper, name='download_question_paper'),
+
+    path("search_books", views.search_books, name="search_books"),
+
+    path('translate-material/', views.translate_material, name='translate_material'),
+
+    path('generate-summary/', views.generate_summary, name='generate_summary'),
+
+    path('log-violation/', views.log_violation, name='log_violation'),
+
+    path('question-bank/<int:course_id>/', views.question_bank, name='question_bank'),
+
+
+    path('check-final-exam-eligibility/', views.check_final_exam_eligibility, name='check_final_exam_eligibility'),
+    path('start-final-exam/<int:course_id>/', views.start_final_exam, name='start_final_exam'),
+
+    path('exam-results/<int:exam_id>/', views.exam_results, name='exam_results'),
+    
+    path('final-exam-setup/<int:course_id>/', views.final_exam_setup, name='final_exam_setup'),
+    path('take-final-exam/<int:exam_id>/', views.take_final_exam, name='take_final_exam'),
+    path('submit-exam/<int:exam_id>/', views.submit_exam, name='submit_exam'),
+    path('ping/', views.ping, name='ping'),
+    path('check-existing-exam/<int:course_id>/', views.check_existing_exam, name='check_existing_exam'),
+
+    path('face-capture/', views.face_capture_view, name='face_capture'),
+    path('save-face-data/', views.save_face_data, name='save_face_data'),
+
+    path('whiteboard/', views.whiteboard, name='whiteboard'),
+
+    path('verify-face-attendance/<int:schedule_id>/', views.verify_face_and_mark_attendance, name='verify_face_attendance'),
+
+    path('message-center/', views.parent_message_center, name='parent_message_center'),
+    path('send-parent-message/', views.send_parent_message, name='send_parent_message'),
+    path('mark-message-read/<int:message_id>/', views.mark_message_read, name='mark_message_read'),
+    path('delete-message/<int:message_id>/', views.delete_message, name='delete_message'),
+
+    path('group/<int:group_id>/upload-media/', views.upload_media_message, name='upload_media_message'),
+    
+    path('share-whiteboard/', views.share_whiteboard, name='share_whiteboard'),
+
+    path('api/notifications/', views.get_notifications, name='get_notifications'),
+    path('send-event-suggestion/', views.send_event_suggestion, name='send_event_suggestion'),
+    path('get-event-suggestions/<int:event_id>/', views.get_event_suggestions, name='get_event_suggestions'),
+
+    path('save-mind-map/', views.save_mind_map, name='save_mind_map'),
+    path('get-mind-maps/', views.get_mind_maps, name='get_mind_maps'),
+    path('delete-mind-map/<int:map_id>/', views.delete_mind_map, name='delete_mind_map'),
 ]
 if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -294,6 +294,11 @@
                     <p class="result-summary">
                         You answered <span class="correct-count">{{ correct_count }}</span> out of <span class="total-questions">{{ total_questions }}</span> questions correctly.
                     </p>
+                    <p>
+                        Total Marks: {{ total_marks }}<br>
+                        Percentage: {{ percentage }}%<br>
+                        Grade: {{ grade }}
+                    </p>
                 
                     <div class="questions">
                         {% for data in questions_data %}

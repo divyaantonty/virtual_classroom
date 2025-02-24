@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Face Registration</title>
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1/dist/face-api.js"></script>
+    <style>
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #video, #canvas {
+            margin-top: 20px;
+        }
+        #status {
+            margin: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Face Registration Required</h2>
+        <p>Please look at the camera and keep your face clearly visible</p>
+        <video id="video" width="640" height="480" autoplay></video>
+        <canvas id="canvas" width="640" height="480"></canvas>
+        <div id="status"></div>
+        <button id="captureBtn">Capture Face</button>
+        
+        <form id="faceForm" method="POST" action="{% url 'save_face_data' %}">
+            {% csrf_token %}
+            <input type="hidden" name="face_descriptor" id="face_descriptor">
+        </form>
+    </div>
+
+    <script>
+        let isModelLoaded = false;
+
+        async function loadModels() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = 'Loading face detection models...';
+            
+            try {
+                await faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
+                await faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
+                await faceapi.nets.faceRecognitionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
+                
+                isModelLoaded = true;
+                statusDiv.textContent = 'Models loaded! You can now capture your face.';
+                startVideo();
+            } catch (error) {
+                statusDiv.textContent = 'Error loading models: ' + error.message;
+            }
+        }
+
+        async function startVideo() {
+            const video = document.getElementById('video');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+            }
+        }
+
+        document.getElementById('captureBtn').addEventListener('click', async () => {
+            if (!isModelLoaded) {
+                alert('Please wait for models to load');
+                return;
+            }
+
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            const statusDiv = document.getElementById('status');
+
+            // Draw current video frame to canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            try {
+                const detections = await faceapi.detectSingleFace(video, 
+                    new faceapi.TinyFaceDetectorOptions())
+                    .withFaceLandmarks()
+                    .withFaceDescriptor();
+
+                if (detections) {
+                    // Convert face descriptor to Array and then to string for sending
+                    const descriptorArray = Array.from(detections.descriptor);
+                    document.getElementById('face_descriptor').value = JSON.stringify(descriptorArray);
+                    document.getElementById('faceForm').submit();
+                } else {
+                    statusDiv.textContent = 'No face detected. Please try again.';
+                }
+            } catch (error) {
+                statusDiv.textContent = 'Error during face capture: ' + error.message;
+            }
+        });
+
+        // Load models when page loads
+        loadModels();
+    </script>
+</body>
+</html> 

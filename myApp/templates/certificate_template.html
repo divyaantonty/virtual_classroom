@@ -1,0 +1,78 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate of Completion</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f3f4f6;
+            font-family: 'Georgia', serif;
+        }
+        .certificate-container {
+            width: 800px;
+            height: 600px;
+            border: 15px solid tan;
+            padding: 20px;
+            background: linear-gradient(145deg, #ffffff, #f1f1f1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            position: relative;
+        }
+        .logo {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 100px;
+        }
+        .title {
+            font-size: 48px;
+            color: tan;
+            margin-top: 50px;
+            font-weight: bold;
+        }
+        .subtitle {
+            font-size: 24px;
+            margin: 20px 0;
+        }
+        .student-name {
+            font-size: 32px;
+            font-style: italic;
+            font-weight: bold;
+            margin: 20px 0;
+            border-bottom: 2px solid black;
+            display: inline-block;
+            width: 60%;
+        }
+        .details {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            font-size: 16px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="certificate-container">
+        <img src="C:\vc Final Update\myproject\myApp\static\images\academics.jpg" alt="Academics Logo" class="logo">
+        <div class="title">Certificate of Completion</div>
+        <div class="subtitle">This certificate is presented to</div>
+        <div class="student-name">{{ student.first_name }} {{ student.last_name }}</div>
+        <div class="details">For successfully completing the course</div>
+        <div class="details">{{ course.course_name }}</div>
+        <div class="footer">On: {{ course.ending_date }} | Provided by Academics</div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<div class="dashboard-sidebar">
+    <div class="dashboard-options">
+        <div class="dropdown">
+            <button class="dropdown-btn">
+                <i class="fas fa-chalkboard-teacher mr-2"></i>Manage Classes
+            </button>
+            <div class="dropdown-content">
+                <a href="{% url 'schedule_class' %}"><i class="fas fa-plus mr-2"></i>Schedule Class</a>
+                <a href="{% url 'view_teacher_schedule_class' %}"><i class="fas fa-list mr-2"></i>View Classes</a>
+            </div>
+        </div>
+        <div class="dropdown">
+            <button class="dropdown-btn">
+                <i class="fas fa-tasks mr-2"></i>Manage Assignments
+            </button>
+            <div class="dropdown-content">
+                <a href="{% url 'create_assignment' %}"><i class="fas fa-plus mr-2"></i>Create Assignment</a>
+                <a href="{% url 'view_assignment' %}"><i class="fas fa-list mr-2"></i>View Assignments</a>
+                <a href="{% url 'evaluate_assignment' %}"><i class="fas fa-check mr-2"></i>Evaluate Assignments</a>
+            </div>
+        </div>
+        <div class="dropdown">
+            <button class="dropdown-btn">
+                <i class="fas fa-book mr-2"></i>Study Materials
+            </button>
+            <div class="dropdown-content">
+                <a href="{% url 'upload_material' %}"><i class="fas fa-upload mr-2"></i>Upload Materials</a>
+                <a href="{% url 'view_uploaded_materials' %}"><i class="fas fa-list mr-2"></i>View Materials</a>
+            </div>
+        </div>
+        <a href="{% url 'teacher_discussion_forum' %}" class="dashboard-box">
+            <i class="fas fa-comments mr-2"></i>Discussion Forum
+        </a>
+        <div class="dropdown">
+            <button class="dropdown-btn">
+                <i class="fas fa-question-circle mr-2"></i>Manage Quizzes
+            </button>
+            <div class="dropdown-content">
+                <a href="{% url 'create_quiz' %}"><i class="fas fa-plus mr-2"></i>Create Quiz</a>
+                <a href="{% url 'view_quiz_questions' %}"><i class="fas fa-list mr-2"></i>View Questions</a>
+                <a href="{% url 'evaluate_answers' %}"><i class="fas fa-check mr-2"></i>Evaluate Answer<a/>
+            </div>
+        </div>
+        <div class="dropdown">
+            <button class="dropdown-btn">
+                <i class="fas fa-calendar-alt mr-2"></i>Manage Events
+            </button>
+            <div class="dropdown-content">
+                <a href="{% url 'add_event' %}"><i class="fas fa-plus mr-2"></i>Create Event</a>
+                <a href="{% url 'view_events' %}"><i class="fas fa-list mr-2"></i>View Events</a>
+            </div>
+        </div>
+        <a href="{% url 'view_profile' %}" class="dashboard-box">
+            <i class="fas fa-user mr-2"></i>View Profile
+        </a>
+        <a href="{% url 'student_list' %}" class="dashboard-box">
+            <i class="fas fa-users mr-2"></i>Student List
+        </a>
+        <a href="{% url 'view_attendance' %}" class="dashboard-box">
+            <i class="fas fa-clipboard-check mr-2"></i>Attendance
+        </a>
+        <a href="{% url 'manage_leave' %}" class="dashboard-box">
+            <i class="fas fa-clipboard-check mr-2"></i>Manage Leave
+        </a>
+        <a href="{% url 'question_generator' %}" class="dashboard-box">
+            <i class="fas fa-plus mr-2"></i>Generate question
+        </a>
+        <a href="{% url 'teacher_dashboard' %}" class="back-btn">
+            <i class="fas fa-arrow-left"></i> Back to Teacher Dashboard
+        </a>    
+    </div>
+</div>

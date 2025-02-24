@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Evaluation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        h2 {
+            text-align: center;
+        }
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        select, input[type="number"] {
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .percentage-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .correct {
+            background-color: #d4edda;
+        }
+        .incorrect {
+            background-color: #f8d7da;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Quiz Evaluation</h2>
+
+    <form method="GET">
+        {% csrf_token %}
+        <label for="course_id">Select Course:</label>
+        <select name="course_id" id="course_id">
+            <option value="">-- Select Course --</option>
+            {% for course in courses %}
+                <option value="{{ course.id }}" {% if course.id == selected_course_id %}selected{% endif %}>{{ course.course_name }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="quiz_id">Select Quiz:</label>
+        <select name="quiz_id" id="quiz_id">
+            <option value="">-- Select Quiz --</option>
+            {% for quiz in quizzes %}
+                <option value="{{ quiz.id }}" {% if quiz.id == selected_quiz_id %}selected{% endif %}>{{ quiz.title }}</option>
+            {% endfor %}
+        </select>
+        
+        <button type="submit">Filter</button>
+    </form>
+
+    <form method="POST">
+        {% csrf_token %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Question</th>
+                    <th>Selected Option</th>
+                    <th>Correct Option</th>
+                    <th>Status</th>
+                    <th>Marks</th>
+                    <th>Grade</th>
+                    <th>Attempt Date</th>
+                    <th>Percentage</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in evaluation_results %}
+                    <tr class="{% if result.is_correct %}correct{% else %}incorrect{% endif %}">
+                        <td>{{ result.student }}</td>
+                        <td>{{ result.question }}</td>
+                        <td>{{ result.selected_option }}</td>
+                        <td>{{ result.correct_option }}</td>
+                        <td>{% if result.is_correct %}✅ Correct{% else %}❌ Incorrect{% endif %}</td>
+                        <td>
+                            <input type="number" name="marks_{{ result.answer_id }}" value="{{ result.marks }}" min="0" max="1">
+                        </td>
+                        <td>{{ result.grade }}</td>
+                        <td>{{ result.attempt_date }}</td>
+                        <td>{{ result.percentage }}%</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <button type="submit">Save Marks</button>
+    </form>
+
+    <div class="percentage-container">
+        <h2>Overall Results</h2>
+        <p>Total Questions: {{ total_questions }}</p>
+        <p>Correct Answers: {{ correct_count }}</p>
+        <p>Percentage: {{ percentage }}%</p>
+        <p>Final Grade: {{ final_grade }}</p>
+    </div>
+
+</body>
+</html>

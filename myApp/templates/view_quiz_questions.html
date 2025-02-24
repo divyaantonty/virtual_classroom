@@ -379,6 +379,9 @@
                     <a href="{% url 'manage_leave' %}" class="dashboard-box">
                         <i class="fas fa-clipboard-check mr-2"></i>Manage Leave
                     </a>
+                    <a href="{% url 'question_generator' %}" class="dashboard-box">
+                        <i class="fas fa-plus mr-2"></i>Generate question
+                    </a>
                 </div>
             </div>
 
@@ -405,8 +408,12 @@
                         <ul class="question-list">
                             {% for question in questions %}
                                 <li class="question-item">
+                                    <div class="quiz-dates">
+                                        <em>Start Date: {{ question.quiz.start_date }}</em><br>
+                                        <em>End Date: {{ question.quiz.end_date }}</em>
+                                    </div>
                                     <div class="question-text">
-                                        <strong>{{ question.text }}</strong>
+                                        <strong>Question : {{ question.text }}</strong>
                                     </div>
                                     <div class="options">
                                         <span class="option">A: {{ question.option_a }}</span><br>
