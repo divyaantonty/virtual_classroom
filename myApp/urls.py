@@ -204,6 +204,12 @@ urlpatterns = [
     path('delete-mind-map/<int:map_id>/', views.delete_mind_map, name='delete_mind_map'),
 
     path('text-to-speech/<int:material_id>/', views.text_to_speech, name='text_to_speech'),
+
+    path('create-note/', views.create_note, name='create_note'),
+    path('view-notes/', views.view_notes, name='view_notes'),
+    path('edit-note/<int:note_id>/', views.edit_note, name='edit_note'),
+    path('delete-note/<int:note_id>/', views.delete_note, name='delete_note'),
+    path('download-note-pdf/<int:note_id>/', views.download_note_pdf, name='download_note_pdf'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

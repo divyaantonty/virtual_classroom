@@ -59,7 +59,15 @@ import soundfile as sf
 from datasets import load_dataset
 import pyttsx3
 import threading
-
+from .models import TeacherNote, Course
+from django.contrib import messages
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from io import BytesIO
+from html import unescape
+import re
 # Load environment variables
 load_dotenv()
 def register(request):
@@ -6049,3 +6057,207 @@ def text_to_speech(request, material_id):
     except Exception as e:
         print(f"Error in text_to_speech: {str(e)}")
         return JsonResponse({'success': False, 'error': str(e)})
+
+def create_note(request):
+    teacher_id = request.session.get('teacher_id')
+    if not teacher_id:
+        return redirect('login')
+        
+    try:
+        teacher = Teacher.objects.get(id=teacher_id)
+        
+        if request.method == 'POST':
+            title = request.POST.get('title')
+            content = request.POST.get('content')
+            course_id = request.POST.get('course')
+            
+            course = Course.objects.get(id=course_id)
+            TeacherNote.objects.create(
+                teacher=teacher,
+                title=title,
+                content=content,
+                course=course
+            )
+            messages.success(request, 'Note created successfully!')
+            return redirect('view_notes')
+        
+        # Get courses assigned to this teacher
+        courses = Course.objects.filter(course_teachers__teacher=teacher)
+        return render(request, 'create_note.html', {
+            'form_title': 'Create New Note',
+            'courses': courses,
+            'first_name': teacher.first_name,
+            'last_name': teacher.last_name
+        })
+        
+    except Teacher.DoesNotExist:
+        messages.error(request, 'Teacher not found')
+        return redirect('login')
+
+def view_notes(request):
+    teacher_id = request.session.get('teacher_id')
+    if not teacher_id:
+        return redirect('login')
+        
+    try:
+        teacher = Teacher.objects.get(id=teacher_id)
+        notes = TeacherNote.objects.filter(teacher=teacher).order_by('-created_at')
+        return render(request, 'view_notes.html', {
+            'notes': notes,
+            'first_name': teacher.first_name,
+            'last_name': teacher.last_name
+        })
+    except Teacher.DoesNotExist:
+        messages.error(request, 'Teacher not found')
+        return redirect('login')
+
+def edit_note(request, note_id):
+    teacher_id = request.session.get('teacher_id')
+    if not teacher_id:
+        return redirect('login')
+        
+    try:
+        teacher = Teacher.objects.get(id=teacher_id)
+        note = get_object_or_404(TeacherNote, id=note_id, teacher=teacher)
+        
+        if request.method == 'POST':
+            note.title = request.POST.get('title')
+            note.content = request.POST.get('content')
+            note.course_id = request.POST.get('course')
+            note.save()
+            messages.success(request, 'Note updated successfully!')
+            return redirect('view_notes')
+        
+        # Fix the course filter here too
+        courses = Course.objects.filter(course_teachers__teacher=teacher)
+        return render(request, 'create_note.html', {
+            'form_title': 'Edit Note',
+            'note': note,
+            'courses': courses,
+            'first_name': teacher.first_name,
+            'last_name': teacher.last_name
+        })
+        
+    except Teacher.DoesNotExist:
+        messages.error(request, 'Teacher not found')
+        return redirect('login')
+
+def delete_note(request, note_id):
+    teacher_id = request.session.get('teacher_id')
+    if not teacher_id:
+        return redirect('login')
+        
+    try:
+        teacher = Teacher.objects.get(id=teacher_id)
+        note = get_object_or_404(TeacherNote, id=note_id, teacher=teacher)
+        note.delete()
+        messages.success(request, 'Note deleted successfully!')
+        return redirect('view_notes')
+        
+    except Teacher.DoesNotExist:
+        messages.error(request, 'Teacher not found')
+        return redirect('login')
+
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from io import BytesIO
+from html import unescape
+import re
+
+def download_note_pdf(request, note_id):
+    teacher_id = request.session.get('teacher_id')
+    if not teacher_id:
+        return redirect('login')
+        
+    try:
+        teacher = Teacher.objects.get(id=teacher_id)
+        note = get_object_or_404(TeacherNote, id=note_id, teacher=teacher)
+        
+        # Create a file-like buffer to receive PDF data
+        buffer = BytesIO()
+        
+        # Create the PDF object using the buffer as its "file"
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=letter,
+            rightMargin=72,
+            leftMargin=72,
+            topMargin=72,
+            bottomMargin=72
+        )
+        
+        # Create the story containing all the elements
+        story = []
+        
+        # Define styles
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            spaceAfter=30
+        )
+        
+        info_style = ParagraphStyle(
+            'CourseInfo',
+            parent=styles['Normal'],
+            fontSize=12,
+            textColor=colors.gray,
+            spaceAfter=20
+        )
+        
+        content_style = ParagraphStyle(
+            'CustomBody',
+            parent=styles['Normal'],
+            fontSize=12,
+            leading=14,
+            spaceAfter=12
+        )
+        
+        # Add title
+        story.append(Paragraph(note.title, title_style))
+        
+        # Add course info and dates
+        course_info = f"""
+        Course: {note.course.course_name}<br/>
+        Created: {note.created_at.strftime('%B %d, %Y')}<br/>
+        Last Updated: {note.updated_at.strftime('%B %d, %Y')}
+        """
+        story.append(Paragraph(course_info, info_style))
+        story.append(Spacer(1, 20))
+        
+        # Process the HTML content
+        content = note.content
+        # Remove HTML tags but preserve line breaks
+        content = re.sub(r'<br\s*/?>', '\n', content)
+        content = re.sub(r'<[^>]+>', '', content)
+        content = unescape(content)  # Convert HTML entities to characters
+        
+        # Split content into paragraphs and add them
+        paragraphs = content.split('\n')
+        for para in paragraphs:
+            if para.strip():
+                story.append(Paragraph(para.strip(), content_style))
+        
+        # Build the PDF
+        doc.build(story)
+        
+        # Get the value of the BytesIO buffer and write it to the response
+        pdf = buffer.getvalue()
+        buffer.close()
+        
+        # Create the HTTP response with PDF content
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{note.title.replace(" ", "_")}.pdf"'
+        response.write(pdf)
+        
+        return response
+        
+    except Teacher.DoesNotExist:
+        messages.error(request, 'Teacher not found')
+        return redirect('login')
+    except Exception as e:
+        messages.error(request, f'Error generating PDF: {str(e)}')
+        return redirect('view_notes')
