@@ -6261,3 +6261,5 @@ def download_note_pdf(request, note_id):
     except Exception as e:
         messages.error(request, f'Error generating PDF: {str(e)}')
         return redirect('view_notes')
+
+    

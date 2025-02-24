@@ -177,74 +177,99 @@
         }
 
         .content-wrapper {
-            background-color: rgba(255, 255, 255, 0.9);
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
             padding: 30px;
-            max-width: 600px;
-            width: 90%;
-            margin: auto;
+            max-width: 800px;
+            margin: 20px auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .content-wrapper h1 {
-            color: #2c3e50;
-            margin-bottom: 20px;
+        .upload-header {
             text-align: center;
+            margin-bottom: 30px;
         }
 
-        .upload-material-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
+        .upload-header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
         }
 
-        .upload-material-table td {
-            padding: 10px;
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .form-control {
             border: 1px solid #dee2e6;
-            vertical-align: middle;
-        }
-
-        .upload-material-table label {
-            font-weight: bold;
-        }
-
-        .upload-material-table select,
-        .upload-material-table input[type="text"],
-        .upload-material-table input[type="file"] {
+            border-radius: 8px;
+            padding: 12px;
             width: 100%;
-            padding: 8px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+            transition: all 0.3s ease;
         }
 
-        .upload-material-table button {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
+        .form-control:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .custom-file-upload {
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background-color: #3498db;
             border: none;
-            border-radius: 4px;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: #95a5a6;
+            border: none;
+        }
+
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+            transform: translateY(-2px);
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            background-color: white;
             cursor: pointer;
-            transition: background-color 0.3s;
         }
 
-        .upload-material-table button:hover {
-            background-color: #0056b3;
-        }
-
-        .back-button {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #6c757d;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            transition: background-color 0.3s;
-        }
-
-        .back-button:hover {
-            background-color: #5a6268;
+        .text-muted {
+            color: #6c757d;
+            font-size: 0.9rem;
         }
 
         @media (max-width: 768px) {
@@ -260,6 +285,68 @@
             .dashboard-content {
                 width: 100%;
             }
+        }
+
+        .note-suggestion {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .note-suggestion i {
+            font-size: 2rem;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+
+        .note-suggestion h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .note-suggestion p {
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+
+        .create-note-btn {
+            background-color:#2980b9;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .create-note-btn:hover {
+            background-color: #2980b9;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .content-wrapper {
+            background-color: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px auto;
+            max-width: 800px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
         }
     </style>
 
@@ -367,46 +454,74 @@
             <!-- Main Content -->
             <div class="dashboard-content">
                 <div class="content-wrapper">
-                    <h1>Upload Material</h1>
+                    <div class="upload-header">
+                        <h1><i class="fas fa-upload"></i> Upload Study Material</h1>
+                        <p class="text-muted">Upload PDF materials for your students</p>
+                    </div>
+
+                    {% if not has_notes %}
+                    <div class="note-suggestion">
+                        <i class="fas fa-lightbulb"></i>
+                        <h4>Create Notes First!</h4>
+                        <p>It's recommended to create course notes before uploading materials. This helps organize your content better.</p>
+                        <a href="{% url 'create_note' %}?course={{ selected_course_id }}" class="create-note-btn">
+                            <i class="fas fa-plus"></i> Create Course Notes
+                        </a>
+                    </div>
+                    {% endif %}
+
                     <form method="POST" enctype="multipart/form-data" onsubmit="return validateDescription();">
                         {% csrf_token %}
-                        <table class="upload-material-table">
-                            <tr>
-                                <td>
-                                    <label for="course">Select Course:</label>
-                                </td>
-                                <td>
-                                    <select name="course" id="course" required>
-                                        {% for course in courses %}
-                                            <option value="{{ course.id }}">{{ course.course_name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <label for="description">Material Description:</label>
-                                </td>
-                                <td>
-                                    <input type="text" name="description" id="description" required>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <label for="file">Upload PDF:</label>
-                                </td>
-                                <td>
-                                    <input type="file" name="file" id="file" accept=".pdf" required>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td colspan="2" style="text-align: center;">
-                                    <button type="submit">Upload</button>
-                                </td>
-                            </tr>
-                        </table>
+                        <div class="form-group mb-4">
+                            <label for="course" class="form-label">
+                                <i class="fas fa-book"></i> Select Course:
+                            </label>
+                            <select name="course" id="course" required>
+                                {% for course in courses %}
+                                    <option value="{{ course.id }}" 
+                                            {% if selected_course_id == course.id %}selected{% endif %}>
+                                        {{ course.course_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label for="description" class="form-label">
+                                <i class="fas fa-file-alt"></i> Material Description:
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   name="description" 
+                                   id="description" 
+                                   placeholder="Enter a brief description of the material"
+                                   required>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label for="file" class="form-label">
+                                <i class="fas fa-file-pdf"></i> Upload PDF:
+                            </label>
+                            <div class="custom-file-upload">
+                                <input type="file" 
+                                       class="form-control" 
+                                       name="file" 
+                                       id="file" 
+                                       accept=".pdf" 
+                                       required>
+                                <small class="text-muted">Only PDF files are accepted</small>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-cloud-upload-alt"></i> Upload Material
+                            </button>
+                            <a href="{% url 'teacher_dashboard' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Dashboard
+                            </a>
+                        </div>
                     </form>
-                    <a href="{% url 'teacher_dashboard' %}" class="back-button">Back to Teacher Dashboard</a>
                 </div>
             </div>
         </div>
