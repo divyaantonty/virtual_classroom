@@ -356,6 +356,190 @@
         .btn-regenerate:hover {
             background-color: #138496;
         }
+
+        /* Action Buttons Styling */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-download, .btn-translate, .btn-summarize, .btn-regenerate, .btn-info {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn-download {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .btn-translate {
+            background-color: #2196F3;
+            color: white;
+        }
+
+        .btn-summarize {
+            background-color: #FF9800;
+            color: white;
+        }
+
+        .btn-regenerate {
+            background-color: #9C27B0;
+            color: white;
+        }
+
+        .btn-info {
+            background-color: #03A9F4;
+            color: white;
+        }
+
+        .btn-download:hover, .btn-translate:hover, .btn-summarize:hover, 
+        .btn-regenerate:hover, .btn-info:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            opacity: 0.9;
+        }
+
+        /* Summary Section Styling */
+        .summary-row {
+            background-color: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+
+        .summary-content {
+            padding: 25px;
+            border-radius: 8px;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin: 15px 0;
+        }
+
+        .summary-content h4 {
+            color: #2c3e50;
+            font-size: 18px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 8px;
+        }
+
+        .summary-text {
+            line-height: 1.6;
+            color: #495057;
+        }
+
+        .key-points {
+            margin-top: 15px;
+            padding-left: 20px;
+        }
+
+        .key-points li {
+            margin-bottom: 8px;
+            color: #495057;
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .key-points li:before {
+            content: "•";
+            color: #2196F3;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            padding: 20px;
+            text-align: center;
+            color: #666;
+        }
+
+        .loading-spinner i {
+            font-size: 24px;
+            color: #2196F3;
+        }
+
+        /* Translation Modal Styling */
+        .translation-modal {
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .modal-content h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        #languageSelect {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 15px;
+            color: #495057;
+            appearance: none;
+            background: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='%23495057' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") no-repeat right 12px center/16px 16px;
+        }
+
+        .close-modal {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            font-size: 24px;
+            color: #666;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-modal:hover {
+            color: #dc3545;
+        }
+
+        /* Alert Styling */
+        .alert {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border-left: 4px solid;
+        }
+
+        .alert-info {
+            background-color: #e3f2fd;
+            border-color: #2196F3;
+            color: #0d47a1;
+        }
+
+        .alert-success {
+            background-color: #e8f5e9;
+            border-color: #4CAF50;
+            color: #1b5e20;
+        }
+
+        .alert-danger {
+            background-color: #ffebee;
+            border-color: #f44336;
+            color: #b71c1c;
+        }
     </style>
 </head>
 
@@ -433,24 +617,26 @@
                                 <td>{{ material.description }}</td>
                                 <td>{{ material.uploaded_at|date:"F d, Y H:i" }}</td>
                                 <td>
-                                    <a href="{{ material.file.url }}" class="btn-download" download>
-                                        <i class="fas fa-download"></i> Download PDF
-                                    </a>
-                                    <button class="btn-translate" onclick="openTranslateModal('{{ material.file.url }}', '{{ material.description }}')">
-                                        <i class="fas fa-language"></i> Translate
-                                    </button>
-                                    <button class="btn-summarize" onclick="generateSummary('{{ material.id }}')">
-                                        <i class="fas fa-book-reader"></i> Summarize
-                                    </button>
-                                    <button class="btn-regenerate" id="regenerate-{{ material.id }}" onclick="generateSummary('{{ material.id }}', true)">
-                                        <i class="fas fa-sync"></i> Regenerate Summary
-                                    </button>
-                                    {% if material.has_text_to_speech %}
-                                        <button onclick="convertToSpeech({{ material.id }})" class="btn btn-info">
-                                            <i class="fas fa-volume-up"></i> Listen
+                                    <div class="action-buttons">
+                                        <a href="{{ material.file.url }}" class="btn-download" download>
+                                            <i class="fas fa-download"></i> Download PDF
+                                        </a>
+                                        <button class="btn-translate" onclick="openTranslateModal('{{ material.file.url }}', '{{ material.description }}')">
+                                            <i class="fas fa-language"></i> Translate
                                         </button>
-                                        <audio id="audio-{{ material.id }}" style="display: none;"></audio>
-                                    {% endif %}
+                                        <button class="btn-summarize" onclick="generateSummary('{{ material.id }}')">
+                                            <i class="fas fa-book-reader"></i> Summarize
+                                        </button>
+                                        <button class="btn-regenerate" id="regenerate-{{ material.id }}" onclick="generateSummary('{{ material.id }}', true)">
+                                            <i class="fas fa-sync"></i> Regenerate
+                                        </button>
+                                        {% if material.has_text_to_speech %}
+                                            <button onclick="convertToSpeech({{ material.id }})" class="btn-info">
+                                                <i class="fas fa-volume-up"></i> Listen
+                                            </button>
+                                            <audio id="audio-{{ material.id }}" style="display: none;"></audio>
+                                        {% endif %}
+                                    </div>
                                 </td>
                             </tr>
                             <!-- Add summary section for each material -->
