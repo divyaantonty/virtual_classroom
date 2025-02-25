@@ -251,6 +251,143 @@
                 cursor: pointer;
             }
         }
+        /* Modal Styles */
+        .event-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            position: relative;
+            background: white;
+            width: 90%;
+            max-width: 500px;
+            margin: 50px auto;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            animation: slideIn 0.3s ease;
+        }
+
+        .modal-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid #eee;
+            position: relative;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            color: #2c3e50;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .close-modal {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 24px;
+            color: #666;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-modal:hover {
+            color: #e74c3c;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .event-detail-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .event-detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f0f7ff;
+            border-radius: 50%;
+            color: #3498db;
+        }
+
+        .detail-content {
+            flex: 1;
+        }
+
+        .detail-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .detail-text {
+            color: #2c3e50;
+            font-size: 16px;
+        }
+
+        .modal-footer {
+            padding: 20px 25px;
+            background: #f8f9fa;
+            border-top: 1px solid #eee;
+            border-radius: 0 0 15px 15px;
+            text-align: right;
+        }
+
+        .btn-register-modal {
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-register-modal.active {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .btn-register-modal.active:hover {
+            background: #27ae60;
+            transform: translateY(-2px);
+        }
+
+        .btn-register-modal.disabled {
+            background: #95a5a6;
+            color: white;
+            cursor: not-allowed;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
     </style>
 </head>
 
@@ -370,13 +507,44 @@
                         </div>
                     </form>
                     <div id="calendar"></div>
-                    <div id="eventModal" class="modal">
+                    <div class="event-modal" id="eventModal">
                         <div class="modal-content">
-                            <span class="close">&times;</span>
-                            <h2 id="eventTitle"></h2>
-                            <p id="eventCourse"></p>
-                            <p id="eventDetails"></p>
-                            <p id="eventDate"></p>
+                            <div class="modal-header">
+                                <h3 class="modal-title"></h3>
+                                <span class="close-modal">&times;</span>
+                            </div>
+                            <div class="modal-body">
+                                <div class="event-detail-row">
+                                    <div class="detail-icon">
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </div>
+                                    <div class="detail-content">
+                                        <span class="detail-label">Date & Time</span>
+                                        <span class="detail-text event-datetime"></span>
+                                    </div>
+                                </div>
+
+                                <div class="event-detail-row">
+                                    <div class="detail-icon">
+                                        <i class="fas fa-book"></i>
+                                    </div>
+                                    <div class="detail-content">
+                                        <span class="detail-label">Course</span>
+                                        <span class="detail-text event-course"></span>
+                                    </div>
+                                </div>
+
+                                <div class="event-detail-row">
+                                    <div class="detail-icon">
+                                        <i class="fas fa-info-circle"></i>
+                                    </div>
+                                    <div class="detail-content">
+                                        <span class="detail-label">Description</span>
+                                        <span class="detail-text event-description"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
                         </div>
                     </div>
                 </div>
@@ -423,28 +591,23 @@
                     },
                     {% endfor %}
                 ],
-                eventClick: function(event, jsEvent, view) {
-                    // Show the modal
-                    $('#eventTitle').text(event.title);
-                    $('#eventDetails').text(event.description);
-                    $('#eventCourse').text('Course: ' + event.course_name);
-                    $('#eventDate').text(
-                          'Event Date: ' + event.start.format('MMMM Do YYYY, h:mm a') +
-                          ' - ' + event.end.format('MMMM Do YYYY, h:mm a')
-                    );
-                    $('#eventModal').show();
+                eventClick: function(event) {
+                    // Populate modal with event details
+                    $('.modal-title').text(event.title);
+                    $('.event-datetime').text(moment(event.start).format('MMMM D, YYYY, h:mm a') + 
+                        ' - ' + moment(event.end).format('h:mm a'));
+                    $('.event-course').text(event.course_name || 'Not specified');
+                    $('.event-description').text(event.description);
+                    
+                    // Show modal
+                    $('#eventModal').fadeIn(300);
                 }
             });
 
-            // Close the modal when the user clicks the close button
-            $('.close').click(function() {
-                $('#eventModal').hide();
-            });
-
-            // Close the modal when the user clicks anywhere outside the modal
-            $(window).click(function(event) {
-                if (event.target == document.getElementById('eventModal')) {
-                    $('#eventModal').hide();
+            // Close modal when clicking the close button or outside the modal
+            $('.close-modal, .event-modal').click(function(e) {
+                if (e.target === this) {
+                    $('#eventModal').fadeOut(300);
                 }
             });
         });
