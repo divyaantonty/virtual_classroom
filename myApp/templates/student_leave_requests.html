@@ -1,27 +1,209 @@
 {% load static %}
-<h2>Your Leave Requests</h2>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Requests</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-image: url("{% static 'images/bk.jpg' %}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: #333;
+        }
 
-<table>
-    <thead>
-        <tr>
-            <th>Course</th>
-            <th>Leave Type</th>
-            <th>Reason</th>
-            <th>Start Date</th>
-            <th>End Date</th>
-            <th>Status</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for leave in leave_requests %}
-        <tr>
-            <td>{{ leave.course.course_name }}</td>
-            <td>{{ leave.leave_type }}</td>
-            <td>{{ leave.reason }}</td>
-            <td>{{ leave.start_date }}</td>
-            <td>{{ leave.end_date }}</td>
-            <td>{{ leave.get_status_display }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+        .leave-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 30px;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2c3e50;
+        }
+
+        .page-header h2 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .page-header p {
+            color: #6c757d;
+            font-size: 1.1rem;
+        }
+
+        .leave-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 10px;
+            margin-top: 20px;
+        }
+
+        .leave-table th {
+            background-color: #f8f9fa;
+            padding: 15px;
+            font-weight: 600;
+            color: #2c3e50;
+            text-align: left;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .leave-table td {
+            padding: 15px;
+            background-color: #ffffff;
+            border-top: 1px solid #dee2e6;
+            vertical-align: middle;
+        }
+
+        .leave-table tr {
+            transition: all 0.3s ease;
+        }
+
+        .leave-table tr:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-pending {
+            background-color: #ffeeba;
+            color: #856404;
+        }
+
+        .status-approved {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-rejected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .new-request-btn {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .new-request-btn:hover {
+            background-color: #2980b9;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: #dee2e6;
+        }
+
+        @media (max-width: 768px) {
+            .leave-container {
+                margin: 20px;
+                padding: 15px;
+            }
+
+            .leave-table {
+                display: block;
+                overflow-x: auto;
+            }
+
+            .page-header h2 {
+                font-size: 1.8rem;
+            }
+        }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .leave-container {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="leave-container">
+        <div class="page-header">
+            <h2><i class="fas fa-calendar-check"></i> Your Leave Requests</h2>
+            <p>Track and manage your leave applications</p>
+        </div>
+
+        <a href="{% url 'apply_leave' %}" class="new-request-btn">
+            <i class="fas fa-plus"></i> New Leave Request
+        </a>
+
+        {% if leave_requests %}
+            <div class="table-responsive">
+                <table class="leave-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-tag"></i> Leave Type</th>
+                            <th><i class="fas fa-comment"></i> Reason</th>
+                            <th><i class="fas fa-calendar-plus"></i> Start Date</th>
+                            <th><i class="fas fa-calendar-minus"></i> End Date</th>
+                            <th><i class="fas fa-info-circle"></i> Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for leave in leave_requests %}
+                        <tr>
+                            <td>{{ leave.get_leave_type_display }}</td>
+                            <td>{{ leave.reason }}</td>
+                            <td>{{ leave.start_date|date:"M d, Y" }}</td>
+                            <td>{{ leave.end_date|date:"M d, Y" }}</td>
+                            <td>
+                                <span class="status-badge status-{{ leave.status|lower }}">
+                                    {{ leave.get_status_display }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-folder-open"></i>
+                <h3>No Leave Requests</h3>
+                <p>You haven't submitted any leave requests yet.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

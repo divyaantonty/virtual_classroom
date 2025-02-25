@@ -2780,38 +2780,62 @@ def get_zoom_access_token():
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import LeaveRequest, Course, CustomUser
+from .models import LeaveRequest, CustomUser
+from datetime import datetime
 
 def apply_leave(request):
     custom_user_id = request.session.get('custom_user_id')
     
     if not custom_user_id:
         messages.error(request, 'You need to log in to apply for leave.')
-        return redirect('login')  # Redirect to login if session doesn't have a custom_user_id
+        return redirect('login')
 
-    student = CustomUser.objects.get(id=custom_user_id)  # Fetch the CustomUser instance
+    try:
+        student = CustomUser.objects.get(id=custom_user_id)
 
-    if request.method == 'POST':
-        leave_type = request.POST.get('leave_type')
-        reason = request.POST.get('reason')
-        start_date = request.POST.get('start_date')
-        end_date = request.POST.get('end_date')
-        course_id = request.POST.get('course_id')
+        if request.method == 'POST':
+            leave_type = request.POST.get('leave_type')
+            reason = request.POST.get('reason')
+            start_date = request.POST.get('start_date')
+            end_date = request.POST.get('end_date')
+
+            # Validate dates
+            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+            today = datetime.now().date()
+
+            if start_date_obj < today:
+                messages.error(request, 'Start date cannot be in the past.')
+                return render(request, 'apply_leave.html')
+
+            if end_date_obj < start_date_obj:
+                messages.error(request, 'End date must be after start date.')
+                return render(request, 'apply_leave.html')
+            
+            # Create leave request
+            leave_request = LeaveRequest.objects.create(
+                student=student,
+                leave_type=leave_type,
+                reason=reason,
+                start_date=start_date,
+                end_date=end_date,
+                status='pending'  # Default status
+            )
+            
+            messages.success(request, 'Leave request submitted successfully!')
+            return redirect('student_leave_requests')  # Changed redirect to student_leave_requests
         
-        course = Course.objects.get(id=course_id)
-        leave_request = LeaveRequest.objects.create(
-            student=student,  # Using the CustomUser instance from the session
-            course=course,
-            leave_type=leave_type,
-            reason=reason,
-            start_date=start_date,
-            end_date=end_date
-        )
-        messages.success(request, 'Leave request submitted successfully!')
-        return redirect('student_dashboard')
-    
-    courses = Course.objects.all()  # Assuming students can select a course
-    return render(request, 'apply_leave.html', {'courses': courses})
+        return render(request, 'apply_leave.html')
+
+    except CustomUser.DoesNotExist:
+        messages.error(request, 'Student profile not found.')
+        return redirect('login')
+    except ValueError as e:
+        messages.error(request, 'Invalid date format.')
+        return render(request, 'apply_leave.html')
+    except Exception as e:
+        messages.error(request, f'An error occurred: {str(e)}')
+        return render(request, 'apply_leave.html')
 
 
 from django.shortcuts import render, get_object_or_404
