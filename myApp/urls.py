@@ -210,6 +210,9 @@ urlpatterns = [
     path('edit-note/<int:note_id>/', views.edit_note, name='edit_note'),
     path('delete-note/<int:note_id>/', views.delete_note, name='delete_note'),
     path('download-note-pdf/<int:note_id>/', views.download_note_pdf, name='download_note_pdf'),
+
+    path('view-event-registrations/', views.view_event_registrations, name='view_event_registrations'),
+    path('export-registrations/', views.export_registrations, name='export_registrations'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

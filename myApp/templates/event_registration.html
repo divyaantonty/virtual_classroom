@@ -1,116 +1,244 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Register for {{ event.title }}</title>
+    <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f4;
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image: url("{% static 'images/bk.jpg' %}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
         }
+
         .container {
+            width: 100%;
             max-width: 500px;
-            margin: 0 auto;
-            padding: 20px;
+            margin: 20px;
+            padding: 30px;
             background-color: #fff;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
         }
+
         h2 {
-            color: #333;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-size: 24px;
+            text-align: center;
         }
-        p {
+
+        .event-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .event-info p {
+            margin: 10px 0;
             color: #555;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
+
+        .event-info i {
+            color: #3498db;
+            width: 20px;
+        }
+
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
+
         label {
-            font-weight: bold;
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 500;
         }
+
         input[type="text"] {
             width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
         }
-        button {
-            background-color: #28a745;
-            color: #fff;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
+
+        input[type="text"]:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
         }
-        button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-        .message {
-            margin-top: 20px;
-            color: #e74c3c;
-        }
+
         .error {
-            color: red;
-            margin-top: 10px;
+            color: #e74c3c;
+            font-size: 13px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .message.error {
+            background-color: #fde8e8;
+            color: #e74c3c;
+            border: 1px solid #fab5b5;
+        }
+
+        .message.success {
+            background-color: #e8f8f5;
+            color: #27ae60;
+            border: 1px solid #a8e6cf;
+        }
+
+        .valid-feedback {
+            color: #27ae60;
+            font-size: 13px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        input.valid {
+            border-color: #27ae60;
+        }
+
+        input.invalid {
+            border-color: #e74c3c;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Register for Event: {{ event.title }}</h2>
-        <p><strong>Date:</strong> {{ event.start_time|date:"F j, Y, g:i a" }} - {{ event.end_time|date:"F j, Y, g:i a" }}</p>
-        <p><strong>Description:</strong> {{ event.description }}</p>
+        
+        <div class="event-info">
+            <p><i class="fas fa-calendar-alt"></i> <strong>Date:</strong> {{ event.start_time|date:"F j, Y" }}</p>
+            <p><i class="fas fa-clock"></i> <strong>Time:</strong> {{ event.start_time|date:"g:i a" }} - {{ event.end_time|date:"g:i a" }}</p>
+            <p><i class="fas fa-info-circle"></i> <strong>Description:</strong> {{ event.description }}</p>
+        </div>
 
         {% if messages %}
-            <div class="message">
-                <ul>
-                    {% for message in messages %}
-                        <li>{{ message }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
+            {% for message in messages %}
+                <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
         {% endif %}
 
         {% if event.start_time|date:"Y-m-d" <= "now"|date:"Y-m-d" %}
-            <p class="message">Registration is closed for this event.</p>
+            <div class="message error">Registration is closed for this event.</div>
         {% elif is_registered %}
-            <p class="message">You are already registered for this event.</p>
+            <div class="message error">You are already registered for this event.</div>
         {% else %}
-            <form method="post" action="{% url 'register_event' event.id %}" onsubmit="return validateContactNumber()">
+            <form method="post" action="{% url 'register_event' event.id %}" id="registrationForm">
                 {% csrf_token %}
                 <div class="form-group">
                     <label for="contact_number">Contact Number:</label>
-                    <input type="text" name="contact_number" id="contact_number" maxlength="10" pattern="^[6-9]\d{9}$" title="Please enter a valid 10-digit contact number starting with 6, 7, 8, or 9" required>
+                    <input type="text" name="contact_number" id="contact_number" 
+                           maxlength="10" required>
+                    <div class="error" id="contact_number_error"></div>
+                    <div class="valid-feedback">Contact number is valid!</div>
                 </div>
-                <div class="error" id="contact_number_error"></div>
-                <button type="submit">Register</button>
+                <button type="submit" id="submitBtn" disabled>Register</button>
             </form>
         {% endif %}
     </div>
 
     <script>
-        function validateContactNumber() {
-            const contactNumber = document.getElementById('contact_number').value;
-            const errorElement = document.getElementById('contact_number_error');
-            
-            // Regular expression for validating 10-digit number starting with 6-9
-            const regex = /^[6-9]\d{9}$/;
-            
-            // Clear previous error message
-            errorElement.textContent = '';
+        document.addEventListener('DOMContentLoaded', function() {
+            const contactInput = document.getElementById('contact_number');
+            const errorDiv = document.getElementById('contact_number_error');
+            const validFeedback = document.querySelector('.valid-feedback');
+            const submitBtn = document.getElementById('submitBtn');
 
-            // Check if the contact number is valid
-            if (!regex.test(contactNumber)) {
-                errorElement.textContent = 'Please enter a valid 10-digit contact number starting with 6, 7, 8, or 9.';
-                return false;  // Prevent form submission
+            function validateContactNumber(value) {
+                const regex = /^[6-9]\d{9}$/;
+                if (!value) {
+                    showError('Contact number is required');
+                    return false;
+                } else if (!regex.test(value)) {
+                    showError('Please enter a valid 10-digit number starting with 6-9');
+                    return false;
+                }
+                return true;
             }
 
-            return true;  // Allow form submission
-        }
+            function showError(message) {
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = message;
+                validFeedback.style.display = 'none';
+                contactInput.classList.add('invalid');
+                contactInput.classList.remove('valid');
+                submitBtn.disabled = true;
+            }
+
+            function showSuccess() {
+                errorDiv.style.display = 'none';
+                validFeedback.style.display = 'block';
+                contactInput.classList.remove('invalid');
+                contactInput.classList.add('valid');
+                submitBtn.disabled = false;
+            }
+
+            contactInput.addEventListener('input', function(e) {
+                const isValid = validateContactNumber(this.value);
+                if (isValid) {
+                    showSuccess();
+                }
+            });
+
+            document.getElementById('registrationForm').addEventListener('submit', function(e) {
+                const isValid = validateContactNumber(contactInput.value);
+                if (!isValid) {
+                    e.preventDefault();
+                }
+            });
+        });
     </script>
 </body>
 </html>

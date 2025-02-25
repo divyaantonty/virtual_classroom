@@ -11014,3 +11014,63 @@ def download_note_pdf(request, note_id):
         messages.error(request, f'Error generating PDF: {str(e)}')
         return redirect('view_notes')
 
+from django.shortcuts import render
+from .models import CalendarEvent, EventRegistration
+import csv
+from django.http import HttpResponse
+
+def view_event_registrations(request):
+    teacher_id = request.session.get('teacher_id')
+    if not teacher_id:
+        return redirect('login')
+
+    # Get events created by this teacher
+    events = CalendarEvent.objects.filter(created_by_id=teacher_id)
+    
+    # Filter by selected event
+    selected_event = request.GET.get('event')
+    if selected_event:
+        events = events.filter(id=selected_event)
+
+    # Filter by registration status
+    status = request.GET.get('status')
+    if status:
+        events = events.filter(registrations__status=status)
+
+    context = {
+        'events': events,
+        'selected_event': selected_event,
+        'status': status,
+    }
+    return render(request, 'view_event_registrations.html', context)
+
+def export_registrations(request):
+    event_id = request.GET.get('event')
+    if not event_id:
+        messages.error(request, 'Please select an event to export')
+        return redirect('view_event_registrations')
+
+    try:
+        event = get_object_or_404(CalendarEvent, id=event_id)
+        registrations = event.registrations.all().select_related('user')
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{event.title}_registrations.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['Student Name', 'Email', 'Contact', 'Registration Date', 'Status'])
+
+        for registration in registrations:
+            writer.writerow([
+                f"{registration.user.first_name} {registration.user.last_name}",
+                registration.user.email,
+                registration.contact_number or 'Not provided',
+                registration.registration_date.strftime('%Y-%m-%d %H:%M'),
+                registration.status
+            ])
+
+        return response
+
+    except Exception as e:
+        messages.error(request, f'Error exporting registrations: {str(e)}')
+        return redirect('view_event_registrations')
