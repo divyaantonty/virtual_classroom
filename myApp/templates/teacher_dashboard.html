@@ -95,7 +95,6 @@
             display: flex;
             flex-grow: 1;
             height: calc(100vh - 60px);
-            overflow:hidden;
         }
 
         .dashboard-sidebar {
@@ -104,6 +103,29 @@
             padding: 80px;
             box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
             height: 100%;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #3498db #ffffff;
+        }
+
+        /* Webkit scrollbar styles (for Chrome, Safari, etc) */
+        .dashboard-sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .dashboard-sidebar::-webkit-scrollbar-track {
+            background: #ffffff;
+            border-radius: 4px;
+        }
+
+        .dashboard-sidebar::-webkit-scrollbar-thumb {
+            background-color: #3498db;
+            border-radius: 4px;
+            border: 2px solid #ffffff;
+        }
+
+        .dashboard-sidebar::-webkit-scrollbar-thumb:hover {
+            background-color: #2980b9;
         }
 
         .dashboard-options {
@@ -258,7 +280,7 @@
         <header class="site-navbar js-sticky-header site-navbar-target" role="banner">
             <div class="header-container">
                 <div class="site-logo">
-                    <a href="{% url 'index' %}" class="d-block">
+                    <a href="#" class="d-block">
                         <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid">
                     </a>
                 </div>
@@ -356,7 +378,14 @@
                     </a>
                     <a href="{% url 'whiteboard' %}" class="dashboard-box">
                         <i class="fas fa-chalkboard mr-2"></i>Live Whiteboard
-                    </a>    
+                    </a>
+                    <a href="{% url 'teacher_messages' %}" class="dashboard-box">
+                        <i class="fas fa-envelope mr-2"></i>Messages
+                        {% if unread_messages > 0 %}
+                            <span class="badge badge-light ml-2">{{ unread_messages }}</span>
+                        {% endif %}
+                    </a>
+                    
                 </div>
             </div>
 

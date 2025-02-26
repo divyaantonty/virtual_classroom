@@ -214,6 +214,11 @@ urlpatterns = [
     path('view-event-registrations/', views.view_event_registrations, name='view_event_registrations'),
     path('export-registrations/', views.export_registrations, name='export_registrations'),
 
+    path('teacher_messages/', views.teacher_messages, name='teacher_messages'),
+
+    path('send-teacher-reply/', views.send_teacher_reply, name='send_teacher_reply'),
+
+    path('get-message-history/<int:message_id>/', views.get_message_history, name='get_message_history'),
 
 ]
 if settings.DEBUG:
