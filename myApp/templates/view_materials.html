@@ -540,6 +540,35 @@
             border-color: #f44336;
             color: #b71c1c;
         }
+
+        .ar-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+        }
+
+        .ar-view-btn {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 6px;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .ar-view-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
     </style>
 </head>
 
@@ -636,6 +665,11 @@
                                             </button>
                                             <audio id="audio-{{ material.id }}" style="display: none;"></audio>
                                         {% endif %}
+                                        {% if material.ar_compatible %}
+                                            <button class="ar-view-btn" onclick="initAR('{{ material.id }}', '{{ material.ar_model_type }}')">
+                                                <i class="fas fa-cube"></i> AR View
+                                            </button>
+                                        {% endif %}
                                     </div>
                                 </td>
                             </tr>
@@ -681,6 +715,23 @@
                             </button>
                         </div>
                     </div>
+
+                    <!-- Add AR Modal -->
+                    <div id="arModal" class="ar-modal">
+                        <div id="arInstructions" class="ar-instructions">
+                            <h3>AR View Instructions</h3>
+                            <p>1. Allow camera access when prompted</p>
+                            <p>2. Point your camera at a flat surface</p>
+                            <p>3. Move your device slowly to scan the area</p>
+                            <button onclick="startAR()" class="ar-control-btn">Start AR View</button>
+                        </div>
+
+                        <div id="arScene" style="display: none;">
+                            <!-- AR scene will be loaded here dynamically -->
+                        </div>
+                        
+                        <span class="close-ar" onclick="closeAR()">&times;</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -697,6 +748,8 @@
     <script>
         let currentFileUrl = '';
         let currentDescription = '';
+        let arScriptsLoaded = false;
+        let currentMaterial = null;
 
         function openTranslateModal(fileUrl, description) {
             currentFileUrl = fileUrl;
@@ -865,6 +918,83 @@
                     button.disabled = false;
                 });
         }
+
+        function initAR(materialId, modelType) {
+            currentMaterial = { id: materialId, type: modelType };
+            document.getElementById('arModal').style.display = 'block';
+            document.getElementById('arInstructions').style.display = 'block';
+            
+            // Load AR scripts only if not already loaded
+            if (!arScriptsLoaded) {
+                loadARScripts().then(() => {
+                    console.log('AR scripts loaded successfully');
+                }).catch(error => {
+                    console.error('Error loading AR scripts:', error);
+                });
+            }
+        }
+
+        function loadARScripts() {
+            return new Promise((resolve, reject) => {
+                // Load required scripts dynamically
+                const scripts = [
+                    'https://aframe.io/releases/1.2.0/aframe.min.js',
+                    'https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js',
+                    'https://raw.githack.com/donmccurdy/aframe-extras/master/dist/aframe-extras.loaders.min.js'
+                ];
+
+                let loaded = 0;
+                scripts.forEach(src => {
+                    const script = document.createElement('script');
+                    script.src = src;
+                    script.async = true;
+                    script.onload = () => {
+                        loaded++;
+                        if (loaded === scripts.length) {
+                            arScriptsLoaded = true;
+                            resolve();
+                        }
+                    };
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+            });
+        }
+
+        function startAR() {
+            document.getElementById('arInstructions').style.display = 'none';
+            const arScene = document.getElementById('arScene');
+            arScene.style.display = 'block';
+
+            // Create AR scene dynamically
+            arScene.innerHTML = `
+                <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+                    <a-marker preset="hiro">
+                        <a-entity
+                            id="arContent"
+                            position="0 0 0"
+                            scale="0.05 0.05 0.05"
+                            gltf-model="/static/models/${currentMaterial.type}.gltf">
+                        </a-entity>
+                    </a-marker>
+                    <a-entity camera></a-entity>
+                </a-scene>
+            `;
+        }
+
+        function closeAR() {
+            const arModal = document.getElementById('arModal');
+            const arScene = document.getElementById('arScene');
+            arScene.innerHTML = ''; // Remove AR scene
+            arModal.style.display = 'none';
+            currentMaterial = null;
+        }
+
+        // Add error handling
+        window.addEventListener('camera-error', function() {
+            alert('Camera access is required for AR features. Please grant permission and try again.');
+            closeAR();
+        });
     </script>
 </body>
 

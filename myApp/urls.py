@@ -213,6 +213,8 @@ urlpatterns = [
 
     path('view-event-registrations/', views.view_event_registrations, name='view_event_registrations'),
     path('export-registrations/', views.export_registrations, name='export_registrations'),
+
+
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

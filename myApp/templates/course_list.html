@@ -122,53 +122,198 @@
             overflow-y: auto;
         }
         .course-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            justify-content: space-around;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 40px;
+            padding: 30px;
+            overflow-y: auto;
         }
         .course-item {
-            width: calc(33.333% - 20px);
-            background-color: #fff;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            text-align: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            transition: all 0.4s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .course-item:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+        .course-image-container {
+            position: relative;
+            height: 220px;
+            overflow: hidden;
         }
         .course-item img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s ease;
+        }
+        .course-item:hover img {
+            transform: scale(1.08);
+        }
+        .course-content {
+            padding: 25px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
         .course-item h3 {
-            margin: 10px 0;
-            font-size: 18px;
+            color: #2c3e50;
+            font-size: 1.6rem;
+            font-weight: 600;
+            margin: 0;
+            line-height: 1.3;
         }
         .course-item p {
-            font-size: 14px;
-            color: #333;
+            color: #666;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin: 10px 0;
+        }
+        .course-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .course-info:last-of-type {
+            border-bottom: none;
+        }
+        .course-info i {
+            color: #3498db;
+            font-size: 1.1rem;
+            width: 24px;
+        }
+        .course-info span {
+            color: #555;
+            font-size: 0.95rem;
+        }
+        .btn-edit {
+            margin-top: auto;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-weight: 500;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .btn-edit:not(.disabled) {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+        .btn-edit:not(.disabled):hover {
+            background: linear-gradient(135deg, #2980b9, #2472a4);
+            transform: translateY(-2px);
+        }
+        .no-courses {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            font-size: 1.2rem;
+            animation: fadeIn 0.8s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @media (max-width: 1200px) {
+            .course-list {
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 30px;
+                padding: 20px;
+            }
         }
         @media (max-width: 768px) {
-            .main-content {
+            .course-list {
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 20px;
+                padding: 15px;
+            }
+            .course-image-container {
+                height: 180px;
+            }
+            .course-content {
+                padding: 20px;
+            }
+            .course-item h3 {
+                font-size: 1.4rem;
+            }
+        }
+        .search-filter-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin: 20px;
+            animation: slideDown 0.5s ease-out;
+        }
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .search-box {
+            position: relative;
+            margin-bottom: 15px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 12px 40px 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        .search-box input:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
+            outline: none;
+        }
+        .search-box i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+        }
+        .filter-options {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .filter-options select {
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: white;
+            cursor: pointer;
+            min-width: 150px;
+            transition: all 0.3s ease;
+        }
+        .filter-options select:hover {
+            border-color: #3498db;
+        }
+        .filter-options select:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
+            outline: none;
+        }
+        @media (max-width: 768px) {
+            .filter-options {
                 flex-direction: column;
             }
-            .dashboard-sidebar {
+            .filter-options select {
                 width: 100%;
-                order: 2;
-            }
-            .content-wrapper {
-                order: 1;
-            }
-            .course-item {
-                width: calc(50% - 20px);
-            }
-            .dropdown-content {
-                position: static;
-                display: none;
-            }
-            .dropdown:hover .dropdown-content {
-                display: block;
             }
         }
     </style>    
@@ -186,6 +331,40 @@
             <a href="{% url 'admin_dashboard' %}" class="back-btn">Back to Admin Dashboard</a>
         </div>
     </header>
+
+    <!-- Add this right after the header section -->
+    <div class="search-filter-container">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search courses...">
+            <i class="fas fa-search"></i>
+        </div>
+        
+        <div class="filter-options">
+            <select id="priceFilter">
+                <option value="">Price Range</option>
+                <option value="0-1000">₹0 - ₹1,000</option>
+                <option value="1000-5000">₹1,000 - ₹5,000</option>
+                <option value="5000-10000">₹5,000 - ₹10,000</option>
+                <option value="10000+">₹10,000+</option>
+            </select>
+
+            <select id="statusFilter">
+                <option value="">Course Status</option>
+                <option value="upcoming">Upcoming</option>
+                <option value="ongoing">Ongoing</option>
+                <option value="completed">Completed</option>
+            </select>
+
+            <select id="sortBy">
+                <option value="">Sort By</option>
+                <option value="name">Course Name</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+                <option value="date">Start Date</option>
+                <option value="duration">Duration</option>
+            </select>
+        </div>
+    </div>
 
     <!-- Main content with sidebar -->
     <div class="main-content">
@@ -227,21 +406,50 @@
             <div class="course-list">
                 {% for course in courses %}
                     <div class="course-item">
-                        {% if course.image %}
-                            <img src="{{ course.image.url }}" alt="{{ course.course_name }}">
-                        {% else %}
-                            <img src="{% static 'images/default-course-image.jpg' %}" alt="Default Course Image">
-                        {% endif %}
-                        <h3>{{ course.course_name }}</h3>
-                        <p>{{ course.description }}</p>
-                        <p><strong>Duration:</strong> {{ course.duration }} year</p>
-                        <p><strong>Price:</strong> ₹{{ course.price }}</p>
-                        <p><strong>Start Date:</strong> {{ course.starting_date|date:"F d, Y" }}</p>
-                        <p><strong>End Date:</strong> {{ course.ending_date|date:"F d, Y" }}</p>
-                        <a href="{% url 'edit_course' course.id %}" class="btn btn-warning">Edit</a>
+                        <div class="course-image-container">
+                            {% if course.image %}
+                                <img src="{{ course.image.url }}" alt="{{ course.course_name }}">
+                            {% else %}
+                                <img src="{% static 'images/default-course-image.jpg' %}" alt="Default Course Image">
+                            {% endif %}
+                        </div>
+                        <div class="course-content">
+                            <h3>{{ course.course_name }}</h3>
+                            <p>{{ course.description }}</p>
+                            <div class="course-info">
+                                <i class="fas fa-clock"></i>
+                                <span>{{ course.duration }} year</span>
+                            </div>
+                            <div class="course-info">
+                                <i class="fas fa-rupee-sign"></i>
+                                <span>{{ course.price }}</span>
+                            </div>
+                            <div class="course-info">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span>Start: {{ course.starting_date|date:"F d, Y" }}</span>
+                            </div>
+                            <div class="course-info">
+                                <i class="fas fa-calendar-check"></i>
+                                <span>End: {{ course.ending_date|date:"F d, Y" }}</span>
+                            </div>
+                            
+                            {% now "Y-m-d" as today %}
+                            {% if course.starting_date|date:"Y-m-d" > today %}
+                                <a href="{% url 'edit_course' course.id %}" class="btn-edit">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                            {% else %}
+                                <button class="btn-edit disabled" title="Cannot edit after start date">
+                                    <i class="fas fa-lock"></i> Locked
+                                </button>
+                            {% endif %}
+                        </div>
                     </div>
                 {% empty %}
-                    <p>No courses available at the moment.</p>
+                    <div class="no-courses">
+                        <i class="fas fa-book-open fa-3x"></i>
+                        <p>No courses available at the moment.</p>
+                    </div>
                 {% endfor %}
             </div>
         </div>
@@ -249,5 +457,109 @@
 
     <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script>
+        // Add animation delay for each course item
+        document.addEventListener('DOMContentLoaded', function() {
+            const courseItems = document.querySelectorAll('.course-item');
+            courseItems.forEach((item, index) => {
+                item.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+    </script>
+
+    <!-- Add this JavaScript before the closing body tag -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const priceFilter = document.getElementById('priceFilter');
+        const statusFilter = document.getElementById('statusFilter');
+        const sortBy = document.getElementById('sortBy');
+        const courseItems = document.querySelectorAll('.course-item');
+
+        function filterCourses() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const priceRange = priceFilter.value;
+            const status = statusFilter.value;
+            const sortValue = sortBy.value;
+
+            courseItems.forEach(item => {
+                const courseName = item.querySelector('h3').textContent.toLowerCase();
+                const description = item.querySelector('p').textContent.toLowerCase();
+                const price = parseFloat(item.querySelector('.fa-rupee-sign').nextElementSibling.textContent);
+                const startDate = new Date(item.querySelector('.fa-calendar-alt').nextElementSibling.textContent.split(': ')[1]);
+                const today = new Date();
+
+                // Search filter
+                const matchesSearch = courseName.includes(searchTerm) || 
+                                    description.includes(searchTerm);
+
+                // Price filter
+                let matchesPrice = true;
+                if (priceRange) {
+                    const [min, max] = priceRange.split('-').map(Number);
+                    if (max) {
+                        matchesPrice = price >= min && price <= max;
+                    } else {
+                        matchesPrice = price >= min;
+                    }
+                }
+
+                // Status filter
+                let matchesStatus = true;
+                if (status) {
+                    if (status === 'upcoming') {
+                        matchesStatus = startDate > today;
+                    } else if (status === 'ongoing') {
+                        matchesStatus = startDate <= today;
+                    } else if (status === 'completed') {
+                        const endDate = new Date(item.querySelector('.fa-calendar-check').nextElementSibling.textContent.split(': ')[1]);
+                        matchesStatus = endDate < today;
+                    }
+                }
+
+                item.style.display = matchesSearch && matchesPrice && matchesStatus ? 'block' : 'none';
+            });
+
+            // Sorting
+            const courseArray = Array.from(courseItems);
+            if (sortValue) {
+                courseArray.sort((a, b) => {
+                    switch(sortValue) {
+                        case 'name':
+                            return a.querySelector('h3').textContent.localeCompare(b.querySelector('h3').textContent);
+                        case 'price-low':
+                            return parseFloat(a.querySelector('.fa-rupee-sign').nextElementSibling.textContent) - 
+                                   parseFloat(b.querySelector('.fa-rupee-sign').nextElementSibling.textContent);
+                        case 'price-high':
+                            return parseFloat(b.querySelector('.fa-rupee-sign').nextElementSibling.textContent) - 
+                                   parseFloat(a.querySelector('.fa-rupee-sign').nextElementSibling.textContent);
+                        case 'date':
+                            return new Date(a.querySelector('.fa-calendar-alt').nextElementSibling.textContent.split(': ')[1]) - 
+                                   new Date(b.querySelector('.fa-calendar-alt').nextElementSibling.textContent.split(': ')[1]);
+                        case 'duration':
+                            return parseFloat(a.querySelector('.fa-clock').nextElementSibling.textContent) - 
+                                   parseFloat(b.querySelector('.fa-clock').nextElementSibling.textContent);
+                    }
+                });
+
+                const courseList = document.querySelector('.course-list');
+                courseArray.forEach(item => courseList.appendChild(item));
+            }
+        }
+
+        // Add event listeners
+        searchInput.addEventListener('input', filterCourses);
+        priceFilter.addEventListener('change', filterCourses);
+        statusFilter.addEventListener('change', filterCourses);
+        sortBy.addEventListener('change', filterCourses);
+
+        // Add debounce for search
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(filterCourses, 300);
+        });
+    });
+    </script>
 </body>
 </html>
