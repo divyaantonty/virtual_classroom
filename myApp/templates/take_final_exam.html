@@ -64,9 +64,101 @@
             -ms-user-select: text;
             user-select: text;
         }
+
+        #webcam-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 200px;
+            height: 150px;
+            background-color: #000;
+            border: 2px solid #dc3545;
+            border-radius: 5px;
+            z-index: 1000;
+        }
+        
+        #webcam-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        #motion-canvas {
+            display: none;
+        }
+
+        .warning-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(220, 53, 69, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 24px;
+            z-index: 2000;
+            display: none;
+            text-align: center;
+            animation: fadeInOut 2s ease-in-out;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        #face-guide {
+            position: fixed;
+            top: 20px;
+            right: 230px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .face-guide-show {
+            display: block !important;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .is-invalid {
+            border-color: #dc3545;
+            background-color: #fff8f8;
+        }
+        
+        .question-container {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+        }
     </style>
 </head>
 <body>
+    <div id="webcam-container">
+        <video id="webcam-video" autoplay playsinline></video>
+    </div>
+    <div id="face-guide">
+        <i class="fas fa-arrows-alt"></i> Please keep your face within the frame
+    </div>
+    <canvas id="motion-canvas" width="320" height="240"></canvas>
+    <audio id="warning-sound">
+        <source src="{% static 'sounds/warning.mp3' %}" type="audio/mpeg">
+        <source src="{% static 'sounds/warning.wav' %}" type="audio/wav">
+    </audio>
+    <div id="warning-message" class="warning-message"></div>
     <div class="container mt-4">
         <div class="card">
             <div class="card-header bg-primary text-white">
@@ -183,15 +275,129 @@
 
         // Monitor tab visibility
         let warningCount = 0;
+        const maxWarnings = 3;
+        let previousImageData = null;
+        let noMovementFrames = 0;
+        const noMovementThreshold = 30; // 3 seconds of no movement
+        
+        // Webcam handling
+        async function setupWebcam() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: true,
+                    audio: false 
+                });
+                const videoElement = document.getElementById('webcam-video');
+                videoElement.srcObject = stream;
+                
+                // Check both movement and face visibility
+                setInterval(() => {
+                    checkMovement();
+                    checkFaceVisibility();
+                }, 1000);
+            } catch (err) {
+                showWarning("❌ Webcam access required! Please enable and refresh.");
+                setTimeout(() => {
+                    document.getElementById('examForm').submit();
+                }, 3000);
+            }
+        }
+
+        // Initialize warning sound
+        const warningSound = document.getElementById('warning-sound');
+        warningSound.volume = 0.8; // Set volume to 80%
+
+        function createWarningSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            function playTone(frequency, duration) {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = frequency;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.8, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + duration);
+            }
+            
+            return function() {
+                playTone(880, 0.3); // Play A5 note for 0.3 seconds
+                setTimeout(() => playTone(587.33, 0.3), 400); // Play D5 note after 0.4 seconds
+            };
+        }
+
+        const playWarningSound = createWarningSound();
+
+        // Movement detection
+        function checkMovement() {
+            const video = document.getElementById('webcam-video');
+            const canvas = document.getElementById('motion-canvas');
+            const context = canvas.getContext('2d');
+
+            // Draw current video frame
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Get image data
+            const currentImageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            
+            if (previousImageData) {
+                let movementDetected = false;
+                const threshold = 30; // Sensitivity threshold
+                let differences = 0;
+                
+                // Compare pixels
+                for (let i = 0; i < currentImageData.data.length; i += 4) {
+                    const diff = Math.abs(currentImageData.data[i] - previousImageData.data[i]);
+                    if (diff > threshold) {
+                        differences++;
+                    }
+                }
+                
+                // If enough pixels changed, movement is detected
+                if (differences > (canvas.width * canvas.height * 0.01)) { // 1% of pixels changed
+                    movementDetected = true;
+                    noMovementFrames = 0;
+                } else {
+                    noMovementFrames++;
+                    
+                    // If no movement for too long, issue warning
+                    if (noMovementFrames >= noMovementThreshold) {
+                        handleViolation('movement');
+                        noMovementFrames = 0;
+                    }
+                }
+            }
+            
+            previousImageData = currentImageData;
+        }
+
+        // Update the window.onload function
+        window.onload = async function() {
+            enableFullScreen();
+            document.body.style.userSelect = 'none';
+            resetInactivityTimer();
+            await setupWebcam();
+        };
+
+        // Clean up webcam on form submit
+        document.getElementById('examForm').addEventListener('submit', () => {
+            const video = document.getElementById('webcam-video');
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+        });
+
+        // Update visibility change handler
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
-                warningCount++;
-                if (warningCount >= 3) {
-                    alert("Multiple tab switches detected. Submitting exam...");
-                    document.getElementById('examForm').submit();
-                } else {
-                    alert(`Warning: Switching tabs is not allowed! Warning ${warningCount}/3`);
-                }
+                handleViolation('tab');
             }
         });
 
@@ -216,17 +422,6 @@
             document.addEventListener(event, resetInactivityTimer);
         });
 
-        // Initialize security measures when page loads
-        window.onload = function() {
-            enableFullScreen();
-            
-            // Disable text selection
-            document.body.style.userSelect = 'none';
-            
-            // Start monitoring
-            resetInactivityTimer();
-        };
-
         // Prevent form resubmission
         if (window.history.replaceState) {
             window.history.replaceState(null, null, window.location.href);
@@ -236,6 +431,173 @@
         window.onbeforeunload = function() {
             return "Are you sure you want to leave? Your exam progress will be lost.";
         };
+
+        let faceOutOfFrameTimeout;
+        let consecutiveNoFaceFrames = 0;
+        const FACE_DETECTION_THRESHOLD = 3; // Number of consecutive frames before warning
+
+        function checkFaceVisibility() {
+            const video = document.getElementById('webcam-video');
+            const canvas = document.getElementById('motion-canvas');
+            const context = canvas.getContext('2d');
+            const faceGuide = document.getElementById('face-guide');
+            
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            
+            // Calculate brightness for different regions of the frame
+            const regions = {
+                center: {brightness: 0, count: 0},
+                top: {brightness: 0, count: 0},
+                bottom: {brightness: 0, count: 0},
+                left: {brightness: 0, count: 0},
+                right: {brightness: 0, count: 0}
+            };
+
+            const width = canvas.width;
+            const height = canvas.height;
+
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const i = (y * width + x) * 4;
+                    const brightness = (imageData.data[i] + imageData.data[i + 1] + imageData.data[i + 2]) / 3;
+
+                    // Define regions
+                    if (x > width * 0.3 && x < width * 0.7 && y > height * 0.3 && y < height * 0.7) {
+                        regions.center.brightness += brightness;
+                        regions.center.count++;
+                    }
+                    if (y < height * 0.3) {
+                        regions.top.brightness += brightness;
+                        regions.top.count++;
+                    }
+                    if (y > height * 0.7) {
+                        regions.bottom.brightness += brightness;
+                        regions.bottom.count++;
+                    }
+                    if (x < width * 0.3) {
+                        regions.left.brightness += brightness;
+                        regions.left.count++;
+                    }
+                    if (x > width * 0.7) {
+                        regions.right.brightness += brightness;
+                        regions.right.count++;
+                    }
+                }
+            }
+
+            // Calculate average brightness for each region
+            for (let region in regions) {
+                regions[region].average = regions[region].brightness / regions[region].count;
+            }
+
+            // Detect face position issues
+            let facePosition = '';
+            if (regions.center.average < 40) {
+                consecutiveNoFaceFrames++;
+                
+                if (regions.top.average > regions.center.average * 1.5) {
+                    facePosition = 'too high';
+                } else if (regions.bottom.average > regions.center.average * 1.5) {
+                    facePosition = 'too low';
+                } else if (regions.left.average > regions.center.average * 1.5) {
+                    facePosition = 'too far left';
+                } else if (regions.right.average > regions.center.average * 1.5) {
+                    facePosition = 'too far right';
+                } else {
+                    facePosition = 'not visible';
+                }
+
+                // Show guide message
+                faceGuide.textContent = `⚠️ Face ${facePosition}! Please adjust your position`;
+                faceGuide.classList.add('face-guide-show');
+
+                // Clear any existing timeout
+                if (faceOutOfFrameTimeout) {
+                    clearTimeout(faceOutOfFrameTimeout);
+                }
+
+                // Set new timeout for warning
+                if (consecutiveNoFaceFrames >= FACE_DETECTION_THRESHOLD) {
+                    handleViolation('face', facePosition);
+                    consecutiveNoFaceFrames = 0;
+                }
+            } else {
+                consecutiveNoFaceFrames = 0;
+                faceGuide.classList.remove('face-guide-show');
+            }
+        }
+
+        function showWarning(message) {
+            const warningElement = document.getElementById('warning-message');
+            warningElement.textContent = message;
+            warningElement.style.display = 'block';
+            
+            playWarningSound();
+            
+            // Hide the message after 3 seconds
+            setTimeout(() => {
+                warningElement.style.display = 'none';
+            }, 3000);
+        }
+
+        function handleViolation(violationType, details = '') {
+            warningCount++;
+            let message;
+            
+            switch(violationType) {
+                case 'face':
+                    message = `⚠️ WARNING ${warningCount}/3: Face ${details || 'not detected'}! Please stay visible.`;
+                    break;
+                case 'tab':
+                    message = `⚠️ WARNING ${warningCount}/3: Tab switching detected! Stay on exam page.`;
+                    break;
+                case 'fullscreen':
+                    message = `⚠️ WARNING ${warningCount}/3: Exit from fullscreen detected!`;
+                    break;
+                case 'movement':
+                    message = `⚠️ WARNING ${warningCount}/3: No movement detected! Please show signs of presence.`;
+                    break;
+                default:
+                    message = `⚠️ WARNING ${warningCount}/3: Violation detected!`;
+            }
+
+            showWarning(message);
+
+            if (warningCount >= maxWarnings) {
+                setTimeout(() => {
+                    showWarning("❌ Too many violations! Submitting exam...");
+                    setTimeout(() => {
+                        document.getElementById('examForm').submit();
+                    }, 2000);
+                }, 1000);
+            }
+        }
+
+        document.getElementById('examForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Check if all required fields are filled
+            const textareas = this.querySelectorAll('textarea[required]');
+            let allFilled = true;
+            
+            textareas.forEach(textarea => {
+                if (!textarea.value.trim()) {
+                    allFilled = false;
+                    textarea.classList.add('is-invalid');
+                } else {
+                    textarea.classList.remove('is-invalid');
+                }
+            });
+            
+            if (!allFilled) {
+                alert('Please answer all questions before submitting.');
+                return;
+            }
+            
+            // If all validations pass, submit the form
+            this.submit();
+        });
     </script>
 </body>
 </html>

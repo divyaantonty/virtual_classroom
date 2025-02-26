@@ -6350,30 +6350,11 @@ def upload_material(request):
     courses = Course.objects.filter(id__in=assigned_courses)
     return render(request, 'upload_material.html', {'courses': courses})
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.utils import timezone
+from django.shortcuts import render, redirect, get_object_or_404  # type: ignore
+from django.contrib import messages  # type: ignore
+from .models import Material, CustomUser, Enrollment
 from datetime import datetime
-from .models import CustomUser, Enrollment, Material
-
-def is_ar_compatible(file_type):
-    """
-    Determine if a file type is compatible with AR viewing
-    """
-    ar_compatible_types = {
-        'pdf': 'document',
-        'doc': 'document',
-        'docx': 'document',
-        'ppt': 'presentation',
-        'pptx': 'presentation',
-        'jpg': 'image',
-        'jpeg': 'image',
-        'png': 'image',
-        'mp4': 'video',
-        'mov': 'video',
-        'txt': 'text'
-    }
-    return ar_compatible_types.get(file_type.lower(), 'default')
+from django.utils import timezone
 
 def view_materials(request):
     # Check if a CustomUser (student) is logged in by checking the session
@@ -6381,7 +6362,7 @@ def view_materials(request):
     
     if not custom_user_id:
         messages.error(request, 'You must be logged in as a student to view materials.')
-        return redirect('login')
+        return redirect('login')  # Redirect to login page if no session
 
     # Fetch the CustomUser (student) object using the session ID
     custom_user = get_object_or_404(CustomUser, id=custom_user_id)
@@ -6391,7 +6372,7 @@ def view_materials(request):
     
     if not enrollments:
         messages.error(request, 'You are not registered for any course.')
-        return redirect('student_dashboard')
+        return redirect('student_dashboard')  # Redirect if no course is associated
 
     # Prepare a list to hold materials that meet the enrollment criteria
     materials = []
@@ -6402,48 +6383,18 @@ def view_materials(request):
         if enrollment.enrollment_time:
             enrollment_datetime = datetime.combine(enrollment.enrollment_date, enrollment.enrollment_time)
         else:
+            # Fallback if time is not present (you may adjust this as needed)
             enrollment_datetime = timezone.make_aware(datetime.combine(enrollment.enrollment_date, datetime.min.time()))
         
         # Make the combined datetime timezone-aware
         enrollment_datetime = timezone.make_aware(enrollment_datetime)
         
         # Fetch materials related to the course and filter by the enrollment datetime
-        course_materials = Material.objects.filter(
-            course=enrollment.course, 
-            uploaded_at__gte=enrollment_datetime
-        )
-
-        # Add AR compatibility information to each material
-        for material in course_materials:
-            # Get file extension from the material file
-            file_extension = material.file.name.split('.')[-1] if material.file else ''
-            
-            # Add AR-related attributes to the material object
-            material.ar_compatible = bool(is_ar_compatible(file_extension))
-            material.ar_model_type = is_ar_compatible(file_extension)
-            material.ar_scale = "0.05 0.05 0.05"  # Default scale
-            
-            # Add custom AR settings based on material type
-            if material.ar_model_type == 'document':
-                material.ar_scale = "0.1 0.1 0.1"
-            elif material.ar_model_type == 'image':
-                material.ar_scale = "0.08 0.08 0.08"
-            elif material.ar_model_type == 'video':
-                material.ar_scale = "0.15 0.15 0.15"
-
+        course_materials = Material.objects.filter(course=enrollment.course, uploaded_at__gte=enrollment_datetime)
         materials.extend(course_materials)
 
-    # Sort materials by upload date (newest first)
-    materials.sort(key=lambda x: x.uploaded_at, reverse=True)
-
-    context = {
-        'materials': materials,
-        'ar_enabled': True,  # Flag to enable AR features in template
-        'student': custom_user,
-        'ar_marker_pattern': 'hiro',  # Default AR marker pattern
-    }
-
-    return render(request, 'view_materials.html', context)
+    # Render the materials in the template
+    return render(request, 'view_materials.html', {'materials': materials})
 
 # views.py
 from .models import Material, Parent, CustomUser
@@ -9644,8 +9595,11 @@ def ping(request):
 def submit_exam(request, exam_id):
     exam = get_object_or_404(FinalExam, id=exam_id)
     
+    # Get all questions for this exam
+    questions = FinalExamQuestion.objects.filter(exam=exam)
+    
     total_marks = 0
-    for question in questions:
+    for question in questions:  # Changed from 'for question in question:'
         answer = request.POST.get(f'answer_{question.id}')
         
         # Check if answer exists
