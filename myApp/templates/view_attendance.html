@@ -182,11 +182,8 @@
         .dashboard-content {
             flex-grow: 1;
             padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            height: calc(100vh - 60px);
             overflow-y: auto;
-
         }
 
         /* Existing styles for profile content */
@@ -284,13 +281,276 @@
             }
         }
         .content-wrapper {
-            background-color: rgba(255, 255, 255, 0.9);
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 20px;
-            max-width: 800px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 30px;
             width: 100%;
+            max-width: 1200px;
             margin: 0 auto;
+            position: relative;
+        }
+
+        .page-header {
+            position: sticky;
+            top: 0;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 20px 0;
+            margin-bottom: 30px;
+            z-index: 100;
+            border-bottom: 2px solid rgba(52, 152, 219, 0.1);
+        }
+
+        .filter-section {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: rgba(52, 152, 219, 0.05);
+            border-radius: 10px;
+        }
+
+        .filter-section form {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .filter-section label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .filter-section select {
+            min-width: 300px;
+        }
+
+        .content-wrapper h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        .content-wrapper h1::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            animation: widthGrow 0.8s ease-out;
+        }
+
+        form {
+            margin-bottom: 30px;
+            text-align: center;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        select {
+            padding: 12px 20px;
+            border: 2px solid #3498db;
+            border-radius: 25px;
+            font-size: 1rem;
+            width: 300px;
+            background-color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        select:hover {
+            border-color: #2ecc71;
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.2);
+        }
+
+        .attendance-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 20px;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        .attendance-table th {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 15px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        .attendance-table tr {
+            transition: all 0.3s ease;
+        }
+
+        .attendance-table tr:nth-child(even) {
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+
+        .attendance-table tr:hover {
+            background-color: rgba(52, 152, 219, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .attendance-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .status-icon {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 8px;
+            animation: bounceIn 0.8s ease;
+        }
+
+        .status-present {
+            color: #2ecc71;
+            padding: 5px 10px;
+            border-radius: 15px;
+            background-color: rgba(46, 204, 113, 0.1);
+        }
+
+        .status-present i {
+            margin-right: 5px;
+            animation: pulseGreen 2s infinite;
+        }
+
+        .status-absent {
+            color: #e74c3c;
+            padding: 5px 10px;
+            border-radius: 15px;
+            background-color: rgba(231, 76, 60, 0.1);
+        }
+
+        .status-absent i {
+            margin-right: 5px;
+            animation: pulseRed 2s infinite;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.2);
+        }
+
+        .back-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.3);
+            color: white;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes bounceIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.3);
+            }
+            50% {
+                opacity: 0.9;
+                transform: scale(1.1);
+            }
+            80% {
+                opacity: 1;
+                transform: scale(0.89);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes widthGrow {
+            from { width: 0; }
+            to { width: 100px; }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: #95a5a6;
+            margin-bottom: 15px;
+            display: block;
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes pulseGreen {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes pulseRed {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        /* Table container with scroll */
+        .table-container {
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+
+        .attendance-table {
+            min-width: 800px; /* Ensure minimum width for better mobile view */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .filter-section form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-section select {
+                width: 100%;
+                min-width: unset;
+            }
+
+            .page-header {
+                position: relative;
+            }
         }
     </style>
 </head>
@@ -302,12 +562,14 @@
                 <div class="site-logo">
                     <img src="{% static 'images/logo.png' %}" alt="Logo">
                 </div>
-                <h1 class="dashboard-heading">Teacher Dashboard</h1>
+                <h2 class="dashboard-heading">Teacher Dashboard</h2>
                 <div class="profile-dropdown">
-                    <span>Welcome, {{ request.user.username }}</span>
+                    <a href="#" class="nav-link text-right d-flex align-items-center">
+                        <i class="fas fa-user-circle mr-2"></i>
+                        <span>{{ first_name }} {{ last_name }}</span>
+                    </a>
                     <div class="profile-dropdown-content">
-                        <a href="{% url 'view_profile' %}">View Profile</a>
-                        <a href="{% url 'logout' %}">Logout</a>
+                        <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
                     </div>
                 </div>
             </div>
@@ -383,58 +645,96 @@
                 </div>
             </div>
 
-            <!-- Main Content -->
             <div class="dashboard-content">
                 <div class="content-wrapper">
-                    <h1>Attendance Records</h1>
+                    <div class="page-header">
+                        <h1>
+                            <i class="fas fa-clipboard-check mr-2" style="color: #3498db;"></i>
+                            Attendance Records
+                        </h1>
 
-                    <form method="get">
-                        <label for="class_schedule_id">Select Class Schedule:</label>
-                        <select name="class_schedule_id" id="class_schedule_id" onchange="this.form.submit()">
-                            <option value="">-- Select Class Schedule --</option>
-                            {% for schedule in class_schedules %}
-                                <option value="{{ schedule.id }}" {% if schedule.id == selected_class_schedule %}selected{% endif %}>
-                                {{ schedule.course_name }} - {{ schedule.date }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </form>
+                        <div class="filter-section">
+                            <form method="get">
+                                <label for="class_schedule_id">
+                                    <i class="fas fa-calendar-alt mr-2"></i>
+                                    Select Class Schedule:
+                                </label>
+                                <select name="class_schedule_id" id="class_schedule_id" onchange="this.form.submit()">
+                                    <option value="">-- Select Class Schedule --</option>
+                                    {% for schedule in class_schedules %}
+                                        <option value="{{ schedule.id }}" {% if schedule.id == selected_class_schedule %}selected{% endif %}>
+                                            {{ schedule.course_name }} - {{ schedule.date }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </form>
+                        </div>
+                    </div>
 
                     {% if course_name %}
-                        <h2>Course: {{ course_name }}</h2>
+                        <h2 class="course-title">
+                            <i class="fas fa-book mr-2" style="color: #2ecc71;"></i>
+                            Course: {{ course_name }}
+                        </h2>
                     {% endif %}
 
-                    {% if attendance_records %}
-                    <table>
-                        <thead>
-                            <tr style="background-color: #f2f2f2;">
-                                <th style="padding: 12px; border: 1px solid #ddd;">Student</th>
-                                <th style="padding: 12px; border: 1px solid #ddd;">Status</th>
-                                <th style="padding: 12px; border: 1px solid #ddd;">Check-in Time</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for record in attendance_records %}
-                                <tr>
-                                    <td style="padding: 12px; border: 1px solid #ddd;">{{ record.student.first_name }} {{ record.student.last_name }}</td>
-                                    <td style="padding: 12px; border: 1px solid #ddd;">{{ record.status }}</td>
-                                    <td style="padding: 12px; border: 1px solid #ddd;">
-                                        {% if record.check_in_time %}
-                                            {{ record.check_in_time|date:"d M Y, H:i" }}
-                                        {% else %}
-                                            N/A
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    
-                    {% else %}
-                        <p>No attendance records found for the selected class schedule.</p>
-                    {% endif %}
+                    <div class="table-container">
+                        {% if attendance_records %}
+                            <table class="attendance-table">
+                                <thead>
+                                    <tr>
+                                        <th><i class="fas fa-user mr-2"></i>Student</th>
+                                        <th><i class="fas fa-check-circle mr-2"></i>Status</th>
+                                        <th><i class="fas fa-clock mr-2"></i>Check-in Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in attendance_records %}
+                                        <tr>
+                                            <td>
+                                                <span class="status-icon">
+                                                    <i class="fas fa-user-graduate"></i>
+                                                </span>
+                                                {{ record.student.first_name }} {{ record.student.last_name }}
+                                            </td>
+                                            <td>
+                                                {% if record.status == 'present' or record.status == 'Present' %}
+                                                    <span class="status-icon status-present">
+                                                        <i class="fas fa-check-circle"></i>
+                                                        Present
+                                                    </span>
+                                                {% else %}
+                                                    <span class="status-icon status-absent">
+                                                        <i class="fas fa-times-circle"></i>
+                                                        Absent
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="status-icon">
+                                                    <i class="fas fa-clock"></i>
+                                                </span>
+                                                {% if record.check_in_time %}
+                                                    {{ record.check_in_time|date:"d M Y, H:i" }}
+                                                {% else %}
+                                                    N/A
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <div class="empty-state">
+                                <i class="fas fa-clipboard-list"></i>
+                                <p>No attendance records found for the selected class schedule.</p>
+                            </div>
+                        {% endif %}
+                    </div>
 
-                    <a href="{% url 'teacher_dashboard' %}" class="back-link">Back to Teacher Dashboard</a>
+                    <a href="{% url 'teacher_dashboard' %}" class="back-link">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+                    </a>
                 </div>
             </div>
         </div>

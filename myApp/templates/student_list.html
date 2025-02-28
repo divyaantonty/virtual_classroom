@@ -284,13 +284,223 @@
             }
         }
         .content-wrapper {
-            background-color: rgba(255, 255, 255, 0.9);
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 20px;
-            max-width: 800px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 1000px;
             width: 100%;
             margin: 0 auto;
+            animation: slideIn 0.6s ease-out;
+        }
+
+        .content-wrapper h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        .content-wrapper h1::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            animation: widthGrow 0.8s ease-out;
+        }
+
+        .student-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 20px;
+        }
+
+        .student-table th {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 15px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            border: none;
+        }
+
+        .student-table tr {
+            transition: all 0.3s ease;
+        }
+
+        .student-table tr:nth-child(even) {
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+
+        .student-table tr:hover {
+            background-color: rgba(52, 152, 219, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .student-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.2);
+        }
+
+        .back-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.3);
+            color: white;
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes widthGrow {
+            from {
+                width: 0;
+            }
+            to {
+                width: 100px;
+            }
+        }
+
+        /* Row animation for table entries */
+        .student-table tbody tr {
+            opacity: 0;
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Fixed animation delays for rows */
+        .student-table tbody tr:nth-child(1) { animation-delay: 0.1s; }
+        .student-table tbody tr:nth-child(2) { animation-delay: 0.2s; }
+        .student-table tbody tr:nth-child(3) { animation-delay: 0.3s; }
+        .student-table tbody tr:nth-child(4) { animation-delay: 0.4s; }
+        .student-table tbody tr:nth-child(5) { animation-delay: 0.5s; }
+        .student-table tbody tr:nth-child(6) { animation-delay: 0.6s; }
+        .student-table tbody tr:nth-child(7) { animation-delay: 0.7s; }
+        .student-table tbody tr:nth-child(8) { animation-delay: 0.8s; }
+        .student-table tbody tr:nth-child(9) { animation-delay: 0.9s; }
+        .student-table tbody tr:nth-child(10) { animation-delay: 1s; }
+
+        /* Empty state styling */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            font-style: italic;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.6;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0.6;
+            }
+        }
+
+        /* Student Icon Animation Styles */
+        .student-icon {
+            display: inline-block;
+            margin-right: 10px;
+            animation: bounceIn 1s ease;
+        }
+
+        .student-icon i {
+            color: #3498db;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        tr:hover .student-icon i {
+            transform: scale(1.2) rotate(10deg);
+            color: #2ecc71;
+        }
+
+        .student-name-cell {
+            display: flex;
+            align-items: center;
+        }
+
+        @keyframes bounceIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.3);
+            }
+            50% {
+                opacity: 0.9;
+                transform: scale(1.1);
+            }
+            80% {
+                opacity: 1;
+                transform: scale(0.89);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Random color variations for student icons */
+        .student-icon:nth-child(3n+1) i { color: #3498db; }
+        .student-icon:nth-child(3n+2) i { color: #e74c3c; }
+        .student-icon:nth-child(3n+3) i { color: #2ecc71; }
+
+        /* Empty state icon animation */
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            display: block;
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
         }
     </style>
 </head>
@@ -388,33 +598,58 @@
                 <div class="content-wrapper">
                     <h1>Student List</h1>
             
-                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <table class="student-table">
                         <thead>
-                            <tr style="background-color: #f2f2f2;">
-                                <th style="padding: 12px; border: 1px solid #ddd;">Student Name</th>
-                                <th style="padding: 12px; border: 1px solid #ddd;">Student Email</th>
-                                <th style="padding: 12px; border: 1px solid #ddd;">Course Name</th>
-                                <th style="padding: 12px; border: 1px solid #ddd;">Enrollment Date</th>
+                            <tr>
+                                <th>Student Name</th>
+                                <th>Student Email</th>
+                                <th>Course Name</th>
+                                <th>Enrollment Date</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% if enrolled_students %}
                                 {% for enrollment in enrolled_students %}
                                     <tr>
-                                        <td style="padding: 12px; border: 1px solid #ddd;">{{ enrollment.student.first_name }} {{ enrollment.student.last_name }}</td>
-                                        <td style="padding: 12px; border: 1px solid #ddd;">{{ enrollment.student.email }}</td>
-                                        <td style="padding: 12px; border: 1px solid #ddd;">{{ enrollment.course.course_name }}</td>
-                                        <td style="padding: 12px; border: 1px solid #ddd;">{{ enrollment.enrollment_date|date:"d M Y" }}</td>
+                                        <td class="student-name-cell">
+                                            <span class="student-icon">
+                                                <i class="fas fa-user-graduate"></i>
+                                            </span>
+                                            {{ enrollment.student.first_name }} {{ enrollment.student.last_name }}
+                                        </td>
+                                        <td>
+                                            <span class="student-icon">
+                                                <i class="fas fa-envelope"></i>
+                                            </span>
+                                            {{ enrollment.student.email }}
+                                        </td>
+                                        <td>
+                                            <span class="student-icon">
+                                                <i class="fas fa-book"></i>
+                                            </span>
+                                            {{ enrollment.course.course_name }}
+                                        </td>
+                                        <td>
+                                            <span class="student-icon">
+                                                <i class="fas fa-calendar-alt"></i>
+                                            </span>
+                                            {{ enrollment.enrollment_date|date:"d M Y" }}
+                                        </td>
                                     </tr>
                                 {% endfor %}
                             {% else %}
                                 <tr>
-                                    <td colspan="4" style="padding: 12px; border: 1px solid #ddd; text-align: center;">No students are currently enrolled in the courses assigned to you.</td>
+                                    <td colspan="4" class="empty-state">
+                                        <i class="fas fa-user-graduate"></i>
+                                        No students are currently enrolled in the courses assigned to you.
+                                    </td>
                                 </tr>
                             {% endif %}
                         </tbody>
                     </table>
-                    <a href="{% url 'teacher_dashboard' %}" class="back-link">Back to Teacher Dashboard</a>
+                    <a href="{% url 'teacher_dashboard' %}" class="back-link">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+                    </a>
                 </div>
             </div>
                 </div>

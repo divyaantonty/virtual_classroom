@@ -143,15 +143,12 @@ AUTH_USER_MODEL = 'myApp.CustomUser'
 LOGIN_URL = '/login/' 
 
 
-ASGI_APPLICATION = 'myproject.asgi.application'
+ASGI_APPLICATION = 'myproject.routing.application'
 
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
-        },
-    },
+        'BACKEND': 'channels.layers.InMemoryChannelLayer'
+    }
 }
 
 

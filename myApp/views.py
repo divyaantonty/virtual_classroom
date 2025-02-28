@@ -6218,6 +6218,6226 @@ class CustomPasswordResetCompleteView(PasswordResetCompleteView):
 
 
 from django.shortcuts import render, redirect
+import json
+import uuid
+import re
+from django.shortcuts import render, redirect
+from django.contrib.auth.hashers import make_password
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib import messages
+from django.utils.crypto import get_random_string
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
+import requests
+from .models import CustomUser, Course, FinalExam, FinalExamQuestion, Parent, TeacherMessage, TeacherStudent, Material, MaterialSummary
+import cv2
+import numpy as np
+from datetime import datetime, timedelta
+import os
+from django.shortcuts import render
+from django.http import JsonResponse
+from .models import Attendance
+import base64
+from transformers import MarianMTModel, MarianTokenizer
+import torch
+from .models import StudentFaceData
+from django.views.decorators.csrf import csrf_exempt
+from scipy.spatial.distance import cosine
+from django.shortcuts import render, redirect
+from .models import ClassSchedule
+from django.utils import timezone
+import mediapipe as mp
+from django.core.files.base import ContentFile
+from PIL import Image
+import io
+from skimage.metrics import structural_similarity as ssim  # Add this import
+from ml_code.create_db import create_data
+from ml_code.face_recognition import face_recognize
+from django.core.paginator import Paginator
+from .models import ParentTeacherMessage, Teacher, Parent
+from django.db.models import Q
+from django.utils import timezone
+from .models import Course, WhiteboardShare
+from django.http import JsonResponse
+from .models import EventSuggestion, CalendarEvent
+from django.views.decorators.http import require_POST
+from .models import MindMap
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import ensure_csrf_cookie
+import os
+from dotenv import load_dotenv
+from gtts import gTTS
+from django.http import FileResponse, HttpResponse
+from django.shortcuts import get_object_or_404
+from .models import Material
+import PyPDF2
+import docx
+import tempfile
+from transformers import SpeechT5Processor, SpeechT5ForTextToSpeech, SpeechT5HifiGan
+import soundfile as sf
+from datasets import load_dataset
+import pyttsx3
+import threading
+from .models import TeacherNote, Course
+from django.contrib import messages
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from io import BytesIO
+from html import unescape
+import re
+from reportlab.pdfgen import canvas
+from io import BytesIO
+from django.core.files.base import ContentFile
+# Load environment variables
+load_dotenv()
+def register(request):
+    if request.method == 'POST':
+        # Extract form data from request.POST
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        email = request.POST.get('email')
+        contact = request.POST.get('contact')
+        date_of_birth = request.POST.get('date_of_birth')
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+       
+
+        # Perform basic validation
+        if not all([first_name, last_name, email, contact, date_of_birth, username, password]):
+            messages.error(request, 'Please fill out all fields.')
+            return render(request, 'register.html')
+
+        if not username.isalnum():
+            messages.error(request, "Username should contain only alphabets or numbers.")
+            return redirect('register')
+
+        # Check if the username or email is unique for the student
+        if CustomUser.objects.filter(username=username).exists():
+            messages.error(request, 'Username is already taken.')
+            return render(request, 'register.html')
+
+        if CustomUser.objects.filter(email=email).exists():
+            messages.error(request, 'Email is already registered.')
+            return render(request, 'register.html')
+
+        # Validate email format
+        
+        # Validate password complexity
+       
+
+
+        # Create and save student user instance
+        student_user = CustomUser(
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            contact=contact,
+            date_of_birth=date_of_birth,
+            password=make_password(password),
+            is_active=True,  # Ensure the user is active upon registration
+        )
+        student_user.save()
+
+        # Auto-generate a unique parent username using UUID
+        parent_username = f'parent_{uuid.uuid4().hex[:8]}'  # Generate an 8-character unique username
+
+        # Generate a random secure password for the parent
+        parent_password = get_random_string(12)  # Generate a 12-character password
+
+        # Create the parent instance linked to the student user
+        parent = Parent.objects.create(
+            auto_generated_username=parent_username,
+            auto_generated_password=parent_password,
+            student_username=student_user.username  # Link to the student's username
+        )
+
+        # Send email with parent's auto-generated credentials to the student's email
+        send_mail(
+            subject='Registration Successful: Parent Login Credentials',
+            message=f'You have successfully registered.\n\n'
+                    f'Your parent\'s login details:\n'
+                    f'Username: {parent_username}\n'
+                    f'Password: {parent_password}\n',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],  # Send to the student's email
+            fail_silently=False,
+        )
+
+        messages.success(request, 'Account created successfully! Parent login credentials have been sent to your email.')
+        return redirect('login')
+    else:
+        return render(request, 'register.html')
+
+
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Teacher, Parent, CustomUser
+
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        # Check Teacher model
+        try:
+            teacher = Teacher.objects.get(auto_generated_username=username)
+            if teacher.auto_generated_password == password:
+                # Manually log in the teacher (using sessions)
+                request.session['teacher_id'] = teacher.id  # Store teacher ID in session
+                return redirect('teacher_dashboard')
+        except Teacher.DoesNotExist:
+            pass  # Not a teacher
+
+        # Check Parent model
+        try:
+            parent = Parent.objects.get(auto_generated_username=username)
+            if parent.auto_generated_password == password:
+                # Manually log in the parent (using sessions)
+                request.session['parent_id'] = parent.id  # Store parent ID in session
+                return redirect('parent_dashboard')
+        except Parent.DoesNotExist:
+            pass  # Not a parent
+
+        # Check CustomUser model
+        try:
+            custom_user = CustomUser.objects.get(username=username)
+            if not custom_user.is_active:
+                messages.error(request, 'Your account is deactivated. Please contact support.')
+            if custom_user.check_password(password):  # Assuming password is stored as plaintext
+                # Manually log in the CustomUser (using sessions)
+                request.session['custom_user_id'] = custom_user.id  # Store CustomUser ID in session
+                
+                # Check if face data exists
+                # face_data = StudentFaceData.objects.filter(user=custom_user).first()
+                # if not face_data or not face_data.is_face_captured:
+                #     return redirect('face_capture')
+                
+                return redirect('available_courses')
+            else:
+                messages.error(request, 'Invalid password for CustomUser.')
+        except CustomUser.DoesNotExist:
+            pass  # Not a CustomUser
+
+        # If no match, show an error message
+        messages.error(request, 'Invalid username or password.')
+
+    return render(request, 'login.html')
+
+def assigned_courses(request):
+    # Get the teacher ID from the session
+    teacher_id = request.session.get('teacher_id')
+
+    if teacher_id:
+        # Fetch the assigned courses from the session
+        assigned_courses = request.session.get('assigned_courses', [])
+
+        return render(request, 'assigned_courses.html', {'courses': assigned_courses})
+
+    return redirect('teacher_login')  # Redirect to login if no session found
+
+
+from django.shortcuts import render, redirect
+from django.utils import timezone
+from .models import Course, Enrollment
+
+def available_courses(request):
+    # Check if the user is authenticated via session
+    if 'custom_user_id' not in request.session:
+        return redirect('login')  # Redirect to the login page if not authenticated
+   
+    # Get the logged-in user's ID from the session
+    custom_user_id = request.session['custom_user_id']
+    custom_user = CustomUser.objects.get(id=custom_user_id)
+    # Get the current date
+    current_date = timezone.now().date()
+
+    # Filter courses to only include those that have not started and haven't reached their end date
+    courses = Course.objects.filter(starting_date__gt=current_date, ending_date__gt=current_date)
+
+    # Apply price range filter if set
+    price_range = request.GET.get('price_range')
+    if price_range:
+        if price_range == 'all':
+            pass
+        elif price_range == '0-500':
+            courses = courses.filter(price__lt=500)
+        elif price_range == '500-999':
+            courses = courses.filter(price__gte=500, price__lt=1000)
+
+        elif price_range == '1000-2000':
+            courses = courses.filter(price__gte=1000, price__lt=2000)
+        elif price_range == '2000-3000':
+            courses = courses.filter(price__gte=2000, price__lt=3000)
+        elif price_range == '3000-4000':
+            courses = courses.filter(price__gte=3000, price__lt=4000)
+        elif price_range == '4000-5000':
+            courses = courses.filter(price__gte=4000, price__lt=5000)
+        elif price_range == '5000+':
+            courses = courses.filter(price__gte=5000)
+
+    # Prepare a list to hold course data along with enrollment status
+    course_data = []
+    for course in courses:
+        # Check if the user is enrolled in the current course
+        is_enrolled = Enrollment.objects.filter(student_id=custom_user_id, course=course).exists()
+        
+        # Append course data with enrollment status and start date check
+        course_data.append({
+            'course': course,
+            'is_enrolled': is_enrolled,
+            'can_enroll': current_date < course.starting_date  # Check if course hasn't started yet
+        })
+
+    # Pass the course data and current date to the template
+    return render(request, 'available_courses.html', {
+        'custom_user': custom_user,
+        'course_data': course_data,
+        'current_date': current_date,
+        'selected_price_range': price_range,
+        
+    })
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Course, Enrollment
+from django.http import HttpResponseForbidden
+
+def enroll_course(request, course_id):
+    # Check if the user is authenticated via session
+    if 'custom_user_id' not in request.session:
+        # If the user is not authenticated, redirect to the login page
+        return redirect('login')  # Redirect to your custom login page
+
+    # Get the authenticated user's ID from the session
+    custom_user_id = request.session['custom_user_id']
+    
+    # Get the course the user is trying to enroll in
+    course = get_object_or_404(Course, id=course_id)
+
+    # Check if the user is already enrolled in this course
+    if Enrollment.objects.filter(student_id=custom_user_id, course=course).exists():
+        # You can add a message here indicating the user is already enrolled
+        return redirect('available_courses')  # Redirect back to the available courses page
+
+    # If the user is not enrolled, create a new Enrollment
+    enrollment = Enrollment.objects.create(student_id=custom_user_id, course=course)
+
+    # Optionally, you can show a success message or redirect to another page
+    return redirect('available_courses')  # Redirect to the course list page
+
+from datetime import datetime
+def student_dashboard(request):
+    custom_user_id = request.session.get('custom_user_id')
+    if not custom_user_id:
+        return redirect('login')
+
+    # Fetch the CustomUser object based on the session ID
+    try:
+        custom_user = CustomUser.objects.get(id=custom_user_id)
+        if not custom_user.is_active:
+            return redirect('login')
+    except CustomUser.DoesNotExist:
+        return redirect('login')
+
+    enrolled_courses = Course.objects.filter(enrollments__student_id=custom_user_id)
+    today = datetime.today()
+
+    # Check for unanswered feedback questions for the logged-in user
+    feedback_questions = FeedbackQuestion.objects.all()
+    answered_questions = Feedback.objects.filter(user=custom_user_id).values_list('question_id', flat=True)
+    
+    # Identify new feedback questions (not answered by the user)
+    new_feedback_questions = feedback_questions.exclude(id__in=answered_questions)
+
+    return render(request, 'student_dashboard.html', {
+        'enrolled_courses': enrolled_courses,
+        'custom_user': custom_user,
+        'new_feedback_questions': new_feedback_questions,  # This will contain unanswered questions
+        'today': today,  # Pass today's date to the template
+    })
+
+
+def teacher_dashboard(request):
+    teacher_id = request.session.get('teacher_id')
+    if not teacher_id:
+        return redirect('login')  # Redirect to login if teacher not authenticated
+
+    try:
+        teacher = Teacher.objects.get(id=teacher_id)
+    except Teacher.DoesNotExist:
+        return redirect('login')  # Redirect if the teacher doesn't exist
+        
+    # Get teacher courses
+    teacher_courses = TeacherCourse.objects.filter(teacher_id=teacher_id).select_related('course')
+    
+    # Get unread message count
+    unread_count = ParentTeacherMessage.objects.filter(
+        teacher_id=teacher_id,
+        message_type='parent_to_teacher',
+        is_read=False
+    ).count()
+    
+    # Pass the teacher object to the template
+    return render(request, 'teacher_dashboard.html', {
+        'first_name': teacher.first_name,
+        'last_name': teacher.last_name,
+        'teacher_courses': teacher_courses,
+        'unread_messages': unread_count
+    })
+
+def parent_dashboard(request):
+    parent_id = request.session.get('parent_id')
+    if not parent_id:
+        return redirect('login')
+
+    try:
+        parent = Parent.objects.get(id=parent_id)
+        student = CustomUser.objects.get(username=parent.student_username)
+        courses = Enrollment.objects.filter(student=student).select_related('course')
+        
+        # Get student's quiz answers/grades
+        grades = UserAnswers.objects.filter(
+            user=student
+        ).select_related(
+            'question__quiz',
+            'question__quiz__course'
+        ).order_by('-attempt_date')
+        
+        # Get assignment submissions for the student
+        assignment_submissions = AssignmentSubmission.objects.filter(
+            student=student
+        ).select_related(
+            'assignment',
+            'assignment__teacher',
+            'assignment__course_name'
+        ).order_by('-submitted_at')
+
+        # Calculate submission status for each submission
+        for submission in assignment_submissions:
+            # Convert submitted_at to date for comparison
+            submission_date = submission.submitted_at.date()
+            due_date = submission.assignment.end_date
+            
+            if submission_date > due_date:
+                submission.is_overdue = True
+                submission.days_overdue = (submission_date - due_date).days
+                submission.status_class = 'text-danger'
+            elif submission_date == due_date:
+                submission.is_overdue = False
+                submission.status_class = 'text-warning'
+                submission.submitted_on = 'last day'
+            else:
+                submission.is_overdue = False
+                submission.days_early = (due_date - submission_date).days
+                submission.status_class = 'text-success'
+
+        # Get attendance records
+        attendance_records = Attendance.objects.filter(student=student).order_by('-check_in_time')
+        
+        # Calculate attendance statistics
+        total_records = attendance_records.count()
+        present_count = attendance_records.filter(status='present').count()
+        absent_count = total_records - present_count
+        attendance_percentage = (present_count / total_records * 100) if total_records > 0 else 0
+
+        # Get the student's enrolled courses
+        courses = Enrollment.objects.filter(student=student).select_related('course')
+        
+        # Calculate total course fees from course prices
+        total_course_fees = sum(enrollment.course.price for enrollment in courses)
+        
+        # Use select_related and prefetch_related to optimize queries
+        teachers = Teacher.objects.filter(
+            Q(parent_messages__parent=parent) | 
+            Q(teacher_courses__course__students__username=parent.student_username)
+        ).prefetch_related('teacher_courses').distinct()
+
+        messages_list = ParentTeacherMessage.objects.filter(parent=parent).order_by('-date')
+        
+        context = {
+            'parent': parent,
+            'student': student,
+            'courses': courses,
+            'grades': grades,
+            'assignment_submissions': assignment_submissions,
+            'attendance_records': attendance_records,
+            'present_count': present_count,
+            'absent_count': absent_count,
+            'attendance_percentage': attendance_percentage,
+            'total_course_fees': total_course_fees,
+            'messages_list': messages_list,
+            'teachers': teachers,
+            'unread_count': messages_list.filter(is_read=False, message_type='teacher_to_parent').count()
+        }
+
+        try:
+            # Get enrolled courses
+            enrolled_courses = Enrollment.objects.filter(
+                student__username=parent.student_username
+            ).values_list('course', flat=True)
+
+            # Get upcoming events for enrolled courses
+            upcoming_events = CalendarEvent.objects.filter(
+                course__in=enrolled_courses,
+                end_time__gte=timezone.now()
+            ).order_by('start_time')
+
+            # Get registered events for the student
+            registered_events = EventRegistration.objects.filter(
+                user__username=parent.student_username,
+                status='registered'
+            ).select_related('event')
+
+            try:
+                # Get event suggestions for this parent
+                event_suggestions = EventSuggestion.objects.filter(
+                    parent=parent
+                ).select_related('event').order_by('-created_at')
+
+                context.update({
+                    'upcoming_events': upcoming_events,
+                    'registered_events': registered_events,
+                    'event_suggestions': event_suggestions,  # Add suggestions to context
+                })
+
+                return render(request, 'parent_dashboard.html', context)
+
+            except Exception as e:
+                print(f"Error getting event suggestions: {str(e)}")
+                return render(request, 'parent_dashboard.html', context)
+
+        except Exception as e:
+            print(f"Error in parent_dashboard: {str(e)}")
+            return render(request, 'parent_dashboard.html', context)
+
+    except Parent.DoesNotExist:
+        return redirect('login')
+    except CustomUser.DoesNotExist:
+        student = None
+        courses = []
+        grades = []
+        assignment_submissions = []
+
+    # Get all messages for this parent
+    messages_list = ParentTeacherMessage.objects.filter(
+        parent=parent,
+        message_type='parent_to_teacher'  # Only get messages sent by parent
+    ).select_related('teacher').order_by('-date')
+
+    context.update({
+        'sent_messages': messages_list,
+    })
+
+    return render(request, 'parent_dashboard.html', {
+        'parent': parent,
+        'student': student,
+        'courses': courses,
+        'grades': grades,
+        'assignment_submissions': assignment_submissions,
+        'attendance_records': attendance_records,
+        'present_count': present_count,
+        'absent_count': absent_count,
+        'attendance_percentage': attendance_percentage,
+    })
+
+
+def index_view(request):
+    return render(request, 'index.html')
+
+def about_view(request):
+    return render(request, 'about.html')
+
+def admissions_view(request):
+    return render(request, 'admissions.html')
+
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .forms import ContactMessageForm  # Adjust the import based on your structure
+
+def contact_view(request):
+    if request.method == 'POST':
+        form = ContactMessageForm(request.POST)
+        if form.is_valid():
+            form.save()  # Save the form data to the database
+            messages.success(request, 'Your message has been sent successfully!')
+            return redirect('index')  # Redirect to the index page after submitting
+        else:
+            # This line ensures that the form with error messages is re-rendered
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = ContactMessageForm()
+
+    return render(request, 'contact.html', {'form': form})  # Replace 'your_template.html' with your actual template name
+
+
+from django.shortcuts import render, redirect
+from .models import ContactMessage
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib import messages
+
+# View to display all contact messages
+def view_messages(request):
+    messages_list = ContactMessage.objects.all()
+    return render(request, 'view_messages.html', {'messages_list': messages_list})
+
+def reply_message(request, message_id):
+    message_obj = ContactMessage.objects.get(id=message_id)
+    if request.method == 'POST':
+        subject = 'Thank you for contacting us'
+        body = 'We will contact you for more clarification regarding your query.'
+        from_email = settings.DEFAULT_FROM_EMAIL
+        recipient_list = [message_obj.email]
+
+        send_mail(subject, body, from_email, recipient_list)
+
+        # Update the replied status
+        message_obj.replied = True
+        message_obj.save()
+
+        messages.success(request, 'Reply sent successfully!')
+        return redirect('view_messages')
+    return redirect('view_messages')
+
+
+
+# views.py
+from django.shortcuts import render
+from .models import Course  # Make sure the Course model is imported
+from django.utils import timezone
+
+def courses_view(request):
+    # Fetch courses that haven't reached the start date
+    available_courses = Course.objects.filter(starting_date__gt=timezone.now())
+    return render(request, 'courses.html', {'courses': available_courses})
+
+def course_detail_10(request):
+    return render(request, 'course_detail_10.html')
+
+def course_detail_higher_secondary(request):
+    return render(request, 'course_detail_higher_secondary.html')
+
+def teachers_view(request):
+    return render(request, 'teachers.html')
+
+def recover_view(request):
+    return render(request, 'recover.html')
+
+def features(request):
+    return render(request, 'features.html')
+
+def parent(request):
+    return render(request, 'parent.html')
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+
+def admin_login(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        
+        # Check against predefined credentials
+        if username == 'admin' and password == 'admin123':
+            # Create a custom session for the admin user
+            request.session['is_admin'] = True
+            return redirect('admin_dashboard')  # Redirect to admin dashboard
+        else:
+            messages.error(request, "Invalid username or password. Please try again.")
+    
+    return render(request, 'admin_login.html')
+# views.py
+from django.shortcuts import render
+from .models import CustomUser, Teacher, Course, Enrollment  # Import your models
+
+def admin_dashboard(request):
+    # Count the number of users, teachers, and courses
+    total_users = CustomUser.objects.count()
+    total_teachers = Teacher.objects.count()
+    total_courses = Course.objects.count()
+
+    # Prepare data for course enrollment visualization
+    courses = Course.objects.all()
+    course_enrollment_data = []
+
+    for course in courses:
+        enrollment_count = Enrollment.objects.filter(course=course).count()
+        course_enrollment_data.append({
+            'course_name': course.course_name,
+            'enrollment_count': enrollment_count
+        })
+
+    context = {
+        'total_users': total_users,
+        'total_teachers': total_teachers,
+        'total_courses': total_courses,
+        'course_enrollment_data': course_enrollment_data,  # Pass enrollment data to template
+    }
+
+    return render(request, 'admin_dashboard.html', context)
+
+# views.py
+from django.shortcuts import render
+from .models import Course, Enrollment  # Import your models
+
+def course_enrollment_view(request):
+    # Get enrollment counts for each course
+    course_data = []
+    courses = Course.objects.all()
+    for course in courses:
+        registration_count = Enrollment.objects.filter(course=course).count()  # Count enrollments for each course
+        course_data.append({
+            'course_name': course.course_name,
+            'registration_count': registration_count
+        })
+
+    context = {
+        'course_data': course_data,  # Pass course data to the template
+    }
+
+    return render(request, 'course_enrollment.html', context)
+
+from django.shortcuts import render
+from .models import CustomUser
+
+def manage_students(request):
+    students = CustomUser.objects.select_related('course').filter(is_active=1)
+
+    past_students = CustomUser.objects.filter(is_active=0)
+    return render(request, 'manage_students.html', {'students': students, 'past_students':past_students})
+
+
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from .models import CustomUser
+
+def delete_student(request, student_id):
+    student = get_object_or_404(CustomUser, id=student_id)
+    if request.method == 'POST':
+        student.is_active = 0  
+        student.save()  
+        messages.success(request, 'Student marked as active successfully.')
+        return redirect('manage_students')
+
+
+# views.py
+from django.core.mail import send_mail
+from django.shortcuts import redirect, get_object_or_404
+from django.contrib import messages
+from .models import CustomUser
+
+def toggle_student_status(request, student_id):
+    student = get_object_or_404(CustomUser, id=student_id)
+    if student.is_active:
+        student.is_active = 0
+        email_subject = "Account Deactivated"
+        email_message = "Your account has been deactivated. Please contact support if you have any questions."
+    else:
+        student.is_active = True
+        email_subject = "Account Activated"
+        email_message = "Your account has been activated. You can now log in to the platform."
+
+    student.save()
+
+    # Send email to the student
+    send_mail(
+        email_subject,
+        email_message,
+        'divyaantony2025@mca.ajce.in',
+        [student.email],
+        fail_silently=False,
+    )
+
+    messages.success(request, f"Student '{student.username}' status updated successfully.")
+    return redirect('manage_students')
+
+
+from django.contrib.auth import logout as auth_logout
+from django.shortcuts import redirect
+
+def logout(request):
+    auth_logout(request)
+    request.session.flush()  
+    return redirect('login')
+
+
+def recover(request):
+    return render(request, 'recover.html')
+from django.contrib.auth.views import PasswordResetView
+from django.urls import reverse_lazy
+
+class CustomPasswordResetView(PasswordResetView):
+    template_name = 'password_reset.html'
+    email_template_name = 'password_reset_email.html'
+    subject_template_name = 'password_reset_subject.txt'
+    success_url = reverse_lazy('password_reset_done')
+from django.contrib.auth.views import PasswordResetDoneView
+
+class CustomPasswordResetDoneView(PasswordResetDoneView):
+    template_name = 'password_reset_done.html'
+from django.contrib.auth.views import PasswordResetConfirmView
+from django.urls import reverse_lazy
+
+class CustomPasswordResetConfirmView(PasswordResetConfirmView):
+    template_name = 'password_reset_confirm.html'
+    success_url = reverse_lazy('password_reset_complete')
+from django.contrib.auth.views import PasswordResetCompleteView
+
+class CustomPasswordResetCompleteView(PasswordResetCompleteView):
+    template_name = 'password_reset_complete.html'
+
+
+import json
+import uuid
+import re
+from django.shortcuts import render, redirect
+from django.contrib.auth.hashers import make_password
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib import messages
+from django.utils.crypto import get_random_string
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
+import requests
+from .models import CustomUser, Course, FinalExam, FinalExamQuestion, Parent, TeacherMessage, TeacherStudent, Material, MaterialSummary
+import cv2
+import numpy as np
+from datetime import datetime, timedelta
+import os
+from django.shortcuts import render
+from django.http import JsonResponse
+from .models import Attendance
+import base64
+from transformers import MarianMTModel, MarianTokenizer
+import torch
+from .models import StudentFaceData
+from django.views.decorators.csrf import csrf_exempt
+from scipy.spatial.distance import cosine
+from django.shortcuts import render, redirect
+from .models import ClassSchedule
+from django.utils import timezone
+import mediapipe as mp
+from django.core.files.base import ContentFile
+from PIL import Image
+import io
+from skimage.metrics import structural_similarity as ssim  # Add this import
+from ml_code.create_db import create_data
+from ml_code.face_recognition import face_recognize
+from django.core.paginator import Paginator
+from .models import ParentTeacherMessage, Teacher, Parent
+from django.db.models import Q
+from django.utils import timezone
+from .models import Course, WhiteboardShare
+from django.http import JsonResponse
+from .models import EventSuggestion, CalendarEvent
+from django.views.decorators.http import require_POST
+from .models import MindMap
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import ensure_csrf_cookie
+import os
+from dotenv import load_dotenv
+from gtts import gTTS
+from django.http import FileResponse, HttpResponse
+from django.shortcuts import get_object_or_404
+from .models import Material
+import PyPDF2
+import docx
+import tempfile
+from transformers import SpeechT5Processor, SpeechT5ForTextToSpeech, SpeechT5HifiGan
+import soundfile as sf
+from datasets import load_dataset
+import pyttsx3
+import threading
+from .models import TeacherNote, Course
+from django.contrib import messages
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from io import BytesIO
+from html import unescape
+import re
+from reportlab.pdfgen import canvas
+from io import BytesIO
+from django.core.files.base import ContentFile
+# Load environment variables
+load_dotenv()
+def register(request):
+    if request.method == 'POST':
+        # Extract form data from request.POST
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        email = request.POST.get('email')
+        contact = request.POST.get('contact')
+        date_of_birth = request.POST.get('date_of_birth')
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+       
+
+        # Perform basic validation
+        if not all([first_name, last_name, email, contact, date_of_birth, username, password]):
+            messages.error(request, 'Please fill out all fields.')
+            return render(request, 'register.html')
+
+        if not username.isalnum():
+            messages.error(request, "Username should contain only alphabets or numbers.")
+            return redirect('register')
+
+        # Check if the username or email is unique for the student
+        if CustomUser.objects.filter(username=username).exists():
+            messages.error(request, 'Username is already taken.')
+            return render(request, 'register.html')
+
+        if CustomUser.objects.filter(email=email).exists():
+            messages.error(request, 'Email is already registered.')
+            return render(request, 'register.html')
+
+        # Validate email format
+        
+        # Validate password complexity
+       
+
+
+        # Create and save student user instance
+        student_user = CustomUser(
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            contact=contact,
+            date_of_birth=date_of_birth,
+            password=make_password(password),
+            is_active=True,  # Ensure the user is active upon registration
+        )
+        student_user.save()
+
+        # Auto-generate a unique parent username using UUID
+        parent_username = f'parent_{uuid.uuid4().hex[:8]}'  # Generate an 8-character unique username
+
+        # Generate a random secure password for the parent
+        parent_password = get_random_string(12)  # Generate a 12-character password
+
+        # Create the parent instance linked to the student user
+        parent = Parent.objects.create(
+            auto_generated_username=parent_username,
+            auto_generated_password=parent_password,
+            student_username=student_user.username  # Link to the student's username
+        )
+
+        # Send email with parent's auto-generated credentials to the student's email
+        send_mail(
+            subject='Registration Successful: Parent Login Credentials',
+            message=f'You have successfully registered.\n\n'
+                    f'Your parent\'s login details:\n'
+                    f'Username: {parent_username}\n'
+                    f'Password: {parent_password}\n',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],  # Send to the student's email
+            fail_silently=False,
+        )
+
+        messages.success(request, 'Account created successfully! Parent login credentials have been sent to your email.')
+        return redirect('login')
+    else:
+        return render(request, 'register.html')
+
+
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Teacher, Parent, CustomUser
+
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        # Check Teacher model
+        try:
+            teacher = Teacher.objects.get(auto_generated_username=username)
+            if teacher.auto_generated_password == password:
+                # Manually log in the teacher (using sessions)
+                request.session['teacher_id'] = teacher.id  # Store teacher ID in session
+                return redirect('teacher_dashboard')
+        except Teacher.DoesNotExist:
+            pass  # Not a teacher
+
+        # Check Parent model
+        try:
+            parent = Parent.objects.get(auto_generated_username=username)
+            if parent.auto_generated_password == password:
+                # Manually log in the parent (using sessions)
+                request.session['parent_id'] = parent.id  # Store parent ID in session
+                return redirect('parent_dashboard')
+        except Parent.DoesNotExist:
+            pass  # Not a parent
+
+        # Check CustomUser model
+        try:
+            custom_user = CustomUser.objects.get(username=username)
+            if not custom_user.is_active:
+                messages.error(request, 'Your account is deactivated. Please contact support.')
+            if custom_user.check_password(password):  # Assuming password is stored as plaintext
+                # Manually log in the CustomUser (using sessions)
+                request.session['custom_user_id'] = custom_user.id  # Store CustomUser ID in session
+                
+                # Check if face data exists
+                # face_data = StudentFaceData.objects.filter(user=custom_user).first()
+                # if not face_data or not face_data.is_face_captured:
+                #     return redirect('face_capture')
+                
+                return redirect('available_courses')
+            else:
+                messages.error(request, 'Invalid password for CustomUser.')
+        except CustomUser.DoesNotExist:
+            pass  # Not a CustomUser
+
+        # If no match, show an error message
+        messages.error(request, 'Invalid username or password.')
+
+    return render(request, 'login.html')
+
+def assigned_courses(request):
+    # Get the teacher ID from the session
+    teacher_id = request.session.get('teacher_id')
+
+    if teacher_id:
+        # Fetch the assigned courses from the session
+        assigned_courses = request.session.get('assigned_courses', [])
+
+        return render(request, 'assigned_courses.html', {'courses': assigned_courses})
+
+    return redirect('teacher_login')  # Redirect to login if no session found
+
+
+from django.shortcuts import render, redirect
+from django.utils import timezone
+from .models import Course, Enrollment
+
+def available_courses(request):
+    # Check if the user is authenticated via session
+    if 'custom_user_id' not in request.session:
+        return redirect('login')  # Redirect to the login page if not authenticated
+   
+    # Get the logged-in user's ID from the session
+    custom_user_id = request.session['custom_user_id']
+    custom_user = CustomUser.objects.get(id=custom_user_id)
+    # Get the current date
+    current_date = timezone.now().date()
+
+    # Filter courses to only include those that have not started and haven't reached their end date
+    courses = Course.objects.filter(starting_date__gt=current_date, ending_date__gt=current_date)
+
+    # Apply price range filter if set
+    price_range = request.GET.get('price_range')
+    if price_range:
+        if price_range == 'all':
+            pass
+        elif price_range == '0-500':
+            courses = courses.filter(price__lt=500)
+        elif price_range == '500-999':
+            courses = courses.filter(price__gte=500, price__lt=1000)
+
+        elif price_range == '1000-2000':
+            courses = courses.filter(price__gte=1000, price__lt=2000)
+        elif price_range == '2000-3000':
+            courses = courses.filter(price__gte=2000, price__lt=3000)
+        elif price_range == '3000-4000':
+            courses = courses.filter(price__gte=3000, price__lt=4000)
+        elif price_range == '4000-5000':
+            courses = courses.filter(price__gte=4000, price__lt=5000)
+        elif price_range == '5000+':
+            courses = courses.filter(price__gte=5000)
+
+    # Prepare a list to hold course data along with enrollment status
+    course_data = []
+    for course in courses:
+        # Check if the user is enrolled in the current course
+        is_enrolled = Enrollment.objects.filter(student_id=custom_user_id, course=course).exists()
+        
+        # Append course data with enrollment status and start date check
+        course_data.append({
+            'course': course,
+            'is_enrolled': is_enrolled,
+            'can_enroll': current_date < course.starting_date  # Check if course hasn't started yet
+        })
+
+    # Pass the course data and current date to the template
+    return render(request, 'available_courses.html', {
+        'custom_user': custom_user,
+        'course_data': course_data,
+        'current_date': current_date,
+        'selected_price_range': price_range,
+        
+    })
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Course, Enrollment
+from django.http import HttpResponseForbidden
+
+def enroll_course(request, course_id):
+    # Check if the user is authenticated via session
+    if 'custom_user_id' not in request.session:
+        # If the user is not authenticated, redirect to the login page
+        return redirect('login')  # Redirect to your custom login page
+
+    # Get the authenticated user's ID from the session
+    custom_user_id = request.session['custom_user_id']
+    
+    # Get the course the user is trying to enroll in
+    course = get_object_or_404(Course, id=course_id)
+
+    # Check if the user is already enrolled in this course
+    if Enrollment.objects.filter(student_id=custom_user_id, course=course).exists():
+        # You can add a message here indicating the user is already enrolled
+        return redirect('available_courses')  # Redirect back to the available courses page
+
+    # If the user is not enrolled, create a new Enrollment
+    enrollment = Enrollment.objects.create(student_id=custom_user_id, course=course)
+
+    # Optionally, you can show a success message or redirect to another page
+    return redirect('available_courses')  # Redirect to the course list page
+
+from datetime import datetime
+def student_dashboard(request):
+    custom_user_id = request.session.get('custom_user_id')
+    if not custom_user_id:
+        return redirect('login')
+
+    # Fetch the CustomUser object based on the session ID
+    try:
+        custom_user = CustomUser.objects.get(id=custom_user_id)
+        if not custom_user.is_active:
+            return redirect('login')
+    except CustomUser.DoesNotExist:
+        return redirect('login')
+
+    enrolled_courses = Course.objects.filter(enrollments__student_id=custom_user_id)
+    today = datetime.today()
+
+    # Check for unanswered feedback questions for the logged-in user
+    feedback_questions = FeedbackQuestion.objects.all()
+    answered_questions = Feedback.objects.filter(user=custom_user_id).values_list('question_id', flat=True)
+    
+    # Identify new feedback questions (not answered by the user)
+    new_feedback_questions = feedback_questions.exclude(id__in=answered_questions)
+
+    return render(request, 'student_dashboard.html', {
+        'enrolled_courses': enrolled_courses,
+        'custom_user': custom_user,
+        'new_feedback_questions': new_feedback_questions,  # This will contain unanswered questions
+        'today': today,  # Pass today's date to the template
+    })
+
+
+def teacher_dashboard(request):
+    teacher_id = request.session.get('teacher_id')
+    if not teacher_id:
+        return redirect('login')  # Redirect to login if teacher not authenticated
+
+    try:
+        teacher = Teacher.objects.get(id=teacher_id)
+    except Teacher.DoesNotExist:
+        return redirect('login')  # Redirect if the teacher doesn't exist
+        
+    # Get teacher courses
+    teacher_courses = TeacherCourse.objects.filter(teacher_id=teacher_id).select_related('course')
+    
+    # Get unread message count
+    unread_count = ParentTeacherMessage.objects.filter(
+        teacher_id=teacher_id,
+        message_type='parent_to_teacher',
+        is_read=False
+    ).count()
+    
+    # Pass the teacher object to the template
+    return render(request, 'teacher_dashboard.html', {
+        'first_name': teacher.first_name,
+        'last_name': teacher.last_name,
+        'teacher_courses': teacher_courses,
+        'unread_messages': unread_count
+    })
+
+def parent_dashboard(request):
+    parent_id = request.session.get('parent_id')
+    if not parent_id:
+        return redirect('login')
+
+    try:
+        parent = Parent.objects.get(id=parent_id)
+        student = CustomUser.objects.get(username=parent.student_username)
+        courses = Enrollment.objects.filter(student=student).select_related('course')
+        
+        # Get student's quiz answers/grades
+        grades = UserAnswers.objects.filter(
+            user=student
+        ).select_related(
+            'question__quiz',
+            'question__quiz__course'
+        ).order_by('-attempt_date')
+        
+        # Get assignment submissions for the student
+        assignment_submissions = AssignmentSubmission.objects.filter(
+            student=student
+        ).select_related(
+            'assignment',
+            'assignment__teacher',
+            'assignment__course_name'
+        ).order_by('-submitted_at')
+
+        # Calculate submission status for each submission
+        for submission in assignment_submissions:
+            # Convert submitted_at to date for comparison
+            submission_date = submission.submitted_at.date()
+            due_date = submission.assignment.end_date
+            
+            if submission_date > due_date:
+                submission.is_overdue = True
+                submission.days_overdue = (submission_date - due_date).days
+                submission.status_class = 'text-danger'
+            elif submission_date == due_date:
+                submission.is_overdue = False
+                submission.status_class = 'text-warning'
+                submission.submitted_on = 'last day'
+            else:
+                submission.is_overdue = False
+                submission.days_early = (due_date - submission_date).days
+                submission.status_class = 'text-success'
+
+        # Get attendance records
+        attendance_records = Attendance.objects.filter(student=student).order_by('-check_in_time')
+        
+        # Calculate attendance statistics
+        total_records = attendance_records.count()
+        present_count = attendance_records.filter(status='present').count()
+        absent_count = total_records - present_count
+        attendance_percentage = (present_count / total_records * 100) if total_records > 0 else 0
+
+        # Get the student's enrolled courses
+        courses = Enrollment.objects.filter(student=student).select_related('course')
+        
+        # Calculate total course fees from course prices
+        total_course_fees = sum(enrollment.course.price for enrollment in courses)
+        
+        # Use select_related and prefetch_related to optimize queries
+        teachers = Teacher.objects.filter(
+            Q(parent_messages__parent=parent) | 
+            Q(teacher_courses__course__students__username=parent.student_username)
+        ).prefetch_related('teacher_courses').distinct()
+
+        messages_list = ParentTeacherMessage.objects.filter(parent=parent).order_by('-date')
+        
+        context = {
+            'parent': parent,
+            'student': student,
+            'courses': courses,
+            'grades': grades,
+            'assignment_submissions': assignment_submissions,
+            'attendance_records': attendance_records,
+            'present_count': present_count,
+            'absent_count': absent_count,
+            'attendance_percentage': attendance_percentage,
+            'total_course_fees': total_course_fees,
+            'messages_list': messages_list,
+            'teachers': teachers,
+            'unread_count': messages_list.filter(is_read=False, message_type='teacher_to_parent').count()
+        }
+
+        try:
+            # Get enrolled courses
+            enrolled_courses = Enrollment.objects.filter(
+                student__username=parent.student_username
+            ).values_list('course', flat=True)
+
+            # Get upcoming events for enrolled courses
+            upcoming_events = CalendarEvent.objects.filter(
+                course__in=enrolled_courses,
+                end_time__gte=timezone.now()
+            ).order_by('start_time')
+
+            # Get registered events for the student
+            registered_events = EventRegistration.objects.filter(
+                user__username=parent.student_username,
+                status='registered'
+            ).select_related('event')
+
+            try:
+                # Get event suggestions for this parent
+                event_suggestions = EventSuggestion.objects.filter(
+                    parent=parent
+                ).select_related('event').order_by('-created_at')
+
+                context.update({
+                    'upcoming_events': upcoming_events,
+                    'registered_events': registered_events,
+                    'event_suggestions': event_suggestions,  # Add suggestions to context
+                })
+
+                return render(request, 'parent_dashboard.html', context)
+
+            except Exception as e:
+                print(f"Error getting event suggestions: {str(e)}")
+                return render(request, 'parent_dashboard.html', context)
+
+        except Exception as e:
+            print(f"Error in parent_dashboard: {str(e)}")
+            return render(request, 'parent_dashboard.html', context)
+
+    except Parent.DoesNotExist:
+        return redirect('login')
+    except CustomUser.DoesNotExist:
+        student = None
+        courses = []
+        grades = []
+        assignment_submissions = []
+
+    # Get all messages for this parent
+    messages_list = ParentTeacherMessage.objects.filter(
+        parent=parent,
+        message_type='parent_to_teacher'  # Only get messages sent by parent
+    ).select_related('teacher').order_by('-date')
+
+    context.update({
+        'sent_messages': messages_list,
+    })
+
+    return render(request, 'parent_dashboard.html', {
+        'parent': parent,
+        'student': student,
+        'courses': courses,
+        'grades': grades,
+        'assignment_submissions': assignment_submissions,
+        'attendance_records': attendance_records,
+        'present_count': present_count,
+        'absent_count': absent_count,
+        'attendance_percentage': attendance_percentage,
+    })
+
+
+def index_view(request):
+    return render(request, 'index.html')
+
+def about_view(request):
+    return render(request, 'about.html')
+
+def admissions_view(request):
+    return render(request, 'admissions.html')
+
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .forms import ContactMessageForm  # Adjust the import based on your structure
+
+def contact_view(request):
+    if request.method == 'POST':
+        form = ContactMessageForm(request.POST)
+        if form.is_valid():
+            form.save()  # Save the form data to the database
+            messages.success(request, 'Your message has been sent successfully!')
+            return redirect('index')  # Redirect to the index page after submitting
+        else:
+            # This line ensures that the form with error messages is re-rendered
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = ContactMessageForm()
+
+    return render(request, 'contact.html', {'form': form})  # Replace 'your_template.html' with your actual template name
+
+
+from django.shortcuts import render, redirect
+from .models import ContactMessage
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib import messages
+
+# View to display all contact messages
+def view_messages(request):
+    messages_list = ContactMessage.objects.all()
+    return render(request, 'view_messages.html', {'messages_list': messages_list})
+
+def reply_message(request, message_id):
+    message_obj = ContactMessage.objects.get(id=message_id)
+    if request.method == 'POST':
+        subject = 'Thank you for contacting us'
+        body = 'We will contact you for more clarification regarding your query.'
+        from_email = settings.DEFAULT_FROM_EMAIL
+        recipient_list = [message_obj.email]
+
+        send_mail(subject, body, from_email, recipient_list)
+
+        # Update the replied status
+        message_obj.replied = True
+        message_obj.save()
+
+        messages.success(request, 'Reply sent successfully!')
+        return redirect('view_messages')
+    return redirect('view_messages')
+
+
+
+# views.py
+from django.shortcuts import render
+from .models import Course  # Make sure the Course model is imported
+from django.utils import timezone
+
+def courses_view(request):
+    # Fetch courses that haven't reached the start date
+    available_courses = Course.objects.filter(starting_date__gt=timezone.now())
+    return render(request, 'courses.html', {'courses': available_courses})
+
+def course_detail_10(request):
+    return render(request, 'course_detail_10.html')
+
+def course_detail_higher_secondary(request):
+    return render(request, 'course_detail_higher_secondary.html')
+
+def teachers_view(request):
+    return render(request, 'teachers.html')
+
+def recover_view(request):
+    return render(request, 'recover.html')
+
+def features(request):
+    return render(request, 'features.html')
+
+def parent(request):
+    return render(request, 'parent.html')
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+
+def admin_login(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        
+        # Check against predefined credentials
+        if username == 'admin' and password == 'admin123':
+            # Create a custom session for the admin user
+            request.session['is_admin'] = True
+            return redirect('admin_dashboard')  # Redirect to admin dashboard
+        else:
+            messages.error(request, "Invalid username or password. Please try again.")
+    
+    return render(request, 'admin_login.html')
+# views.py
+from django.shortcuts import render
+from .models import CustomUser, Teacher, Course, Enrollment  # Import your models
+
+def admin_dashboard(request):
+    # Count the number of users, teachers, and courses
+    total_users = CustomUser.objects.count()
+    total_teachers = Teacher.objects.count()
+    total_courses = Course.objects.count()
+
+    # Prepare data for course enrollment visualization
+    courses = Course.objects.all()
+    course_enrollment_data = []
+
+    for course in courses:
+        enrollment_count = Enrollment.objects.filter(course=course).count()
+        course_enrollment_data.append({
+            'course_name': course.course_name,
+            'enrollment_count': enrollment_count
+        })
+
+    context = {
+        'total_users': total_users,
+        'total_teachers': total_teachers,
+        'total_courses': total_courses,
+        'course_enrollment_data': course_enrollment_data,  # Pass enrollment data to template
+    }
+
+    return render(request, 'admin_dashboard.html', context)
+
+# views.py
+from django.shortcuts import render
+from .models import Course, Enrollment  # Import your models
+
+def course_enrollment_view(request):
+    # Get enrollment counts for each course
+    course_data = []
+    courses = Course.objects.all()
+    for course in courses:
+        registration_count = Enrollment.objects.filter(course=course).count()  # Count enrollments for each course
+        course_data.append({
+            'course_name': course.course_name,
+            'registration_count': registration_count
+        })
+
+    context = {
+        'course_data': course_data,  # Pass course data to the template
+    }
+
+    return render(request, 'course_enrollment.html', context)
+
+from django.shortcuts import render
+from .models import CustomUser
+
+def manage_students(request):
+    students = CustomUser.objects.select_related('course').filter(is_active=1)
+
+    past_students = CustomUser.objects.filter(is_active=0)
+    return render(request, 'manage_students.html', {'students': students, 'past_students':past_students})
+
+
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from .models import CustomUser
+
+def delete_student(request, student_id):
+    student = get_object_or_404(CustomUser, id=student_id)
+    if request.method == 'POST':
+        student.is_active = 0  
+        student.save()  
+        messages.success(request, 'Student marked as active successfully.')
+        return redirect('manage_students')
+
+
+# views.py
+from django.core.mail import send_mail
+from django.shortcuts import redirect, get_object_or_404
+from django.contrib import messages
+from .models import CustomUser
+
+def toggle_student_status(request, student_id):
+    student = get_object_or_404(CustomUser, id=student_id)
+    if student.is_active:
+        student.is_active = 0
+        email_subject = "Account Deactivated"
+        email_message = "Your account has been deactivated. Please contact support if you have any questions."
+    else:
+        student.is_active = True
+        email_subject = "Account Activated"
+        email_message = "Your account has been activated. You can now log in to the platform."
+
+    student.save()
+
+    # Send email to the student
+    send_mail(
+        email_subject,
+        email_message,
+        'divyaantony2025@mca.ajce.in',
+        [student.email],
+        fail_silently=False,
+    )
+
+    messages.success(request, f"Student '{student.username}' status updated successfully.")
+    return redirect('manage_students')
+
+
+from django.contrib.auth import logout as auth_logout
+from django.shortcuts import redirect
+
+def logout(request):
+    auth_logout(request)
+    request.session.flush()  
+    return redirect('login')
+
+
+def recover(request):
+    return render(request, 'recover.html')
+from django.contrib.auth.views import PasswordResetView
+from django.urls import reverse_lazy
+
+class CustomPasswordResetView(PasswordResetView):
+    template_name = 'password_reset.html'
+    email_template_name = 'password_reset_email.html'
+    subject_template_name = 'password_reset_subject.txt'
+    success_url = reverse_lazy('password_reset_done')
+from django.contrib.auth.views import PasswordResetDoneView
+
+class CustomPasswordResetDoneView(PasswordResetDoneView):
+    template_name = 'password_reset_done.html'
+from django.contrib.auth.views import PasswordResetConfirmView
+from django.urls import reverse_lazy
+
+class CustomPasswordResetConfirmView(PasswordResetConfirmView):
+    template_name = 'password_reset_confirm.html'
+    success_url = reverse_lazy('password_reset_complete')
+from django.contrib.auth.views import PasswordResetCompleteView
+
+class CustomPasswordResetCompleteView(PasswordResetCompleteView):
+    template_name = 'password_reset_complete.html'
+
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Teacher
+
+def register_teacher(request):
+    if request.method == 'POST':
+        # Extract data from the POST request
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        gender = request.POST.get('gender')
+        dob = request.POST.get('dob')
+        email = request.POST.get('email')
+        contact = request.POST.get('contact')
+        address_line1 = request.POST.get('address_line1')
+        address_line2 = request.POST.get('address_line2')
+        city = request.POST.get('city')
+        state = request.POST.get('state')
+        zip_code = request.POST.get('zip_code')
+        qualification = request.POST.get('qualification')
+        experience = request.POST.get('experience')
+
+        # Handle file uploads
+        qualification_certificate = request.FILES.get('qualification_certificate')
+        experience_certificate = request.FILES.get('experience_certificate', None)  # This file is optional
+
+        # Simple validation check for required fields
+        if not first_name or not last_name or not email:
+            messages.error(request, "First name, last name, and email are required.")
+        else:
+            # Create a new Teacher object and set the fields
+            teacher = Teacher(
+                first_name=first_name,
+                last_name=last_name,
+                gender=gender,
+                date_of_birth=dob,
+                email=email,
+                contact=contact,
+                address_line1=address_line1,
+                address_line2=address_line2,
+                city=city,
+                state=state,
+                zip_code=zip_code,
+                qualification=qualification,
+                experience=experience,
+                qualification_certificate=qualification_certificate,
+                experience_certificate=experience_certificate,  # This file is optional
+                status='pending'  # Set the initial status of the teacher to 'pending'
+            )
+            teacher.save()
+
+            # Add a success message
+            messages.success(request, "You have successfully registered! Please wait for your approval.")
+
+            # Redirect to the login page or another relevant page after successful registration
+            return redirect('login')
+
+    return render(request, 'register_teacher.html')
+
+
+
+from django.shortcuts import render, redirect
+from .models import Teacher  # Adjust the import based on your app structure
+
+def view_profile(request):
+    teacher_id = request.session.get('teacher_id')
+    
+    if not teacher_id:
+        print("No teacher ID found in session.")  # Debugging line
+        return render(request, 'view_profile.html', {'error': 'Profile not found.'})
+    
+    try:
+        teacher = Teacher.objects.get(id=teacher_id)
+        print(f"Logged in teacher's username: {teacher.auto_generated_username}")  # Debugging line
+        context = {'teacher': teacher}
+    except Teacher.DoesNotExist:
+        print("No matching Teacher found.")  # Debugging line
+        context = {'error': 'Profile not found.'}
+    
+    return render(request, 'view_profile.html', context)
+
+from django.core.mail import send_mail
+from django.contrib.auth.models import User
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import Teacher
+import random
+import string
+
+def manage_teachers(request):
+    pending_teachers = Teacher.objects.filter(status='pending')
+    approved_teachers = Teacher.objects.filter(status='approved')
+    
+    context = {
+        'pending_teachers': pending_teachers,
+        'approved_teachers': approved_teachers,
+    }
+    return render(request, 'manage_teachers.html', context)
+
+# views.py
+from django.core.mail import send_mail
+from django.shortcuts import redirect, get_object_or_404
+from django.contrib import messages
+from .models import Teacher  # Import your Teacher model
+
+def toggle_teacher_status(request, teacher_id):
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+    
+    if teacher.is_active:
+        teacher.is_active = False  # Set to False to deactivate
+        email_subject = "Account Deactivated"
+        email_message = "Your account has been deactivated. Please contact support if you have any questions."
+    else:
+        teacher.is_active = True  # Set to True to activate
+        email_subject = "Account Activated"
+        email_message = "Your account has been activated. You can now log in to the platform."
+
+    teacher.save()
+
+    # Send email to the teacher
+    send_mail(
+        email_subject,
+        email_message,
+        'divyaantony2025@mca.ajce.in',  # Replace with your email
+        [teacher.email],  # Send email to the teacher
+        fail_silently=False,
+    )
+
+    messages.success(request, f"Teacher '{teacher.first_name} {teacher.last_name}' status updated successfully.")
+    return redirect('manage_teachers')
+
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.core.mail import send_mail
+from django.utils.crypto import get_random_string
+from .models import Teacher, Course, TeacherCourse  # Assuming TeacherCourse is the model for the relationship
+from .forms import ApproveTeacherForm
+
+def approve_teacher(request, teacher_id):
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+    courses = Course.objects.all()
+    
+    if request.method == 'POST':
+        form = ApproveTeacherForm(request.POST, instance=teacher)
+        
+        if form.is_valid():
+            if teacher.status != 'approved':
+                teacher.status = 'approved'
+                
+                # Process selected courses and teaching areas
+                selected_courses = request.POST.getlist('courses')  # This retrieves a list of selected course IDs
+                for course_id in selected_courses:
+                    course = get_object_or_404(Course, id=course_id)
+                    teaching_area = request.POST.get(f'teaching_area_{course_id}', '')  # Get the teaching area for each course
+                    
+                    # Create or update the TeacherCourse relationship
+                    TeacherCourse.objects.create(teacher=teacher, course=course, teaching_area=teaching_area)
+
+                teacher.save()
+
+                # Debugging: Check if teacher is approved
+                print(f"Teacher {teacher.first_name} {teacher.last_name} is now approved")
+             
+                # Generate random username and password
+                random_username = f"teacher_{get_random_string(8)}"  
+                random_password = get_random_string(8)  
+
+                # Debugging: Check if credentials are generated
+                print(f"Generated credentials: {random_username}, {random_password}")
+                
+                teacher.auto_generated_username = random_username
+                teacher.auto_generated_password = random_password  
+                teacher.save()
+
+                # Send email to the teacher
+                subject = 'Your Teacher Account has been Approved'
+                message = (
+                    f"Dear {teacher.first_name} {teacher.last_name},\n\n"
+                    f"Your account has been approved! Here are your login details:\n\n"
+                    f"Username: {random_username}\n"
+                    f"Password: {random_password}\n\n"
+                    f"You have been assigned to teach the course(s).\n"
+                    f"Teaching Area: **{teaching_area}**.\n\n"
+                    "Please log in and change your password upon your first login.\n\n"
+                    "Best Regards,\n"
+                    "The Administration Team"
+                )
+
+                # Send the email
+                send_mail(
+                    subject,
+                    message,
+                    'divyaantony2025@mca.ajce.in',  
+                    [teacher.email],
+                    fail_silently=False,
+                )
+
+                return redirect('admin_dashboard')  
+            else:
+                print("Teacher is already approved")
+        else:
+            print(form.errors)
+
+    else:
+        form = ApproveTeacherForm(instance=teacher)
+
+    context = {
+        'form': form,
+        'teacher': teacher,
+        'courses': courses,
+    }
+
+    return render(request, 'approve_teacher.html', context)
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Teacher
+
+def reject_teacher(request, teacher_id):
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+
+    if request.method == 'POST':
+        teacher.delete()  # Or you can set the status to 'pending'
+        return redirect('manage_teachers')  # Redirect after rejection
+
+    return render(request, 'reject_teacher.html', {'teacher': teacher})
+
+def approving_teacher(request, teacher_id):
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+
+    if request.method == 'POST':
+        # Update the teacher's status to 'approved'
+        teacher.status = 'approved'
+        teacher.save()
+        messages.success(request, f'Teacher {teacher.first_name} {teacher.last_name} has been approved.')
+
+        return redirect('manage_teachers')  # Redirect to the management page after approval
+
+    # If GET request, render the approve form
+    form = None  # You can add additional form processing logic if required
+    return render(request, 'approve_teacher.html', {'teacher': teacher, 'form': form})
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import Teacher
+
+# View to handle deleting a teacher
+def delete_teacher(request, teacher_id):
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+    if request.method == 'GET':
+        teacher.delete()
+        messages.success(request, f'Teacher {teacher.first_name} {teacher.last_name} has been deleted.')
+        return redirect('manage_teachers')
+
+
+from django.shortcuts import render
+from .models import Teacher
+
+def teacher_list(request):
+    teachers = Teacher.objects.all()  # Fetch all teachers from the database
+    return render(request, 'teacher_list.html', {'teachers': teachers})
+
+
+from django.shortcuts import render, redirect
+from django.core.mail import send_mail
+from django.contrib import messages
+from .models import Teacher, TeacherInterview  # Import the Interview model
+
+def interview_teacher(request):
+    # Fetch only teachers with status "pending"
+    teachers = Teacher.objects.filter(status='pending')
+
+    if request.method == 'POST':
+        # Get form data
+        teacher_id = request.POST.get('teacher_id')
+        interview_date = request.POST.get('interview_date')
+        starting_time = request.POST.get('starting_time')
+        ending_time = request.POST.get('ending_time')
+        meeting_link = request.POST.get('meeting_link')
+        interviewer_name = request.POST.get('interviewer_name')
+        notes = request.POST.get('notes')
+
+        # Fetch the teacher based on teacher_id
+        try:
+            teacher = Teacher.objects.get(id=teacher_id)
+            first_name = teacher.first_name
+            last_name = teacher.last_name
+            teacher_email = teacher.email  # Retrieve teacher's email
+        except Teacher.DoesNotExist:
+            messages.error(request, 'Teacher not found!')
+            return redirect('interview_teacher')
+
+        # Store interview details in the database
+        interview = TeacherInterview.objects.create(
+            teacher=teacher,
+            interview_date=interview_date,
+            starting_time=starting_time,
+            ending_time=ending_time,
+            meeting_link=meeting_link,
+            interviewer_name=interviewer_name,
+            notes=notes
+        )
+
+        # Email content
+        subject = "Interview Scheduled for Teacher"
+        message = f"""
+        Dear {first_name} {last_name},
+
+        You are scheduled for an interview.
+
+        Interview Details:
+        Date: {interview_date}
+        Starting Time: {starting_time}
+        Ending Time: {ending_time}
+        Meeting Link: {meeting_link}
+
+        Interviewer: {interviewer_name}
+        Notes: {notes}
+
+        Please make sure to attend the meeting on time.
+
+        Best regards,
+        {interviewer_name}
+        """
+
+        # Sending the email
+        send_mail(
+            subject,
+            message,
+            'divyaantony2025@mca.ajce.in',  # From email (replace with your configuration)
+            [teacher_email],  # Recipient email
+            fail_silently=False,
+        )
+
+        messages.success(request, f'Interview scheduled successfully, and email sent to {teacher_email}!')
+        return redirect('admin_dashboard')
+
+    return render(request, 'interview_teacher.html', {'teachers': teachers})
+
+
+
+from datetime import datetime, timedelta
+
+def add_course(request):
+    if request.method == 'POST':
+        course_name = request.POST.get('course_name')
+        description = request.POST.get('description')
+        duration = request.POST.get('duration')  # Duration is 1 hour
+        price = request.POST.get('price')
+        image = request.FILES.get('image')
+        start_date = request.POST.get('start_date')  # getting the start date
+        
+        # Convert start_date string to a datetime object
+        start_date = datetime.strptime(start_date, "%Y-%m-%d")
+        
+        # Calculate the end_date by adding one year to the start_date
+        end_date = start_date + timedelta(days=365)
+
+        # Create and save the new course object
+        new_course = Course(
+            course_name=course_name, 
+            description=description, 
+            duration=int(duration), 
+            price=price, 
+            image=image,
+            starting_date=start_date,
+            ending_date=end_date
+        )
+        new_course.save()
+
+        messages.success(request, 'Course added successfully!')
+        return redirect('course_list')
+    else:
+        return render(request, 'add_courses.html')
+
+
+
+def course_list(request):
+    courses = Course.objects.all()  
+    return render(request, 'course_list.html', {'courses': courses})
+
+from django.shortcuts import render, redirect
+from .models import Course, ClassSchedule, Teacher, TeacherCourse
+from datetime import date, datetime
+
+def schedule_class(request):
+    teacher_id = request.session.get('teacher_id')  # Get teacher ID from session
+    if not teacher_id:
+        return redirect('login')  # Redirect to login if teacher ID is missing
+    
+    try:
+        teacher = Teacher.objects.get(id=teacher_id)  # Fetch the logged-in teacher
+    except Teacher.DoesNotExist:
+        return redirect('login')  # Redirect to login if teacher is not found
+
+    # Fetch the assigned courses from TeacherCourse model
+    assigned_courses = TeacherCourse.objects.filter(teacher=teacher)
+    
+    if not assigned_courses.exists():
+        error_message = "No course is assigned to you."
+        return render(request, 'schedule_class.html', {
+            'today': date.today(),
+            'error_message': error_message
+        })
+
+    today = date.today()
+    error_message = None
+
+    if request.method == 'POST':
+        class_name = request.POST.get('class_name')
+        selected_date_str = request.POST.get('date')
+        start_time_str = request.POST.get('start_time')
+        end_time_str = request.POST.get('end_time')
+        meeting_link = request.POST.get('meeting_link')
+        selected_course_id = request.POST.get('assigned_course')  # Get selected course ID from dropdown
+
+        # Convert strings to appropriate date and time objects
+        try:
+            selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+            start_time = datetime.strptime(start_time_str, '%H:%M').time()
+            end_time = datetime.strptime(end_time_str, '%H:%M').time()
+        except ValueError:
+            error_message = "Invalid date or time format. Please use the correct format."
+            return render(request, 'schedule_class.html', {
+                'assigned_courses': assigned_courses,
+                'today': today,
+                'error_message': error_message
+            })
+
+        # Validate that the selected date is not in the past
+        if selected_date < today:
+            error_message = "The selected date cannot be in the past."
+            return render(request, 'schedule_class.html', {
+                'assigned_courses': assigned_courses,
+                'today': today,
+                'error_message': error_message
+            })
+        
+        # Fetch the selected course to validate dates
+        course = Course.objects.get(id=selected_course_id)  # Fetch the course by ID
+        
+        # Validate that the scheduled date is within the course's start and end dates
+        if selected_date < course.starting_date or selected_date > course.ending_date:
+            error_message = f"The scheduled date must be between {course.starting_date} and {course.ending_date}."
+            return render(request, 'schedule_class.html', {
+                'assigned_courses': assigned_courses,
+                'today': today,
+                'error_message': error_message
+            })
+
+        # Check that the end time is after the start time
+        if end_time <= start_time:
+            error_message = "End time must be after the start time."
+            return render(request, 'schedule_class.html', {
+                'assigned_courses': assigned_courses,
+                'today': today,
+                'error_message': error_message
+            })
+        
+        # Overlap validation - Check if the new class conflicts with any existing scheduled classes for any teacher
+        overlapping_classes = ClassSchedule.objects.filter(
+            date=selected_date,
+            start_time__lt=end_time,  # An overlap if the class starts before the new one ends
+            end_time__gt=start_time   # And ends after the new one starts
+        )
+
+        if overlapping_classes.exists():
+            error_message = "The scheduled class overlaps with an existing class scheduled by another teacher."
+            return render(request, 'schedule_class.html', {
+                'assigned_courses': assigned_courses,
+                'today': today,
+                'error_message': error_message
+            })
+
+        # Create the class schedule record in the database
+        schedule = ClassSchedule(
+            class_name=class_name,
+            course_name=course,  # Use the fetched course
+            date=selected_date,
+            start_time=start_time,
+            end_time=end_time,
+            meeting_link=meeting_link,
+            teacher=teacher
+        )
+        schedule.save()
+
+        if schedule:
+            return redirect('view_teacher_schedule_class')  # Redirect to teacher's dashboard on success
+
+    # Fetch scheduled classes for this teacher
+    current_datetime = datetime.now()
+    scheduled_classes = ClassSchedule.objects.filter(
+        teacher=teacher, date__gte=today, end_time__gt=current_datetime.time()
+    )
+
+    return render(request, 'schedule_class.html', {
+        'first_name': teacher.first_name,
+        'last_name': teacher.last_name,
+        'assigned_courses': assigned_courses,
+        'today': today,
+        'scheduled_classes': scheduled_classes,
+        'error_message': error_message
+    })
+
+
+from django.shortcuts import render, redirect
+from django.utils import timezone
+from django.db.models import Q
+from .models import ClassSchedule, Teacher, Course
+
+def view_teacher_schedule_class(request):
+    # Get the teacher_id from session
+    teacher_id = request.session.get('teacher_id')
+
+    # Redirect to login if teacher_id is not present
+    if not teacher_id:
+        return redirect('login')
+
+    try:
+        teacher = Teacher.objects.get(id=teacher_id)
+    except Teacher.DoesNotExist:
+        return redirect('login')
+
+    # Get the current local time and date, automatically converted to IST if TIME_ZONE is set to 'Asia/Kolkata'
+    current_datetime = timezone.localtime()
+
+    # Debug statement to check the current IST date and time
+    print(f"Current date and time (IST): {current_datetime}")
+    print(f"Current date (IST): {current_datetime.date()}, Current time (IST): {current_datetime.time()}")
+
+    # Fetch ongoing and future classes based on the current IST date and time
+    future_classes = ClassSchedule.objects.filter(
+        teacher=teacher  # Filter classes by teacher
+    ).filter(
+        Q(date=current_datetime.date(), end_time__gt=current_datetime.time()) |  # Ongoing classes today that haven't ended
+        Q(date__gt=current_datetime.date())  # Future classes (scheduled after today)
+    ).order_by('date', 'start_time')  # Order by date and start time
+
+    # Debug statement to check the ongoing and future classes query results
+    print(f"Ongoing and future classes: {future_classes}")
+
+    # Prepare the context for rendering
+    context = {
+        'future_classes': future_classes,
+        'first_name': teacher.first_name,
+        'last_name': teacher.last_name,  # Ongoing and future classes
+    }
+
+    return render(request, 'view_teacher_schedule_class.html', context)
+
+
+
+from django.shortcuts import render, redirect # type: ignore
+from django.contrib import messages # type: ignore
+from .models import ClassSchedule
+
+def edit_class(request):
+    courses = Course.objects.all()
+    if request.method == 'POST':
+        class_id = request.POST.get('class_id')
+        course_id = request.POST.get('course_name')
+        class_name = request.POST.get('class_name')
+        date = request.POST.get('date')
+        start_time = request.POST.get('start_time')
+        end_time = request.POST.get('end_time')
+        meeting_link = request.POST.get('meeting_link')
+
+        try:
+            scheduled_class = ClassSchedule.objects.get(id=class_id)
+            scheduled_class.course_name = course_id
+            scheduled_class.class_name = class_name
+            scheduled_class.date = date
+            scheduled_class.start_time = start_time
+            scheduled_class.end_time = end_time
+            scheduled_class.meeting_link = meeting_link
+            scheduled_class.save()
+
+            messages.success(request, "Class details updated successfully.")
+        except ClassSchedule.DoesNotExist:
+            messages.error(request, "Class not found.")
+
+        return redirect('view_teacher_schedule_class', {'courses': courses})  # Redirect to the view scheduled classes page
+
+from django.contrib import messages # type: ignore
+from django.shortcuts import redirect, render # type: ignore
+from .models import ClassSchedule, CustomUser,Enrollment
+from django.utils import timezone # type: ignore
+from django.db.models import Q # type: ignore
+
+def view_scheduled_classes(request):
+    # Retrieve the custom user ID from the session
+    custom_user_id = request.session.get('custom_user_id')
+
+    if not custom_user_id:
+        messages.error(request, "You are not logged in.")
+        return redirect('login')
+
+    try:
+        # Fetch the student (CustomUser) based on the custom user ID
+        student = CustomUser.objects.get(id=custom_user_id)
+    except CustomUser.DoesNotExist:
+        messages.error(request, "Student not found.")
+        return redirect('login')
+# Fetch the enrolled courses for the student
+    enrolled_courses = Enrollment.objects.filter(student=student)
+
+    if not enrolled_courses.exists():
+        messages.error(request, "You are not registered for any course.")
+        return redirect('student_dashboard')
+
+    # Get the current date and time in IST
+    current_datetime = timezone.localtime()  # This will automatically convert to IST if TIME_ZONE is set to 'Asia/Kolkata'
+
+    # Debug statement to check the current IST date and time
+    print(f"Current date and time (IST): {current_datetime}")
+
+    # Fetch ongoing and future classes for the registered course
+    ongoing_future_classes = ClassSchedule.objects.filter(
+       course_name__in=enrolled_courses.values_list('course', flat=True)  # Correct field name here
+    ).filter( 
+        Q(date=current_datetime.date(), end_time__gt=current_datetime.time()) |  # Ongoing classes today that haven't ended
+        Q(date__gt=current_datetime.date())  # Future classes (after today)
+    ).order_by('date', 'start_time')  # Order by date and start time
+
+    # Check if there are any ongoing or future classes
+    if not ongoing_future_classes.exists():
+        messages.info(request, "No ongoing or upcoming classes found.")
+
+    # Pass the classes to the template
+    return render(request, 'view_scheduled_classes.html', {'scheduled_classes': ongoing_future_classes})
+
+
+from django.shortcuts import render, redirect # type: ignore
+from .models import CustomUser, ClassSchedule, Parent
+
+def view_class_schedule(request):
+    parent_id = request.session.get('parent_id')
+    
+    if not parent_id:
+        
+        return redirect('login')
+    
+    try:
+        parent = Parent.objects.get(id=parent_id)
+    except Parent.DoesNotExist:
+       
+        return redirect('error_page')
+
+    child_username = parent.student_username
+    child = CustomUser.objects.get(username=child_username)
+    child_schedule = ClassSchedule.objects.filter(course_name=child.course)
+
+    context = {
+        'child': child,
+        'child_schedule': child_schedule,
+    }
+    
+    return render(request, 'view_class_schedule.html', context)
+
+
+from .models import CustomUser, Parent, Teacher
+from .models import Parent
+
+
+def change_password(request):
+    parent_id = request.session.get('parent_id')
+    
+    # Check if parent is logged in
+    if not parent_id:
+        messages.error(request, 'You are not logged in as a parent.')
+        return redirect('login')
+
+    try:
+        # Fetch the parent instance
+        parent = Parent.objects.get(id=parent_id)
+    except Parent.DoesNotExist:
+        messages.error(request, 'Parent not found.')
+        return redirect('login')
+
+    if request.method == 'POST':
+        old_password = request.POST.get('old_password')
+        new_password1 = request.POST.get('new_password')
+        new_password2 = request.POST.get('confirm_password')
+
+        # Check if new passwords match
+        if new_password1 != new_password2:
+            messages.error(request, 'New passwords do not match.')
+            return redirect('change_password')
+
+        # Check if the old password is correct
+        if old_password != parent.auto_generated_password:
+            messages.error(request, 'Old password is incorrect.')
+            return redirect('change_password')
+
+        # Update the password in the database
+        parent.auto_generated_password = new_password1
+        parent.save()
+        messages.success(request, 'Your password has been successfully updated.')
+        return redirect('login')
+
+    return render(request, 'change_password.html')
+
+
+from django.shortcuts import render, redirect # type: ignore
+from django.contrib import messages # type: ignore
+from django.contrib.auth import update_session_auth_hash # type: ignore
+from .models import CustomUser, Parent, Teacher
+from .models import Teacher
+
+def teacher_changepassword(request):
+    teacher_id = request.session.get('teacher_id')
+    
+    # Check if teacher is logged in
+    if not teacher_id:
+        messages.error(request, 'You are not logged in as a teacher.')
+        return redirect('login')
+
+    try:
+        # Fetch the teacher instance
+        teacher = Teacher.objects.get(id=teacher_id)
+    except Teacher.DoesNotExist:
+        messages.error(request, 'Teacher not found.')
+        return redirect('login')
+
+    if request.method == 'POST':
+        old_password = request.POST.get('old_password')
+        new_password1 = request.POST.get('new_password')
+        new_password2 = request.POST.get('confirm_password')
+
+        # Check if new passwords match
+        if new_password1 != new_password2:
+            messages.error(request, 'New passwords do not match.')
+            return redirect('teacher_changepassword')
+
+        # Check if the old password is correct
+        if old_password != teacher.auto_generated_password:
+            messages.error(request, 'Old password is incorrect.')
+            return redirect('teacher_changepassword')
+
+        # Update the password in the database
+        teacher.auto_generated_password = new_password1
+        teacher.save()
+        messages.success(request, 'Your password has been successfully updated.')
+        return redirect('login')
+
+    return render(request, 'teacher_changepassword.html')
+
+
+
+from .models import Teacher
+
+def teacher_updateprofile(request):
+    teacher_id = request.session.get('teacher_id')
+    
+    if not teacher_id:
+        messages.error(request, 'No teacher ID found in session.')
+        return redirect('login')
+
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+
+    if request.method == 'POST':
+        # Fetch the form data
+        teacher.first_name = request.POST.get('first_name')
+        teacher.last_name = request.POST.get('last_name')
+        teacher.gender = request.POST.get('gender')
+        teacher.date_of_birth = datetime.strptime(request.POST.get('date_of_birth'), '%Y-%m-%d').date()
+        teacher.email = request.POST.get('email')
+        teacher.contact = request.POST.get('contact')
+        teacher.address_line1 = request.POST.get('address_line1')
+        teacher.address_line2 = request.POST.get('address_line2')
+        teacher.city = request.POST.get('city')
+        teacher.state = request.POST.get('state')
+        teacher.zip_code = request.POST.get('zip_code')
+        teacher.qualification = request.POST.get('qualification')
+        teacher.experience = request.POST.get('experience')
+
+        # Handle file uploads
+        if 'qualification_certificate' in request.FILES:
+            teacher.qualification_certificate = request.FILES['qualification_certificate']
+        if 'experience_certificate' in request.FILES:
+            teacher.experience_certificate = request.FILES['experience_certificate']
+        # Save the updated teacher details
+        teacher.save()
+        messages.success(request, 'Profile updated successfully.')
+        return redirect('view_profile')  
+
+    context = {'teacher': teacher,
+               'first_name': teacher.first_name,
+               'last_name': teacher.last_name,
+        }
+    return render(request, 'teacher_updateprofile.html', context)
+
+
+from .models import Parent
+import json
+import uuid
+import re
+from django.shortcuts import render, redirect
+from django.contrib.auth.hashers import make_password
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib import messages
+from django.utils.crypto import get_random_string
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
+import requests
+from .models import CustomUser, Course, FinalExam, FinalExamQuestion, Parent, TeacherMessage, TeacherStudent, Material, MaterialSummary
+import cv2
+import numpy as np
+from datetime import datetime, timedelta
+import os
+from django.shortcuts import render
+from django.http import JsonResponse
+from .models import Attendance
+import base64
+from transformers import MarianMTModel, MarianTokenizer
+import torch
+from .models import StudentFaceData
+from django.views.decorators.csrf import csrf_exempt
+from scipy.spatial.distance import cosine
+from django.shortcuts import render, redirect
+from .models import ClassSchedule
+from django.utils import timezone
+import mediapipe as mp
+from django.core.files.base import ContentFile
+from PIL import Image
+import io
+from skimage.metrics import structural_similarity as ssim  # Add this import
+from ml_code.create_db import create_data
+from ml_code.face_recognition import face_recognize
+from django.core.paginator import Paginator
+from .models import ParentTeacherMessage, Teacher, Parent
+from django.db.models import Q
+from django.utils import timezone
+from .models import Course, WhiteboardShare
+from django.http import JsonResponse
+from .models import EventSuggestion, CalendarEvent
+from django.views.decorators.http import require_POST
+from .models import MindMap
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import ensure_csrf_cookie
+import os
+from dotenv import load_dotenv
+from gtts import gTTS
+from django.http import FileResponse, HttpResponse
+from django.shortcuts import get_object_or_404
+from .models import Material
+import PyPDF2
+import docx
+import tempfile
+from transformers import SpeechT5Processor, SpeechT5ForTextToSpeech, SpeechT5HifiGan
+import soundfile as sf
+from datasets import load_dataset
+import pyttsx3
+import threading
+from .models import TeacherNote, Course
+from django.contrib import messages
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from io import BytesIO
+from html import unescape
+import re
+from reportlab.pdfgen import canvas
+from io import BytesIO
+from django.core.files.base import ContentFile
+# Load environment variables
+load_dotenv()
+def register(request):
+    if request.method == 'POST':
+        # Extract form data from request.POST
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        email = request.POST.get('email')
+        contact = request.POST.get('contact')
+        date_of_birth = request.POST.get('date_of_birth')
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+       
+
+        # Perform basic validation
+        if not all([first_name, last_name, email, contact, date_of_birth, username, password]):
+            messages.error(request, 'Please fill out all fields.')
+            return render(request, 'register.html')
+
+        if not username.isalnum():
+            messages.error(request, "Username should contain only alphabets or numbers.")
+            return redirect('register')
+
+        # Check if the username or email is unique for the student
+        if CustomUser.objects.filter(username=username).exists():
+            messages.error(request, 'Username is already taken.')
+            return render(request, 'register.html')
+
+        if CustomUser.objects.filter(email=email).exists():
+            messages.error(request, 'Email is already registered.')
+            return render(request, 'register.html')
+
+        # Validate email format
+        
+        # Validate password complexity
+       
+
+
+        # Create and save student user instance
+        student_user = CustomUser(
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            contact=contact,
+            date_of_birth=date_of_birth,
+            password=make_password(password),
+            is_active=True,  # Ensure the user is active upon registration
+        )
+        student_user.save()
+
+        # Auto-generate a unique parent username using UUID
+        parent_username = f'parent_{uuid.uuid4().hex[:8]}'  # Generate an 8-character unique username
+
+        # Generate a random secure password for the parent
+        parent_password = get_random_string(12)  # Generate a 12-character password
+
+        # Create the parent instance linked to the student user
+        parent = Parent.objects.create(
+            auto_generated_username=parent_username,
+            auto_generated_password=parent_password,
+            student_username=student_user.username  # Link to the student's username
+        )
+
+        # Send email with parent's auto-generated credentials to the student's email
+        send_mail(
+            subject='Registration Successful: Parent Login Credentials',
+            message=f'You have successfully registered.\n\n'
+                    f'Your parent\'s login details:\n'
+                    f'Username: {parent_username}\n'
+                    f'Password: {parent_password}\n',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],  # Send to the student's email
+            fail_silently=False,
+        )
+
+        messages.success(request, 'Account created successfully! Parent login credentials have been sent to your email.')
+        return redirect('login')
+    else:
+        return render(request, 'register.html')
+
+
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Teacher, Parent, CustomUser
+
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        # Check Teacher model
+        try:
+            teacher = Teacher.objects.get(auto_generated_username=username)
+            if teacher.auto_generated_password == password:
+                # Manually log in the teacher (using sessions)
+                request.session['teacher_id'] = teacher.id  # Store teacher ID in session
+                return redirect('teacher_dashboard')
+        except Teacher.DoesNotExist:
+            pass  # Not a teacher
+
+        # Check Parent model
+        try:
+            parent = Parent.objects.get(auto_generated_username=username)
+            if parent.auto_generated_password == password:
+                # Manually log in the parent (using sessions)
+                request.session['parent_id'] = parent.id  # Store parent ID in session
+                return redirect('parent_dashboard')
+        except Parent.DoesNotExist:
+            pass  # Not a parent
+
+        # Check CustomUser model
+        try:
+            custom_user = CustomUser.objects.get(username=username)
+            if not custom_user.is_active:
+                messages.error(request, 'Your account is deactivated. Please contact support.')
+            if custom_user.check_password(password):  # Assuming password is stored as plaintext
+                # Manually log in the CustomUser (using sessions)
+                request.session['custom_user_id'] = custom_user.id  # Store CustomUser ID in session
+                
+                # Check if face data exists
+                # face_data = StudentFaceData.objects.filter(user=custom_user).first()
+                # if not face_data or not face_data.is_face_captured:
+                #     return redirect('face_capture')
+                
+                return redirect('available_courses')
+            else:
+                messages.error(request, 'Invalid password for CustomUser.')
+        except CustomUser.DoesNotExist:
+            pass  # Not a CustomUser
+
+        # If no match, show an error message
+        messages.error(request, 'Invalid username or password.')
+
+    return render(request, 'login.html')
+
+def assigned_courses(request):
+    # Get the teacher ID from the session
+    teacher_id = request.session.get('teacher_id')
+
+    if teacher_id:
+        # Fetch the assigned courses from the session
+        assigned_courses = request.session.get('assigned_courses', [])
+
+        return render(request, 'assigned_courses.html', {'courses': assigned_courses})
+
+    return redirect('teacher_login')  # Redirect to login if no session found
+
+
+from django.shortcuts import render, redirect
+from django.utils import timezone
+from .models import Course, Enrollment
+
+def available_courses(request):
+    # Check if the user is authenticated via session
+    if 'custom_user_id' not in request.session:
+        return redirect('login')  # Redirect to the login page if not authenticated
+   
+    # Get the logged-in user's ID from the session
+    custom_user_id = request.session['custom_user_id']
+    custom_user = CustomUser.objects.get(id=custom_user_id)
+    # Get the current date
+    current_date = timezone.now().date()
+
+    # Filter courses to only include those that have not started and haven't reached their end date
+    courses = Course.objects.filter(starting_date__gt=current_date, ending_date__gt=current_date)
+
+    # Apply price range filter if set
+    price_range = request.GET.get('price_range')
+    if price_range:
+        if price_range == 'all':
+            pass
+        elif price_range == '0-500':
+            courses = courses.filter(price__lt=500)
+        elif price_range == '500-999':
+            courses = courses.filter(price__gte=500, price__lt=1000)
+
+        elif price_range == '1000-2000':
+            courses = courses.filter(price__gte=1000, price__lt=2000)
+        elif price_range == '2000-3000':
+            courses = courses.filter(price__gte=2000, price__lt=3000)
+        elif price_range == '3000-4000':
+            courses = courses.filter(price__gte=3000, price__lt=4000)
+        elif price_range == '4000-5000':
+            courses = courses.filter(price__gte=4000, price__lt=5000)
+        elif price_range == '5000+':
+            courses = courses.filter(price__gte=5000)
+
+    # Prepare a list to hold course data along with enrollment status
+    course_data = []
+    for course in courses:
+        # Check if the user is enrolled in the current course
+        is_enrolled = Enrollment.objects.filter(student_id=custom_user_id, course=course).exists()
+        
+        # Append course data with enrollment status and start date check
+        course_data.append({
+            'course': course,
+            'is_enrolled': is_enrolled,
+            'can_enroll': current_date < course.starting_date  # Check if course hasn't started yet
+        })
+
+    # Pass the course data and current date to the template
+    return render(request, 'available_courses.html', {
+        'custom_user': custom_user,
+        'course_data': course_data,
+        'current_date': current_date,
+        'selected_price_range': price_range,
+        
+    })
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Course, Enrollment
+from django.http import HttpResponseForbidden
+
+def enroll_course(request, course_id):
+    # Check if the user is authenticated via session
+    if 'custom_user_id' not in request.session:
+        # If the user is not authenticated, redirect to the login page
+        return redirect('login')  # Redirect to your custom login page
+
+    # Get the authenticated user's ID from the session
+    custom_user_id = request.session['custom_user_id']
+    
+    # Get the course the user is trying to enroll in
+    course = get_object_or_404(Course, id=course_id)
+
+    # Check if the user is already enrolled in this course
+    if Enrollment.objects.filter(student_id=custom_user_id, course=course).exists():
+        # You can add a message here indicating the user is already enrolled
+        return redirect('available_courses')  # Redirect back to the available courses page
+
+    # If the user is not enrolled, create a new Enrollment
+    enrollment = Enrollment.objects.create(student_id=custom_user_id, course=course)
+
+    # Optionally, you can show a success message or redirect to another page
+    return redirect('available_courses')  # Redirect to the course list page
+
+from datetime import datetime
+def student_dashboard(request):
+    custom_user_id = request.session.get('custom_user_id')
+    if not custom_user_id:
+        return redirect('login')
+
+    # Fetch the CustomUser object based on the session ID
+    try:
+        custom_user = CustomUser.objects.get(id=custom_user_id)
+        if not custom_user.is_active:
+            return redirect('login')
+    except CustomUser.DoesNotExist:
+        return redirect('login')
+
+    enrolled_courses = Course.objects.filter(enrollments__student_id=custom_user_id)
+    today = datetime.today()
+
+    # Check for unanswered feedback questions for the logged-in user
+    feedback_questions = FeedbackQuestion.objects.all()
+    answered_questions = Feedback.objects.filter(user=custom_user_id).values_list('question_id', flat=True)
+    
+    # Identify new feedback questions (not answered by the user)
+    new_feedback_questions = feedback_questions.exclude(id__in=answered_questions)
+
+    return render(request, 'student_dashboard.html', {
+        'enrolled_courses': enrolled_courses,
+        'custom_user': custom_user,
+        'new_feedback_questions': new_feedback_questions,  # This will contain unanswered questions
+        'today': today,  # Pass today's date to the template
+    })
+
+
+def teacher_dashboard(request):
+    teacher_id = request.session.get('teacher_id')
+    if not teacher_id:
+        return redirect('login')  # Redirect to login if teacher not authenticated
+
+    # Fetch the Teacher object using teacher_id
+    try:
+        teacher = Teacher.objects.get(id=teacher_id)
+    except Teacher.DoesNotExist:
+        return redirect('login')  # Redirect if the teacher doesn't exist
+    teacher_courses = TeacherCourse.objects.filter(teacher_id=teacher_id).select_related('course')
+    # Pass the teacher object to the template
+    return render(request, 'teacher_dashboard.html', {
+        'first_name': teacher.first_name,
+        'last_name': teacher.last_name,
+        'teacher_courses': teacher_courses
+    })
+
+def parent_dashboard(request):
+    parent_id = request.session.get('parent_id')
+    if not parent_id:
+        return redirect('login')
+
+    try:
+        parent = Parent.objects.get(id=parent_id)
+        student = CustomUser.objects.get(username=parent.student_username)
+        courses = Enrollment.objects.filter(student=student).select_related('course')
+        
+        # Get student's quiz answers/grades
+        grades = UserAnswers.objects.filter(
+            user=student
+        ).select_related(
+            'question__quiz',
+            'question__quiz__course'
+        ).order_by('-attempt_date')
+        
+        # Get assignment submissions for the student
+        assignment_submissions = AssignmentSubmission.objects.filter(
+            student=student
+        ).select_related(
+            'assignment',
+            'assignment__teacher',
+            'assignment__course_name'
+        ).order_by('-submitted_at')
+
+        # Calculate submission status for each submission
+        for submission in assignment_submissions:
+            # Convert submitted_at to date for comparison
+            submission_date = submission.submitted_at.date()
+            due_date = submission.assignment.end_date
+            
+            if submission_date > due_date:
+                submission.is_overdue = True
+                submission.days_overdue = (submission_date - due_date).days
+                submission.status_class = 'text-danger'
+            elif submission_date == due_date:
+                submission.is_overdue = False
+                submission.status_class = 'text-warning'
+                submission.submitted_on = 'last day'
+            else:
+                submission.is_overdue = False
+                submission.days_early = (due_date - submission_date).days
+                submission.status_class = 'text-success'
+
+        # Get attendance records
+        attendance_records = Attendance.objects.filter(student=student).order_by('-check_in_time')
+        
+        # Calculate attendance statistics
+        total_records = attendance_records.count()
+        present_count = attendance_records.filter(status='present').count()
+        absent_count = total_records - present_count
+        attendance_percentage = (present_count / total_records * 100) if total_records > 0 else 0
+
+        # Get the student's enrolled courses
+        courses = Enrollment.objects.filter(student=student).select_related('course')
+        
+        # Calculate total course fees from course prices
+        total_course_fees = sum(enrollment.course.price for enrollment in courses)
+        
+        # Use select_related and prefetch_related to optimize queries
+        teachers = Teacher.objects.filter(
+            Q(parent_messages__parent=parent) | 
+            Q(teacher_courses__course__students__username=parent.student_username)
+        ).prefetch_related('teacher_courses').distinct()
+
+        messages_list = ParentTeacherMessage.objects.filter(parent=parent).order_by('-date')
+        
+        context = {
+            'parent': parent,
+            'student': student,
+            'courses': courses,
+            'grades': grades,
+            'assignment_submissions': assignment_submissions,
+            'attendance_records': attendance_records,
+            'present_count': present_count,
+            'absent_count': absent_count,
+            'attendance_percentage': attendance_percentage,
+            'total_course_fees': total_course_fees,
+            'messages_list': messages_list,
+            'teachers': teachers,
+            'unread_count': messages_list.filter(is_read=False, message_type='teacher_to_parent').count()
+        }
+
+        try:
+            # Get enrolled courses
+            enrolled_courses = Enrollment.objects.filter(
+                student__username=parent.student_username
+            ).values_list('course', flat=True)
+
+            # Get upcoming events for enrolled courses
+            upcoming_events = CalendarEvent.objects.filter(
+                course__in=enrolled_courses,
+                end_time__gte=timezone.now()
+            ).order_by('start_time')
+
+            # Get registered events for the student
+            registered_events = EventRegistration.objects.filter(
+                user__username=parent.student_username,
+                status='registered'
+            ).select_related('event')
+
+            try:
+                # Get event suggestions for this parent
+                event_suggestions = EventSuggestion.objects.filter(
+                    parent=parent
+                ).select_related('event').order_by('-created_at')
+
+                context.update({
+                    'upcoming_events': upcoming_events,
+                    'registered_events': registered_events,
+                    'event_suggestions': event_suggestions,  # Add suggestions to context
+                })
+
+                return render(request, 'parent_dashboard.html', context)
+
+            except Exception as e:
+                print(f"Error getting event suggestions: {str(e)}")
+                return render(request, 'parent_dashboard.html', context)
+
+        except Exception as e:
+            print(f"Error in parent_dashboard: {str(e)}")
+            return render(request, 'parent_dashboard.html', context)
+
+    except Parent.DoesNotExist:
+        return redirect('login')
+    except CustomUser.DoesNotExist:
+        student = None
+        courses = []
+        grades = []
+        assignment_submissions = []
+
+    # Get all messages for this parent
+    messages_list = ParentTeacherMessage.objects.filter(
+        parent=parent,
+        message_type='parent_to_teacher'  # Only get messages sent by parent
+    ).select_related('teacher').order_by('-date')
+
+    context.update({
+        'sent_messages': messages_list,
+    })
+
+    return render(request, 'parent_dashboard.html', {
+        'parent': parent,
+        'student': student,
+        'courses': courses,
+        'grades': grades,
+        'assignment_submissions': assignment_submissions,
+        'attendance_records': attendance_records,
+        'present_count': present_count,
+        'absent_count': absent_count,
+        'attendance_percentage': attendance_percentage,
+    })
+
+
+def index_view(request):
+    return render(request, 'index.html')
+
+def about_view(request):
+    return render(request, 'about.html')
+
+def admissions_view(request):
+    return render(request, 'admissions.html')
+
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .forms import ContactMessageForm  # Adjust the import based on your structure
+
+def contact_view(request):
+    if request.method == 'POST':
+        form = ContactMessageForm(request.POST)
+        if form.is_valid():
+            form.save()  # Save the form data to the database
+            messages.success(request, 'Your message has been sent successfully!')
+            return redirect('index')  # Redirect to the index page after submitting
+        else:
+            # This line ensures that the form with error messages is re-rendered
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = ContactMessageForm()
+
+    return render(request, 'contact.html', {'form': form})  # Replace 'your_template.html' with your actual template name
+
+
+from django.shortcuts import render, redirect
+from .models import ContactMessage
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib import messages
+
+# View to display all contact messages
+def view_messages(request):
+    messages_list = ContactMessage.objects.all()
+    return render(request, 'view_messages.html', {'messages_list': messages_list})
+
+def reply_message(request, message_id):
+    message_obj = ContactMessage.objects.get(id=message_id)
+    if request.method == 'POST':
+        subject = 'Thank you for contacting us'
+        body = 'We will contact you for more clarification regarding your query.'
+        from_email = settings.DEFAULT_FROM_EMAIL
+        recipient_list = [message_obj.email]
+
+        send_mail(subject, body, from_email, recipient_list)
+
+        # Update the replied status
+        message_obj.replied = True
+        message_obj.save()
+
+        messages.success(request, 'Reply sent successfully!')
+        return redirect('view_messages')
+    return redirect('view_messages')
+
+
+
+# views.py
+from django.shortcuts import render
+from .models import Course  # Make sure the Course model is imported
+from django.utils import timezone
+
+def courses_view(request):
+    # Fetch courses that haven't reached the start date
+    available_courses = Course.objects.filter(starting_date__gt=timezone.now())
+    return render(request, 'courses.html', {'courses': available_courses})
+
+def course_detail_10(request):
+    return render(request, 'course_detail_10.html')
+
+def course_detail_higher_secondary(request):
+    return render(request, 'course_detail_higher_secondary.html')
+
+def teachers_view(request):
+    return render(request, 'teachers.html')
+
+def recover_view(request):
+    return render(request, 'recover.html')
+
+def features(request):
+    return render(request, 'features.html')
+
+def parent(request):
+    return render(request, 'parent.html')
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+
+def admin_login(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        
+        # Check against predefined credentials
+        if username == 'admin' and password == 'admin123':
+            # Create a custom session for the admin user
+            request.session['is_admin'] = True
+            return redirect('admin_dashboard')  # Redirect to admin dashboard
+        else:
+            messages.error(request, "Invalid username or password. Please try again.")
+    
+    return render(request, 'admin_login.html')
+# views.py
+from django.shortcuts import render
+from .models import CustomUser, Teacher, Course, Enrollment  # Import your models
+
+def admin_dashboard(request):
+    # Count the number of users, teachers, and courses
+    total_users = CustomUser.objects.count()
+    total_teachers = Teacher.objects.count()
+    total_courses = Course.objects.count()
+
+    # Prepare data for course enrollment visualization
+    courses = Course.objects.all()
+    course_enrollment_data = []
+
+    for course in courses:
+        enrollment_count = Enrollment.objects.filter(course=course).count()
+        course_enrollment_data.append({
+            'course_name': course.course_name,
+            'enrollment_count': enrollment_count
+        })
+
+    context = {
+        'total_users': total_users,
+        'total_teachers': total_teachers,
+        'total_courses': total_courses,
+        'course_enrollment_data': course_enrollment_data,  # Pass enrollment data to template
+    }
+
+    return render(request, 'admin_dashboard.html', context)
+
+# views.py
+from django.shortcuts import render
+from .models import Course, Enrollment  # Import your models
+
+def course_enrollment_view(request):
+    # Get enrollment counts for each course
+    course_data = []
+    courses = Course.objects.all()
+    for course in courses:
+        registration_count = Enrollment.objects.filter(course=course).count()  # Count enrollments for each course
+        course_data.append({
+            'course_name': course.course_name,
+            'registration_count': registration_count
+        })
+
+    context = {
+        'course_data': course_data,  # Pass course data to the template
+    }
+
+    return render(request, 'course_enrollment.html', context)
+
+from django.shortcuts import render
+from .models import CustomUser
+
+def manage_students(request):
+    students = CustomUser.objects.select_related('course').filter(is_active=1)
+
+    past_students = CustomUser.objects.filter(is_active=0)
+    return render(request, 'manage_students.html', {'students': students, 'past_students':past_students})
+
+
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from .models import CustomUser
+
+def delete_student(request, student_id):
+    student = get_object_or_404(CustomUser, id=student_id)
+    if request.method == 'POST':
+        student.is_active = 0  
+        student.save()  
+        messages.success(request, 'Student marked as active successfully.')
+        return redirect('manage_students')
+
+
+# views.py
+from django.core.mail import send_mail
+from django.shortcuts import redirect, get_object_or_404
+from django.contrib import messages
+from .models import CustomUser
+
+def toggle_student_status(request, student_id):
+    student = get_object_or_404(CustomUser, id=student_id)
+    if student.is_active:
+        student.is_active = 0
+        email_subject = "Account Deactivated"
+        email_message = "Your account has been deactivated. Please contact support if you have any questions."
+    else:
+        student.is_active = True
+        email_subject = "Account Activated"
+        email_message = "Your account has been activated. You can now log in to the platform."
+
+    student.save()
+
+    # Send email to the student
+    send_mail(
+        email_subject,
+        email_message,
+        'divyaantony2025@mca.ajce.in',
+        [student.email],
+        fail_silently=False,
+    )
+
+    messages.success(request, f"Student '{student.username}' status updated successfully.")
+    return redirect('manage_students')
+
+
+from django.contrib.auth import logout as auth_logout
+from django.shortcuts import redirect
+
+def logout(request):
+    auth_logout(request)
+    request.session.flush()  
+    return redirect('login')
+
+
+def recover(request):
+    return render(request, 'recover.html')
+from django.contrib.auth.views import PasswordResetView
+from django.urls import reverse_lazy
+
+class CustomPasswordResetView(PasswordResetView):
+    template_name = 'password_reset.html'
+    email_template_name = 'password_reset_email.html'
+    subject_template_name = 'password_reset_subject.txt'
+    success_url = reverse_lazy('password_reset_done')
+from django.contrib.auth.views import PasswordResetDoneView
+
+class CustomPasswordResetDoneView(PasswordResetDoneView):
+    template_name = 'password_reset_done.html'
+from django.contrib.auth.views import PasswordResetConfirmView
+from django.urls import reverse_lazy
+
+class CustomPasswordResetConfirmView(PasswordResetConfirmView):
+    template_name = 'password_reset_confirm.html'
+    success_url = reverse_lazy('password_reset_complete')
+from django.contrib.auth.views import PasswordResetCompleteView
+
+class CustomPasswordResetCompleteView(PasswordResetCompleteView):
+    template_name = 'password_reset_complete.html'
+
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Teacher
+
+def register_teacher(request):
+    if request.method == 'POST':
+        # Extract data from the POST request
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        gender = request.POST.get('gender')
+        dob = request.POST.get('dob')
+        email = request.POST.get('email')
+        contact = request.POST.get('contact')
+        address_line1 = request.POST.get('address_line1')
+        address_line2 = request.POST.get('address_line2')
+        city = request.POST.get('city')
+        state = request.POST.get('state')
+        zip_code = request.POST.get('zip_code')
+        qualification = request.POST.get('qualification')
+        experience = request.POST.get('experience')
+
+        # Handle file uploads
+        qualification_certificate = request.FILES.get('qualification_certificate')
+        experience_certificate = request.FILES.get('experience_certificate', None)  # This file is optional
+
+        # Simple validation check for required fields
+        if not first_name or not last_name or not email:
+            messages.error(request, "First name, last name, and email are required.")
+        else:
+            # Create a new Teacher object and set the fields
+            teacher = Teacher(
+                first_name=first_name,
+                last_name=last_name,
+                gender=gender,
+                date_of_birth=dob,
+                email=email,
+                contact=contact,
+                address_line1=address_line1,
+                address_line2=address_line2,
+                city=city,
+                state=state,
+                zip_code=zip_code,
+                qualification=qualification,
+                experience=experience,
+                qualification_certificate=qualification_certificate,
+                experience_certificate=experience_certificate,  # This file is optional
+                status='pending'  # Set the initial status of the teacher to 'pending'
+            )
+            teacher.save()
+
+            # Add a success message
+            messages.success(request, "You have successfully registered! Please wait for your approval.")
+
+            # Redirect to the login page or another relevant page after successful registration
+            return redirect('login')
+
+    return render(request, 'register_teacher.html')
+
+
+
+from django.shortcuts import render, redirect
+from .models import Teacher  # Adjust the import based on your app structure
+
+def view_profile(request):
+    teacher_id = request.session.get('teacher_id')
+    
+    if not teacher_id:
+        print("No teacher ID found in session.")  # Debugging line
+        return render(request, 'view_profile.html', {'error': 'Profile not found.'})
+    
+    try:
+        teacher = Teacher.objects.get(id=teacher_id)
+        print(f"Logged in teacher's username: {teacher.auto_generated_username}")  # Debugging line
+        context = {'teacher': teacher}
+    except Teacher.DoesNotExist:
+        print("No matching Teacher found.")  # Debugging line
+        context = {'error': 'Profile not found.'}
+    
+    return render(request, 'view_profile.html', context)
+
+from django.core.mail import send_mail
+from django.contrib.auth.models import User
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import Teacher
+import random
+import string
+
+def manage_teachers(request):
+    pending_teachers = Teacher.objects.filter(status='pending')
+    approved_teachers = Teacher.objects.filter(status='approved')
+    
+    context = {
+        'pending_teachers': pending_teachers,
+        'approved_teachers': approved_teachers,
+    }
+    return render(request, 'manage_teachers.html', context)
+
+# views.py
+from django.core.mail import send_mail
+from django.shortcuts import redirect, get_object_or_404
+from django.contrib import messages
+from .models import Teacher  # Import your Teacher model
+
+def toggle_teacher_status(request, teacher_id):
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+    
+    if teacher.is_active:
+        teacher.is_active = False  # Set to False to deactivate
+        email_subject = "Account Deactivated"
+        email_message = "Your account has been deactivated. Please contact support if you have any questions."
+    else:
+        teacher.is_active = True  # Set to True to activate
+        email_subject = "Account Activated"
+        email_message = "Your account has been activated. You can now log in to the platform."
+
+    teacher.save()
+
+    # Send email to the teacher
+    send_mail(
+        email_subject,
+        email_message,
+        'divyaantony2025@mca.ajce.in',  # Replace with your email
+        [teacher.email],  # Send email to the teacher
+        fail_silently=False,
+    )
+
+    messages.success(request, f"Teacher '{teacher.first_name} {teacher.last_name}' status updated successfully.")
+    return redirect('manage_teachers')
+
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.core.mail import send_mail
+from django.utils.crypto import get_random_string
+from .models import Teacher, Course, TeacherCourse  # Assuming TeacherCourse is the model for the relationship
+from .forms import ApproveTeacherForm
+
+def approve_teacher(request, teacher_id):
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+    courses = Course.objects.all()
+    
+    if request.method == 'POST':
+        form = ApproveTeacherForm(request.POST, instance=teacher)
+        
+        if form.is_valid():
+            if teacher.status != 'approved':
+                teacher.status = 'approved'
+                
+                # Process selected courses and teaching areas
+                selected_courses = request.POST.getlist('courses')  # This retrieves a list of selected course IDs
+                for course_id in selected_courses:
+                    course = get_object_or_404(Course, id=course_id)
+                    teaching_area = request.POST.get(f'teaching_area_{course_id}', '')  # Get the teaching area for each course
+                    
+                    # Create or update the TeacherCourse relationship
+                    TeacherCourse.objects.create(teacher=teacher, course=course, teaching_area=teaching_area)
+
+                teacher.save()
+
+                # Debugging: Check if teacher is approved
+                print(f"Teacher {teacher.first_name} {teacher.last_name} is now approved")
+             
+                # Generate random username and password
+                random_username = f"teacher_{get_random_string(8)}"  
+                random_password = get_random_string(8)  
+
+                # Debugging: Check if credentials are generated
+                print(f"Generated credentials: {random_username}, {random_password}")
+                
+                teacher.auto_generated_username = random_username
+                teacher.auto_generated_password = random_password  
+                teacher.save()
+
+                # Send email to the teacher
+                subject = 'Your Teacher Account has been Approved'
+                message = (
+                    f"Dear {teacher.first_name} {teacher.last_name},\n\n"
+                    f"Your account has been approved! Here are your login details:\n\n"
+                    f"Username: {random_username}\n"
+                    f"Password: {random_password}\n\n"
+                    f"You have been assigned to teach the course(s).\n"
+                    f"Teaching Area: **{teaching_area}**.\n\n"
+                    "Please log in and change your password upon your first login.\n\n"
+                    "Best Regards,\n"
+                    "The Administration Team"
+                )
+
+                # Send the email
+                send_mail(
+                    subject,
+                    message,
+                    'divyaantony2025@mca.ajce.in',  
+                    [teacher.email],
+                    fail_silently=False,
+                )
+
+                return redirect('admin_dashboard')  
+            else:
+                print("Teacher is already approved")
+        else:
+            print(form.errors)
+
+    else:
+        form = ApproveTeacherForm(instance=teacher)
+
+    context = {
+        'form': form,
+        'teacher': teacher,
+        'courses': courses,
+    }
+
+    return render(request, 'approve_teacher.html', context)
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Teacher
+
+def reject_teacher(request, teacher_id):
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+
+    if request.method == 'POST':
+        teacher.delete()  # Or you can set the status to 'pending'
+        return redirect('manage_teachers')  # Redirect after rejection
+
+    return render(request, 'reject_teacher.html', {'teacher': teacher})
+
+def approving_teacher(request, teacher_id):
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+
+    if request.method == 'POST':
+        # Update the teacher's status to 'approved'
+        teacher.status = 'approved'
+        teacher.save()
+        messages.success(request, f'Teacher {teacher.first_name} {teacher.last_name} has been approved.')
+
+        return redirect('manage_teachers')  # Redirect to the management page after approval
+
+    # If GET request, render the approve form
+    form = None  # You can add additional form processing logic if required
+    return render(request, 'approve_teacher.html', {'teacher': teacher, 'form': form})
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import Teacher
+
+# View to handle deleting a teacher
+def delete_teacher(request, teacher_id):
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+    if request.method == 'GET':
+        teacher.delete()
+        messages.success(request, f'Teacher {teacher.first_name} {teacher.last_name} has been deleted.')
+        return redirect('manage_teachers')
+
+
+from django.shortcuts import render
+from .models import Teacher
+
+def teacher_list(request):
+    teachers = Teacher.objects.all()  # Fetch all teachers from the database
+    return render(request, 'teacher_list.html', {'teachers': teachers})
+
+
+from django.shortcuts import render, redirect
+from django.core.mail import send_mail
+from django.contrib import messages
+from .models import Teacher, TeacherInterview  # Import the Interview model
+
+def interview_teacher(request):
+    # Fetch only teachers with status "pending"
+    teachers = Teacher.objects.filter(status='pending')
+
+    if request.method == 'POST':
+        # Get form data
+        teacher_id = request.POST.get('teacher_id')
+        interview_date = request.POST.get('interview_date')
+        starting_time = request.POST.get('starting_time')
+        ending_time = request.POST.get('ending_time')
+        meeting_link = request.POST.get('meeting_link')
+        interviewer_name = request.POST.get('interviewer_name')
+        notes = request.POST.get('notes')
+
+        # Fetch the teacher based on teacher_id
+        try:
+            teacher = Teacher.objects.get(id=teacher_id)
+            first_name = teacher.first_name
+            last_name = teacher.last_name
+            teacher_email = teacher.email  # Retrieve teacher's email
+        except Teacher.DoesNotExist:
+            messages.error(request, 'Teacher not found!')
+            return redirect('interview_teacher')
+
+        # Store interview details in the database
+        interview = TeacherInterview.objects.create(
+            teacher=teacher,
+            interview_date=interview_date,
+            starting_time=starting_time,
+            ending_time=ending_time,
+            meeting_link=meeting_link,
+            interviewer_name=interviewer_name,
+            notes=notes
+        )
+
+        # Email content
+        subject = "Interview Scheduled for Teacher"
+        message = f"""
+        Dear {first_name} {last_name},
+
+        You are scheduled for an interview.
+
+        Interview Details:
+        Date: {interview_date}
+        Starting Time: {starting_time}
+        Ending Time: {ending_time}
+        Meeting Link: {meeting_link}
+
+        Interviewer: {interviewer_name}
+        Notes: {notes}
+
+        Please make sure to attend the meeting on time.
+
+        Best regards,
+        {interviewer_name}
+        """
+
+        # Sending the email
+        send_mail(
+            subject,
+            message,
+            'divyaantony2025@mca.ajce.in',  # From email (replace with your configuration)
+            [teacher_email],  # Recipient email
+            fail_silently=False,
+        )
+
+        messages.success(request, f'Interview scheduled successfully, and email sent to {teacher_email}!')
+        return redirect('admin_dashboard')
+
+    return render(request, 'interview_teacher.html', {'teachers': teachers})
+
+
+
+from datetime import datetime, timedelta
+
+def add_course(request):
+    if request.method == 'POST':
+        course_name = request.POST.get('course_name')
+        description = request.POST.get('description')
+        duration = request.POST.get('duration')  # Duration is 1 hour
+        price = request.POST.get('price')
+        image = request.FILES.get('image')
+        start_date = request.POST.get('start_date')  # getting the start date
+        
+        # Convert start_date string to a datetime object
+        start_date = datetime.strptime(start_date, "%Y-%m-%d")
+        
+        # Calculate the end_date by adding one year to the start_date
+        end_date = start_date + timedelta(days=365)
+
+        # Create and save the new course object
+        new_course = Course(
+            course_name=course_name, 
+            description=description, 
+            duration=int(duration), 
+            price=price, 
+            image=image,
+            starting_date=start_date,
+            ending_date=end_date
+        )
+        new_course.save()
+
+        messages.success(request, 'Course added successfully!')
+        return redirect('course_list')
+    else:
+        return render(request, 'add_courses.html')
+
+
+
+def course_list(request):
+    courses = Course.objects.all()  
+    return render(request, 'course_list.html', {'courses': courses})
+
+from django.shortcuts import render, redirect
+from .models import Course, ClassSchedule, Teacher, TeacherCourse
+from datetime import date, datetime
+
+def schedule_class(request):
+    teacher_id = request.session.get('teacher_id')  # Get teacher ID from session
+    if not teacher_id:
+        return redirect('login')  # Redirect to login if teacher ID is missing
+    
+    try:
+        teacher = Teacher.objects.get(id=teacher_id)  # Fetch the logged-in teacher
+    except Teacher.DoesNotExist:
+        return redirect('login')  # Redirect to login if teacher is not found
+
+    # Fetch the assigned courses from TeacherCourse model
+    assigned_courses = TeacherCourse.objects.filter(teacher=teacher)
+    
+    if not assigned_courses.exists():
+        error_message = "No course is assigned to you."
+        return render(request, 'schedule_class.html', {
+            'today': date.today(),
+            'error_message': error_message
+        })
+
+    today = date.today()
+    error_message = None
+
+    if request.method == 'POST':
+        class_name = request.POST.get('class_name')
+        selected_date_str = request.POST.get('date')
+        start_time_str = request.POST.get('start_time')
+        end_time_str = request.POST.get('end_time')
+        meeting_link = request.POST.get('meeting_link')
+        selected_course_id = request.POST.get('assigned_course')  # Get selected course ID from dropdown
+
+        # Convert strings to appropriate date and time objects
+        try:
+            selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+            start_time = datetime.strptime(start_time_str, '%H:%M').time()
+            end_time = datetime.strptime(end_time_str, '%H:%M').time()
+        except ValueError:
+            error_message = "Invalid date or time format. Please use the correct format."
+            return render(request, 'schedule_class.html', {
+                'assigned_courses': assigned_courses,
+                'today': today,
+                'error_message': error_message
+            })
+
+        # Validate that the selected date is not in the past
+        if selected_date < today:
+            error_message = "The selected date cannot be in the past."
+            return render(request, 'schedule_class.html', {
+                'assigned_courses': assigned_courses,
+                'today': today,
+                'error_message': error_message
+            })
+        
+        # Fetch the selected course to validate dates
+        course = Course.objects.get(id=selected_course_id)  # Fetch the course by ID
+        
+        # Validate that the scheduled date is within the course's start and end dates
+        if selected_date < course.starting_date or selected_date > course.ending_date:
+            error_message = f"The scheduled date must be between {course.starting_date} and {course.ending_date}."
+            return render(request, 'schedule_class.html', {
+                'assigned_courses': assigned_courses,
+                'today': today,
+                'error_message': error_message
+            })
+
+        # Check that the end time is after the start time
+        if end_time <= start_time:
+            error_message = "End time must be after the start time."
+            return render(request, 'schedule_class.html', {
+                'assigned_courses': assigned_courses,
+                'today': today,
+                'error_message': error_message
+            })
+        
+        # Overlap validation - Check if the new class conflicts with any existing scheduled classes for any teacher
+        overlapping_classes = ClassSchedule.objects.filter(
+            date=selected_date,
+            start_time__lt=end_time,  # An overlap if the class starts before the new one ends
+            end_time__gt=start_time   # And ends after the new one starts
+        )
+
+        if overlapping_classes.exists():
+            error_message = "The scheduled class overlaps with an existing class scheduled by another teacher."
+            return render(request, 'schedule_class.html', {
+                'assigned_courses': assigned_courses,
+                'today': today,
+                'error_message': error_message
+            })
+
+        # Create the class schedule record in the database
+        schedule = ClassSchedule(
+            class_name=class_name,
+            course_name=course,  # Use the fetched course
+            date=selected_date,
+            start_time=start_time,
+            end_time=end_time,
+            meeting_link=meeting_link,
+            teacher=teacher
+        )
+        schedule.save()
+
+        if schedule:
+            return redirect('view_teacher_schedule_class')  # Redirect to teacher's dashboard on success
+
+    # Fetch scheduled classes for this teacher
+    current_datetime = datetime.now()
+    scheduled_classes = ClassSchedule.objects.filter(
+        teacher=teacher, date__gte=today, end_time__gt=current_datetime.time()
+    )
+
+    return render(request, 'schedule_class.html', {
+        'first_name': teacher.first_name,
+        'last_name': teacher.last_name,
+        'assigned_courses': assigned_courses,
+        'today': today,
+        'scheduled_classes': scheduled_classes,
+        'error_message': error_message
+    })
+
+
+from django.shortcuts import render, redirect
+from django.utils import timezone
+from django.db.models import Q
+from .models import ClassSchedule, Teacher, Course
+
+def view_teacher_schedule_class(request):
+    # Get the teacher_id from session
+    teacher_id = request.session.get('teacher_id')
+
+    # Redirect to login if teacher_id is not present
+    if not teacher_id:
+        return redirect('login')
+
+    try:
+        teacher = Teacher.objects.get(id=teacher_id)
+    except Teacher.DoesNotExist:
+        return redirect('login')
+
+    # Get the current local time and date, automatically converted to IST if TIME_ZONE is set to 'Asia/Kolkata'
+    current_datetime = timezone.localtime()
+
+    # Debug statement to check the current IST date and time
+    print(f"Current date and time (IST): {current_datetime}")
+    print(f"Current date (IST): {current_datetime.date()}, Current time (IST): {current_datetime.time()}")
+
+    # Fetch ongoing and future classes based on the current IST date and time
+    future_classes = ClassSchedule.objects.filter(
+        teacher=teacher  # Filter classes by teacher
+    ).filter(
+        Q(date=current_datetime.date(), end_time__gt=current_datetime.time()) |  # Ongoing classes today that haven't ended
+        Q(date__gt=current_datetime.date())  # Future classes (scheduled after today)
+    ).order_by('date', 'start_time')  # Order by date and start time
+
+    # Debug statement to check the ongoing and future classes query results
+    print(f"Ongoing and future classes: {future_classes}")
+
+    # Prepare the context for rendering
+    context = {
+        'future_classes': future_classes,
+        'first_name': teacher.first_name,
+        'last_name': teacher.last_name,  # Ongoing and future classes
+    }
+
+    return render(request, 'view_teacher_schedule_class.html', context)
+
+
+
+from django.shortcuts import render, redirect # type: ignore
+from django.contrib import messages # type: ignore
+from .models import ClassSchedule
+
+def edit_class(request):
+    courses = Course.objects.all()
+    if request.method == 'POST':
+        class_id = request.POST.get('class_id')
+        course_id = request.POST.get('course_name')
+        class_name = request.POST.get('class_name')
+        date = request.POST.get('date')
+        start_time = request.POST.get('start_time')
+        end_time = request.POST.get('end_time')
+        meeting_link = request.POST.get('meeting_link')
+
+        try:
+            scheduled_class = ClassSchedule.objects.get(id=class_id)
+            scheduled_class.course_name = course_id
+            scheduled_class.class_name = class_name
+            scheduled_class.date = date
+            scheduled_class.start_time = start_time
+            scheduled_class.end_time = end_time
+            scheduled_class.meeting_link = meeting_link
+            scheduled_class.save()
+
+            messages.success(request, "Class details updated successfully.")
+        except ClassSchedule.DoesNotExist:
+            messages.error(request, "Class not found.")
+
+        return redirect('view_teacher_schedule_class', {'courses': courses})  # Redirect to the view scheduled classes page
+
+from django.contrib import messages # type: ignore
+from django.shortcuts import redirect, render # type: ignore
+from .models import ClassSchedule, CustomUser,Enrollment
+from django.utils import timezone # type: ignore
+from django.db.models import Q # type: ignore
+
+def view_scheduled_classes(request):
+    # Retrieve the custom user ID from the session
+    custom_user_id = request.session.get('custom_user_id')
+
+    if not custom_user_id:
+        messages.error(request, "You are not logged in.")
+        return redirect('login')
+
+    try:
+        # Fetch the student (CustomUser) based on the custom user ID
+        student = CustomUser.objects.get(id=custom_user_id)
+    except CustomUser.DoesNotExist:
+        messages.error(request, "Student not found.")
+        return redirect('login')
+# Fetch the enrolled courses for the student
+    enrolled_courses = Enrollment.objects.filter(student=student)
+
+    if not enrolled_courses.exists():
+        messages.error(request, "You are not registered for any course.")
+        return redirect('student_dashboard')
+
+    # Get the current date and time in IST
+    current_datetime = timezone.localtime()  # This will automatically convert to IST if TIME_ZONE is set to 'Asia/Kolkata'
+
+    # Debug statement to check the current IST date and time
+    print(f"Current date and time (IST): {current_datetime}")
+
+    # Fetch ongoing and future classes for the registered course
+    ongoing_future_classes = ClassSchedule.objects.filter(
+       course_name__in=enrolled_courses.values_list('course', flat=True)  # Correct field name here
+    ).filter( 
+        Q(date=current_datetime.date(), end_time__gt=current_datetime.time()) |  # Ongoing classes today that haven't ended
+        Q(date__gt=current_datetime.date())  # Future classes (after today)
+    ).order_by('date', 'start_time')  # Order by date and start time
+
+    # Check if there are any ongoing or future classes
+    if not ongoing_future_classes.exists():
+        messages.info(request, "No ongoing or upcoming classes found.")
+
+    # Pass the classes to the template
+    return render(request, 'view_scheduled_classes.html', {'scheduled_classes': ongoing_future_classes})
+
+
+from django.shortcuts import render, redirect # type: ignore
+from .models import CustomUser, ClassSchedule, Parent
+
+def view_class_schedule(request):
+    parent_id = request.session.get('parent_id')
+    
+    if not parent_id:
+        
+        return redirect('login')
+    
+    try:
+        parent = Parent.objects.get(id=parent_id)
+    except Parent.DoesNotExist:
+       
+        return redirect('error_page')
+
+    child_username = parent.student_username
+    child = CustomUser.objects.get(username=child_username)
+    child_schedule = ClassSchedule.objects.filter(course_name=child.course)
+
+    context = {
+        'child': child,
+        'child_schedule': child_schedule,
+    }
+    
+    return render(request, 'view_class_schedule.html', context)
+
+
+from .models import CustomUser, Parent, Teacher
+from .models import Parent
+
+
+def change_password(request):
+    parent_id = request.session.get('parent_id')
+    
+    # Check if parent is logged in
+    if not parent_id:
+        messages.error(request, 'You are not logged in as a parent.')
+        return redirect('login')
+
+    try:
+        # Fetch the parent instance
+        parent = Parent.objects.get(id=parent_id)
+    except Parent.DoesNotExist:
+        messages.error(request, 'Parent not found.')
+        return redirect('login')
+
+    if request.method == 'POST':
+        old_password = request.POST.get('old_password')
+        new_password1 = request.POST.get('new_password')
+        new_password2 = request.POST.get('confirm_password')
+
+        # Check if new passwords match
+        if new_password1 != new_password2:
+            messages.error(request, 'New passwords do not match.')
+            return redirect('change_password')
+
+        # Check if the old password is correct
+        if old_password != parent.auto_generated_password:
+            messages.error(request, 'Old password is incorrect.')
+            return redirect('change_password')
+
+        # Update the password in the database
+        parent.auto_generated_password = new_password1
+        parent.save()
+        messages.success(request, 'Your password has been successfully updated.')
+        return redirect('login')
+
+    return render(request, 'change_password.html')
+
+
+from django.shortcuts import render, redirect # type: ignore
+from django.contrib import messages # type: ignore
+from django.contrib.auth import update_session_auth_hash # type: ignore
+from .models import CustomUser, Parent, Teacher
+from .models import Teacher
+
+def teacher_changepassword(request):
+    teacher_id = request.session.get('teacher_id')
+    
+    # Check if teacher is logged in
+    if not teacher_id:
+        messages.error(request, 'You are not logged in as a teacher.')
+        return redirect('login')
+
+    try:
+        # Fetch the teacher instance
+        teacher = Teacher.objects.get(id=teacher_id)
+    except Teacher.DoesNotExist:
+        messages.error(request, 'Teacher not found.')
+        return redirect('login')
+
+    if request.method == 'POST':
+        old_password = request.POST.get('old_password')
+        new_password1 = request.POST.get('new_password')
+        new_password2 = request.POST.get('confirm_password')
+
+        # Check if new passwords match
+        if new_password1 != new_password2:
+            messages.error(request, 'New passwords do not match.')
+            return redirect('teacher_changepassword')
+
+        # Check if the old password is correct
+        if old_password != teacher.auto_generated_password:
+            messages.error(request, 'Old password is incorrect.')
+            return redirect('teacher_changepassword')
+
+        # Update the password in the database
+        teacher.auto_generated_password = new_password1
+        teacher.save()
+        messages.success(request, 'Your password has been successfully updated.')
+        return redirect('login')
+
+    return render(request, 'teacher_changepassword.html')
+
+
+
+from .models import Teacher
+
+def teacher_updateprofile(request):
+    teacher_id = request.session.get('teacher_id')
+    
+    if not teacher_id:
+        messages.error(request, 'No teacher ID found in session.')
+        return redirect('login')
+
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+
+    if request.method == 'POST':
+        # Fetch the form data
+        teacher.first_name = request.POST.get('first_name')
+        teacher.last_name = request.POST.get('last_name')
+        teacher.gender = request.POST.get('gender')
+        teacher.date_of_birth = datetime.strptime(request.POST.get('date_of_birth'), '%Y-%m-%d').date()
+        teacher.email = request.POST.get('email')
+        teacher.contact = request.POST.get('contact')
+        teacher.address_line1 = request.POST.get('address_line1')
+        teacher.address_line2 = request.POST.get('address_line2')
+        teacher.city = request.POST.get('city')
+        teacher.state = request.POST.get('state')
+        teacher.zip_code = request.POST.get('zip_code')
+        teacher.qualification = request.POST.get('qualification')
+        teacher.experience = request.POST.get('experience')
+
+        # Handle file uploads
+        if 'qualification_certificate' in request.FILES:
+            teacher.qualification_certificate = request.FILES['qualification_certificate']
+        if 'experience_certificate' in request.FILES:
+            teacher.experience_certificate = request.FILES['experience_certificate']
+        # Save the updated teacher details
+        teacher.save()
+        messages.success(request, 'Profile updated successfully.')
+        return redirect('view_profile')  
+
+    context = {'teacher': teacher,
+               'first_name': teacher.first_name,
+               'last_name': teacher.last_name,
+        }
+    return render(request, 'teacher_updateprofile.html', context)
+
+
+from .models import Parent
+import json
+import uuid
+import re
+from django.shortcuts import render, redirect
+from django.contrib.auth.hashers import make_password
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib import messages
+from django.utils.crypto import get_random_string
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
+import requests
+from .models import CustomUser, Course, FinalExam, FinalExamQuestion, Parent, TeacherMessage, TeacherStudent, Material, MaterialSummary
+import cv2
+import numpy as np
+from datetime import datetime, timedelta
+import os
+from django.shortcuts import render
+from django.http import JsonResponse
+from .models import Attendance
+import base64
+from transformers import MarianMTModel, MarianTokenizer
+import torch
+from .models import StudentFaceData
+from django.views.decorators.csrf import csrf_exempt
+from scipy.spatial.distance import cosine
+from django.shortcuts import render, redirect
+from .models import ClassSchedule
+from django.utils import timezone
+import mediapipe as mp
+from django.core.files.base import ContentFile
+from PIL import Image
+import io
+from skimage.metrics import structural_similarity as ssim  # Add this import
+from ml_code.create_db import create_data
+from ml_code.face_recognition import face_recognize
+from django.core.paginator import Paginator
+from .models import ParentTeacherMessage, Teacher, Parent
+from django.db.models import Q
+from django.utils import timezone
+from .models import Course, WhiteboardShare
+from django.http import JsonResponse
+from .models import EventSuggestion, CalendarEvent
+from django.views.decorators.http import require_POST
+from .models import MindMap
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import ensure_csrf_cookie
+import os
+from dotenv import load_dotenv
+from gtts import gTTS
+from django.http import FileResponse, HttpResponse
+from django.shortcuts import get_object_or_404
+from .models import Material
+import PyPDF2
+import docx
+import tempfile
+from transformers import SpeechT5Processor, SpeechT5ForTextToSpeech, SpeechT5HifiGan
+import soundfile as sf
+from datasets import load_dataset
+import pyttsx3
+import threading
+from .models import TeacherNote, Course
+from django.contrib import messages
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from io import BytesIO
+from html import unescape
+import re
+from reportlab.pdfgen import canvas
+from io import BytesIO
+from django.core.files.base import ContentFile
+# Load environment variables
+load_dotenv()
+def register(request):
+    if request.method == 'POST':
+        # Extract form data from request.POST
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        email = request.POST.get('email')
+        contact = request.POST.get('contact')
+        date_of_birth = request.POST.get('date_of_birth')
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+       
+
+        # Perform basic validation
+        if not all([first_name, last_name, email, contact, date_of_birth, username, password]):
+            messages.error(request, 'Please fill out all fields.')
+            return render(request, 'register.html')
+
+        if not username.isalnum():
+            messages.error(request, "Username should contain only alphabets or numbers.")
+            return redirect('register')
+
+        # Check if the username or email is unique for the student
+        if CustomUser.objects.filter(username=username).exists():
+            messages.error(request, 'Username is already taken.')
+            return render(request, 'register.html')
+
+        if CustomUser.objects.filter(email=email).exists():
+            messages.error(request, 'Email is already registered.')
+            return render(request, 'register.html')
+
+        # Validate email format
+        
+        # Validate password complexity
+       
+
+
+        # Create and save student user instance
+        student_user = CustomUser(
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            contact=contact,
+            date_of_birth=date_of_birth,
+            password=make_password(password),
+            is_active=True,  # Ensure the user is active upon registration
+        )
+        student_user.save()
+
+        # Auto-generate a unique parent username using UUID
+        parent_username = f'parent_{uuid.uuid4().hex[:8]}'  # Generate an 8-character unique username
+
+        # Generate a random secure password for the parent
+        parent_password = get_random_string(12)  # Generate a 12-character password
+
+        # Create the parent instance linked to the student user
+        parent = Parent.objects.create(
+            auto_generated_username=parent_username,
+            auto_generated_password=parent_password,
+            student_username=student_user.username  # Link to the student's username
+        )
+
+        # Send email with parent's auto-generated credentials to the student's email
+        send_mail(
+            subject='Registration Successful: Parent Login Credentials',
+            message=f'You have successfully registered.\n\n'
+                    f'Your parent\'s login details:\n'
+                    f'Username: {parent_username}\n'
+                    f'Password: {parent_password}\n',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],  # Send to the student's email
+            fail_silently=False,
+        )
+
+        messages.success(request, 'Account created successfully! Parent login credentials have been sent to your email.')
+        return redirect('login')
+    else:
+        return render(request, 'register.html')
+
+
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Teacher, Parent, CustomUser
+
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        # Check Teacher model
+        try:
+            teacher = Teacher.objects.get(auto_generated_username=username)
+            if teacher.auto_generated_password == password:
+                # Manually log in the teacher (using sessions)
+                request.session['teacher_id'] = teacher.id  # Store teacher ID in session
+                return redirect('teacher_dashboard')
+        except Teacher.DoesNotExist:
+            pass  # Not a teacher
+
+        # Check Parent model
+        try:
+            parent = Parent.objects.get(auto_generated_username=username)
+            if parent.auto_generated_password == password:
+                # Manually log in the parent (using sessions)
+                request.session['parent_id'] = parent.id  # Store parent ID in session
+                return redirect('parent_dashboard')
+        except Parent.DoesNotExist:
+            pass  # Not a parent
+
+        # Check CustomUser model
+        try:
+            custom_user = CustomUser.objects.get(username=username)
+            if not custom_user.is_active:
+                messages.error(request, 'Your account is deactivated. Please contact support.')
+            if custom_user.check_password(password):  # Assuming password is stored as plaintext
+                # Manually log in the CustomUser (using sessions)
+                request.session['custom_user_id'] = custom_user.id  # Store CustomUser ID in session
+                
+                # Check if face data exists
+                # face_data = StudentFaceData.objects.filter(user=custom_user).first()
+                # if not face_data or not face_data.is_face_captured:
+                #     return redirect('face_capture')
+                
+                return redirect('available_courses')
+            else:
+                messages.error(request, 'Invalid password for CustomUser.')
+        except CustomUser.DoesNotExist:
+            pass  # Not a CustomUser
+
+        # If no match, show an error message
+        messages.error(request, 'Invalid username or password.')
+
+    return render(request, 'login.html')
+
+def assigned_courses(request):
+    # Get the teacher ID from the session
+    teacher_id = request.session.get('teacher_id')
+
+    if teacher_id:
+        # Fetch the assigned courses from the session
+        assigned_courses = request.session.get('assigned_courses', [])
+
+        return render(request, 'assigned_courses.html', {'courses': assigned_courses})
+
+    return redirect('teacher_login')  # Redirect to login if no session found
+
+
+from django.shortcuts import render, redirect
+from django.utils import timezone
+from .models import Course, Enrollment
+
+def available_courses(request):
+    # Check if the user is authenticated via session
+    if 'custom_user_id' not in request.session:
+        return redirect('login')  # Redirect to the login page if not authenticated
+   
+    # Get the logged-in user's ID from the session
+    custom_user_id = request.session['custom_user_id']
+    custom_user = CustomUser.objects.get(id=custom_user_id)
+    # Get the current date
+    current_date = timezone.now().date()
+
+    # Filter courses to only include those that have not started and haven't reached their end date
+    courses = Course.objects.filter(starting_date__gt=current_date, ending_date__gt=current_date)
+
+    # Apply price range filter if set
+    price_range = request.GET.get('price_range')
+    if price_range:
+        if price_range == 'all':
+            pass
+        elif price_range == '0-500':
+            courses = courses.filter(price__lt=500)
+        elif price_range == '500-999':
+            courses = courses.filter(price__gte=500, price__lt=1000)
+
+        elif price_range == '1000-2000':
+            courses = courses.filter(price__gte=1000, price__lt=2000)
+        elif price_range == '2000-3000':
+            courses = courses.filter(price__gte=2000, price__lt=3000)
+        elif price_range == '3000-4000':
+            courses = courses.filter(price__gte=3000, price__lt=4000)
+        elif price_range == '4000-5000':
+            courses = courses.filter(price__gte=4000, price__lt=5000)
+        elif price_range == '5000+':
+            courses = courses.filter(price__gte=5000)
+
+    # Prepare a list to hold course data along with enrollment status
+    course_data = []
+    for course in courses:
+        # Check if the user is enrolled in the current course
+        is_enrolled = Enrollment.objects.filter(student_id=custom_user_id, course=course).exists()
+        
+        # Append course data with enrollment status and start date check
+        course_data.append({
+            'course': course,
+            'is_enrolled': is_enrolled,
+            'can_enroll': current_date < course.starting_date  # Check if course hasn't started yet
+        })
+
+    # Pass the course data and current date to the template
+    return render(request, 'available_courses.html', {
+        'custom_user': custom_user,
+        'course_data': course_data,
+        'current_date': current_date,
+        'selected_price_range': price_range,
+        
+    })
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Course, Enrollment
+from django.http import HttpResponseForbidden
+
+def enroll_course(request, course_id):
+    # Check if the user is authenticated via session
+    if 'custom_user_id' not in request.session:
+        # If the user is not authenticated, redirect to the login page
+        return redirect('login')  # Redirect to your custom login page
+
+    # Get the authenticated user's ID from the session
+    custom_user_id = request.session['custom_user_id']
+    
+    # Get the course the user is trying to enroll in
+    course = get_object_or_404(Course, id=course_id)
+
+    # Check if the user is already enrolled in this course
+    if Enrollment.objects.filter(student_id=custom_user_id, course=course).exists():
+        # You can add a message here indicating the user is already enrolled
+        return redirect('available_courses')  # Redirect back to the available courses page
+
+    # If the user is not enrolled, create a new Enrollment
+    enrollment = Enrollment.objects.create(student_id=custom_user_id, course=course)
+
+    # Optionally, you can show a success message or redirect to another page
+    return redirect('available_courses')  # Redirect to the course list page
+
+from datetime import datetime
+def student_dashboard(request):
+    custom_user_id = request.session.get('custom_user_id')
+    if not custom_user_id:
+        return redirect('login')
+
+    # Fetch the CustomUser object based on the session ID
+    try:
+        custom_user = CustomUser.objects.get(id=custom_user_id)
+        if not custom_user.is_active:
+            return redirect('login')
+    except CustomUser.DoesNotExist:
+        return redirect('login')
+
+    enrolled_courses = Course.objects.filter(enrollments__student_id=custom_user_id)
+    today = datetime.today()
+
+    # Check for unanswered feedback questions for the logged-in user
+    feedback_questions = FeedbackQuestion.objects.all()
+    answered_questions = Feedback.objects.filter(user=custom_user_id).values_list('question_id', flat=True)
+    
+    # Identify new feedback questions (not answered by the user)
+    new_feedback_questions = feedback_questions.exclude(id__in=answered_questions)
+
+    return render(request, 'student_dashboard.html', {
+        'enrolled_courses': enrolled_courses,
+        'custom_user': custom_user,
+        'new_feedback_questions': new_feedback_questions,  # This will contain unanswered questions
+        'today': today,  # Pass today's date to the template
+    })
+
+
+def teacher_dashboard(request):
+    teacher_id = request.session.get('teacher_id')
+    if not teacher_id:
+        return redirect('login')  # Redirect to login if teacher not authenticated
+
+    # Fetch the Teacher object using teacher_id
+    try:
+        teacher = Teacher.objects.get(id=teacher_id)
+    except Teacher.DoesNotExist:
+        return redirect('login')  # Redirect if the teacher doesn't exist
+    teacher_courses = TeacherCourse.objects.filter(teacher_id=teacher_id).select_related('course')
+    # Pass the teacher object to the template
+    return render(request, 'teacher_dashboard.html', {
+        'first_name': teacher.first_name,
+        'last_name': teacher.last_name,
+        'teacher_courses': teacher_courses
+    })
+
+def parent_dashboard(request):
+    parent_id = request.session.get('parent_id')
+    if not parent_id:
+        return redirect('login')
+
+    try:
+        parent = Parent.objects.get(id=parent_id)
+        student = CustomUser.objects.get(username=parent.student_username)
+        courses = Enrollment.objects.filter(student=student).select_related('course')
+        
+        # Get student's quiz answers/grades
+        grades = UserAnswers.objects.filter(
+            user=student
+        ).select_related(
+            'question__quiz',
+            'question__quiz__course'
+        ).order_by('-attempt_date')
+        
+        # Get assignment submissions for the student
+        assignment_submissions = AssignmentSubmission.objects.filter(
+            student=student
+        ).select_related(
+            'assignment',
+            'assignment__teacher',
+            'assignment__course_name'
+        ).order_by('-submitted_at')
+
+        # Calculate submission status for each submission
+        for submission in assignment_submissions:
+            # Convert submitted_at to date for comparison
+            submission_date = submission.submitted_at.date()
+            due_date = submission.assignment.end_date
+            
+            if submission_date > due_date:
+                submission.is_overdue = True
+                submission.days_overdue = (submission_date - due_date).days
+                submission.status_class = 'text-danger'
+            elif submission_date == due_date:
+                submission.is_overdue = False
+                submission.status_class = 'text-warning'
+                submission.submitted_on = 'last day'
+            else:
+                submission.is_overdue = False
+                submission.days_early = (due_date - submission_date).days
+                submission.status_class = 'text-success'
+
+        # Get attendance records
+        attendance_records = Attendance.objects.filter(student=student).order_by('-check_in_time')
+        
+        # Calculate attendance statistics
+        total_records = attendance_records.count()
+        present_count = attendance_records.filter(status='present').count()
+        absent_count = total_records - present_count
+        attendance_percentage = (present_count / total_records * 100) if total_records > 0 else 0
+
+        # Get the student's enrolled courses
+        courses = Enrollment.objects.filter(student=student).select_related('course')
+        
+        # Calculate total course fees from course prices
+        total_course_fees = sum(enrollment.course.price for enrollment in courses)
+        
+        # Use select_related and prefetch_related to optimize queries
+        teachers = Teacher.objects.filter(
+            Q(parent_messages__parent=parent) | 
+            Q(teacher_courses__course__students__username=parent.student_username)
+        ).prefetch_related('teacher_courses').distinct()
+
+        messages_list = ParentTeacherMessage.objects.filter(parent=parent).order_by('-date')
+        
+        context = {
+            'parent': parent,
+            'student': student,
+            'courses': courses,
+            'grades': grades,
+            'assignment_submissions': assignment_submissions,
+            'attendance_records': attendance_records,
+            'present_count': present_count,
+            'absent_count': absent_count,
+            'attendance_percentage': attendance_percentage,
+            'total_course_fees': total_course_fees,
+            'messages_list': messages_list,
+            'teachers': teachers,
+            'unread_count': messages_list.filter(is_read=False, message_type='teacher_to_parent').count()
+        }
+
+        try:
+            # Get enrolled courses
+            enrolled_courses = Enrollment.objects.filter(
+                student__username=parent.student_username
+            ).values_list('course', flat=True)
+
+            # Get upcoming events for enrolled courses
+            upcoming_events = CalendarEvent.objects.filter(
+                course__in=enrolled_courses,
+                end_time__gte=timezone.now()
+            ).order_by('start_time')
+
+            # Get registered events for the student
+            registered_events = EventRegistration.objects.filter(
+                user__username=parent.student_username,
+                status='registered'
+            ).select_related('event')
+
+            try:
+                # Get event suggestions for this parent
+                event_suggestions = EventSuggestion.objects.filter(
+                    parent=parent
+                ).select_related('event').order_by('-created_at')
+
+                context.update({
+                    'upcoming_events': upcoming_events,
+                    'registered_events': registered_events,
+                    'event_suggestions': event_suggestions,  # Add suggestions to context
+                })
+
+                return render(request, 'parent_dashboard.html', context)
+
+            except Exception as e:
+                print(f"Error getting event suggestions: {str(e)}")
+                return render(request, 'parent_dashboard.html', context)
+
+        except Exception as e:
+            print(f"Error in parent_dashboard: {str(e)}")
+            return render(request, 'parent_dashboard.html', context)
+
+    except Parent.DoesNotExist:
+        return redirect('login')
+    except CustomUser.DoesNotExist:
+        student = None
+        courses = []
+        grades = []
+        assignment_submissions = []
+
+    # Get all messages for this parent
+    messages_list = ParentTeacherMessage.objects.filter(
+        parent=parent,
+        message_type='parent_to_teacher'  # Only get messages sent by parent
+    ).select_related('teacher').order_by('-date')
+
+    context.update({
+        'sent_messages': messages_list,
+    })
+
+    return render(request, 'parent_dashboard.html', {
+        'parent': parent,
+        'student': student,
+        'courses': courses,
+        'grades': grades,
+        'assignment_submissions': assignment_submissions,
+        'attendance_records': attendance_records,
+        'present_count': present_count,
+        'absent_count': absent_count,
+        'attendance_percentage': attendance_percentage,
+    })
+
+
+def index_view(request):
+    return render(request, 'index.html')
+
+def about_view(request):
+    return render(request, 'about.html')
+
+def admissions_view(request):
+    return render(request, 'admissions.html')
+
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .forms import ContactMessageForm  # Adjust the import based on your structure
+
+def contact_view(request):
+    if request.method == 'POST':
+        form = ContactMessageForm(request.POST)
+        if form.is_valid():
+            form.save()  # Save the form data to the database
+            messages.success(request, 'Your message has been sent successfully!')
+            return redirect('index')  # Redirect to the index page after submitting
+        else:
+            # This line ensures that the form with error messages is re-rendered
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = ContactMessageForm()
+
+    return render(request, 'contact.html', {'form': form})  # Replace 'your_template.html' with your actual template name
+
+
+from django.shortcuts import render, redirect
+from .models import ContactMessage
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib import messages
+
+# View to display all contact messages
+def view_messages(request):
+    messages_list = ContactMessage.objects.all()
+    return render(request, 'view_messages.html', {'messages_list': messages_list})
+
+def reply_message(request, message_id):
+    message_obj = ContactMessage.objects.get(id=message_id)
+    if request.method == 'POST':
+        subject = 'Thank you for contacting us'
+        body = 'We will contact you for more clarification regarding your query.'
+        from_email = settings.DEFAULT_FROM_EMAIL
+        recipient_list = [message_obj.email]
+
+        send_mail(subject, body, from_email, recipient_list)
+
+        # Update the replied status
+        message_obj.replied = True
+        message_obj.save()
+
+        messages.success(request, 'Reply sent successfully!')
+        return redirect('view_messages')
+    return redirect('view_messages')
+
+
+
+# views.py
+from django.shortcuts import render
+from .models import Course  # Make sure the Course model is imported
+from django.utils import timezone
+
+def courses_view(request):
+    # Fetch courses that haven't reached the start date
+    available_courses = Course.objects.filter(starting_date__gt=timezone.now())
+    return render(request, 'courses.html', {'courses': available_courses})
+
+def course_detail_10(request):
+    return render(request, 'course_detail_10.html')
+
+def course_detail_higher_secondary(request):
+    return render(request, 'course_detail_higher_secondary.html')
+
+def teachers_view(request):
+    return render(request, 'teachers.html')
+
+def recover_view(request):
+    return render(request, 'recover.html')
+
+def features(request):
+    return render(request, 'features.html')
+
+def parent(request):
+    return render(request, 'parent.html')
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+
+def admin_login(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        
+        # Check against predefined credentials
+        if username == 'admin' and password == 'admin123':
+            # Create a custom session for the admin user
+            request.session['is_admin'] = True
+            return redirect('admin_dashboard')  # Redirect to admin dashboard
+        else:
+            messages.error(request, "Invalid username or password. Please try again.")
+    
+    return render(request, 'admin_login.html')
+# views.py
+from django.shortcuts import render
+from .models import CustomUser, Teacher, Course, Enrollment  # Import your models
+
+def admin_dashboard(request):
+    # Count the number of users, teachers, and courses
+    total_users = CustomUser.objects.count()
+    total_teachers = Teacher.objects.count()
+    total_courses = Course.objects.count()
+
+    # Prepare data for course enrollment visualization
+    courses = Course.objects.all()
+    course_enrollment_data = []
+
+    for course in courses:
+        enrollment_count = Enrollment.objects.filter(course=course).count()
+        course_enrollment_data.append({
+            'course_name': course.course_name,
+            'enrollment_count': enrollment_count
+        })
+
+    context = {
+        'total_users': total_users,
+        'total_teachers': total_teachers,
+        'total_courses': total_courses,
+        'course_enrollment_data': course_enrollment_data,  # Pass enrollment data to template
+    }
+
+    return render(request, 'admin_dashboard.html', context)
+
+# views.py
+from django.shortcuts import render
+from .models import Course, Enrollment  # Import your models
+
+def course_enrollment_view(request):
+    # Get enrollment counts for each course
+    course_data = []
+    courses = Course.objects.all()
+    for course in courses:
+        registration_count = Enrollment.objects.filter(course=course).count()  # Count enrollments for each course
+        course_data.append({
+            'course_name': course.course_name,
+            'registration_count': registration_count
+        })
+
+    context = {
+        'course_data': course_data,  # Pass course data to the template
+    }
+
+    return render(request, 'course_enrollment.html', context)
+
+from django.shortcuts import render
+from .models import CustomUser
+
+def manage_students(request):
+    students = CustomUser.objects.select_related('course').filter(is_active=1)
+
+    past_students = CustomUser.objects.filter(is_active=0)
+    return render(request, 'manage_students.html', {'students': students, 'past_students':past_students})
+
+
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from .models import CustomUser
+
+def delete_student(request, student_id):
+    student = get_object_or_404(CustomUser, id=student_id)
+    if request.method == 'POST':
+        student.is_active = 0  
+        student.save()  
+        messages.success(request, 'Student marked as active successfully.')
+        return redirect('manage_students')
+
+
+# views.py
+from django.core.mail import send_mail
+from django.shortcuts import redirect, get_object_or_404
+from django.contrib import messages
+from .models import CustomUser
+
+def toggle_student_status(request, student_id):
+    student = get_object_or_404(CustomUser, id=student_id)
+    if student.is_active:
+        student.is_active = 0
+        email_subject = "Account Deactivated"
+        email_message = "Your account has been deactivated. Please contact support if you have any questions."
+    else:
+        student.is_active = True
+        email_subject = "Account Activated"
+        email_message = "Your account has been activated. You can now log in to the platform."
+
+    student.save()
+
+    # Send email to the student
+    send_mail(
+        email_subject,
+        email_message,
+        'divyaantony2025@mca.ajce.in',
+        [student.email],
+        fail_silently=False,
+    )
+
+    messages.success(request, f"Student '{student.username}' status updated successfully.")
+    return redirect('manage_students')
+
+
+from django.contrib.auth import logout as auth_logout
+from django.shortcuts import redirect
+
+def logout(request):
+    auth_logout(request)
+    request.session.flush()  
+    return redirect('login')
+
+
+def recover(request):
+    return render(request, 'recover.html')
+from django.contrib.auth.views import PasswordResetView
+from django.urls import reverse_lazy
+
+class CustomPasswordResetView(PasswordResetView):
+    template_name = 'password_reset.html'
+    email_template_name = 'password_reset_email.html'
+    subject_template_name = 'password_reset_subject.txt'
+    success_url = reverse_lazy('password_reset_done')
+from django.contrib.auth.views import PasswordResetDoneView
+
+class CustomPasswordResetDoneView(PasswordResetDoneView):
+    template_name = 'password_reset_done.html'
+from django.contrib.auth.views import PasswordResetConfirmView
+from django.urls import reverse_lazy
+
+class CustomPasswordResetConfirmView(PasswordResetConfirmView):
+    template_name = 'password_reset_confirm.html'
+    success_url = reverse_lazy('password_reset_complete')
+from django.contrib.auth.views import PasswordResetCompleteView
+
+class CustomPasswordResetCompleteView(PasswordResetCompleteView):
+    template_name = 'password_reset_complete.html'
+
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Teacher
+
+def register_teacher(request):
+    if request.method == 'POST':
+        # Extract data from the POST request
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        gender = request.POST.get('gender')
+        dob = request.POST.get('dob')
+        email = request.POST.get('email')
+        contact = request.POST.get('contact')
+        address_line1 = request.POST.get('address_line1')
+        address_line2 = request.POST.get('address_line2')
+        city = request.POST.get('city')
+        state = request.POST.get('state')
+        zip_code = request.POST.get('zip_code')
+        qualification = request.POST.get('qualification')
+        experience = request.POST.get('experience')
+
+        # Handle file uploads
+        qualification_certificate = request.FILES.get('qualification_certificate')
+        experience_certificate = request.FILES.get('experience_certificate', None)  # This file is optional
+
+        # Simple validation check for required fields
+        if not first_name or not last_name or not email:
+            messages.error(request, "First name, last name, and email are required.")
+        else:
+            # Create a new Teacher object and set the fields
+            teacher = Teacher(
+                first_name=first_name,
+                last_name=last_name,
+                gender=gender,
+                date_of_birth=dob,
+                email=email,
+                contact=contact,
+                address_line1=address_line1,
+                address_line2=address_line2,
+                city=city,
+                state=state,
+                zip_code=zip_code,
+                qualification=qualification,
+                experience=experience,
+                qualification_certificate=qualification_certificate,
+                experience_certificate=experience_certificate,  # This file is optional
+                status='pending'  # Set the initial status of the teacher to 'pending'
+            )
+            teacher.save()
+
+            # Add a success message
+            messages.success(request, "You have successfully registered! Please wait for your approval.")
+
+            # Redirect to the login page or another relevant page after successful registration
+            return redirect('login')
+
+    return render(request, 'register_teacher.html')
+
+
+
+from django.shortcuts import render, redirect
+from .models import Teacher  # Adjust the import based on your app structure
+
+def view_profile(request):
+    teacher_id = request.session.get('teacher_id')
+    
+    if not teacher_id:
+        print("No teacher ID found in session.")  # Debugging line
+        return render(request, 'view_profile.html', {'error': 'Profile not found.'})
+    
+    try:
+        teacher = Teacher.objects.get(id=teacher_id)
+        print(f"Logged in teacher's username: {teacher.auto_generated_username}")  # Debugging line
+        context = {'teacher': teacher}
+    except Teacher.DoesNotExist:
+        print("No matching Teacher found.")  # Debugging line
+        context = {'error': 'Profile not found.'}
+    
+    return render(request, 'view_profile.html', context)
+
+from django.core.mail import send_mail
+from django.contrib.auth.models import User
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import Teacher
+import random
+import string
+
+def manage_teachers(request):
+    pending_teachers = Teacher.objects.filter(status='pending')
+    approved_teachers = Teacher.objects.filter(status='approved')
+    
+    context = {
+        'pending_teachers': pending_teachers,
+        'approved_teachers': approved_teachers,
+    }
+    return render(request, 'manage_teachers.html', context)
+
+# views.py
+from django.core.mail import send_mail
+from django.shortcuts import redirect, get_object_or_404
+from django.contrib import messages
+from .models import Teacher  # Import your Teacher model
+
+def toggle_teacher_status(request, teacher_id):
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+    
+    if teacher.is_active:
+        teacher.is_active = False  # Set to False to deactivate
+        email_subject = "Account Deactivated"
+        email_message = "Your account has been deactivated. Please contact support if you have any questions."
+    else:
+        teacher.is_active = True  # Set to True to activate
+        email_subject = "Account Activated"
+        email_message = "Your account has been activated. You can now log in to the platform."
+
+    teacher.save()
+
+    # Send email to the teacher
+    send_mail(
+        email_subject,
+        email_message,
+        'divyaantony2025@mca.ajce.in',  # Replace with your email
+        [teacher.email],  # Send email to the teacher
+        fail_silently=False,
+    )
+
+    messages.success(request, f"Teacher '{teacher.first_name} {teacher.last_name}' status updated successfully.")
+    return redirect('manage_teachers')
+
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.core.mail import send_mail
+from django.utils.crypto import get_random_string
+from .models import Teacher, Course, TeacherCourse  # Assuming TeacherCourse is the model for the relationship
+from .forms import ApproveTeacherForm
+
+def approve_teacher(request, teacher_id):
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+    courses = Course.objects.all()
+    
+    if request.method == 'POST':
+        form = ApproveTeacherForm(request.POST, instance=teacher)
+        
+        if form.is_valid():
+            if teacher.status != 'approved':
+                teacher.status = 'approved'
+                
+                # Process selected courses and teaching areas
+                selected_courses = request.POST.getlist('courses')  # This retrieves a list of selected course IDs
+                for course_id in selected_courses:
+                    course = get_object_or_404(Course, id=course_id)
+                    teaching_area = request.POST.get(f'teaching_area_{course_id}', '')  # Get the teaching area for each course
+                    
+                    # Create or update the TeacherCourse relationship
+                    TeacherCourse.objects.create(teacher=teacher, course=course, teaching_area=teaching_area)
+
+                teacher.save()
+
+                # Debugging: Check if teacher is approved
+                print(f"Teacher {teacher.first_name} {teacher.last_name} is now approved")
+             
+                # Generate random username and password
+                random_username = f"teacher_{get_random_string(8)}"  
+                random_password = get_random_string(8)  
+
+                # Debugging: Check if credentials are generated
+                print(f"Generated credentials: {random_username}, {random_password}")
+                
+                teacher.auto_generated_username = random_username
+                teacher.auto_generated_password = random_password  
+                teacher.save()
+
+                # Send email to the teacher
+                subject = 'Your Teacher Account has been Approved'
+                message = (
+                    f"Dear {teacher.first_name} {teacher.last_name},\n\n"
+                    f"Your account has been approved! Here are your login details:\n\n"
+                    f"Username: {random_username}\n"
+                    f"Password: {random_password}\n\n"
+                    f"You have been assigned to teach the course(s).\n"
+                    f"Teaching Area: **{teaching_area}**.\n\n"
+                    "Please log in and change your password upon your first login.\n\n"
+                    "Best Regards,\n"
+                    "The Administration Team"
+                )
+
+                # Send the email
+                send_mail(
+                    subject,
+                    message,
+                    'divyaantony2025@mca.ajce.in',  
+                    [teacher.email],
+                    fail_silently=False,
+                )
+
+                return redirect('admin_dashboard')  
+            else:
+                print("Teacher is already approved")
+        else:
+            print(form.errors)
+
+    else:
+        form = ApproveTeacherForm(instance=teacher)
+
+    context = {
+        'form': form,
+        'teacher': teacher,
+        'courses': courses,
+    }
+
+    return render(request, 'approve_teacher.html', context)
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Teacher
+
+def reject_teacher(request, teacher_id):
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+
+    if request.method == 'POST':
+        teacher.delete()  # Or you can set the status to 'pending'
+        return redirect('manage_teachers')  # Redirect after rejection
+
+    return render(request, 'reject_teacher.html', {'teacher': teacher})
+
+def approving_teacher(request, teacher_id):
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+
+    if request.method == 'POST':
+        # Update the teacher's status to 'approved'
+        teacher.status = 'approved'
+        teacher.save()
+        messages.success(request, f'Teacher {teacher.first_name} {teacher.last_name} has been approved.')
+
+        return redirect('manage_teachers')  # Redirect to the management page after approval
+
+    # If GET request, render the approve form
+    form = None  # You can add additional form processing logic if required
+    return render(request, 'approve_teacher.html', {'teacher': teacher, 'form': form})
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import Teacher
+
+# View to handle deleting a teacher
+def delete_teacher(request, teacher_id):
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+    if request.method == 'GET':
+        teacher.delete()
+        messages.success(request, f'Teacher {teacher.first_name} {teacher.last_name} has been deleted.')
+        return redirect('manage_teachers')
+
+
+from django.shortcuts import render
+from .models import Teacher
+
+def teacher_list(request):
+    teachers = Teacher.objects.all()  # Fetch all teachers from the database
+    return render(request, 'teacher_list.html', {'teachers': teachers})
+
+
+from django.shortcuts import render, redirect
+from django.core.mail import send_mail
+from django.contrib import messages
+from .models import Teacher, TeacherInterview  # Import the Interview model
+
+def interview_teacher(request):
+    # Fetch only teachers with status "pending"
+    teachers = Teacher.objects.filter(status='pending')
+
+    if request.method == 'POST':
+        # Get form data
+        teacher_id = request.POST.get('teacher_id')
+        interview_date = request.POST.get('interview_date')
+        starting_time = request.POST.get('starting_time')
+        ending_time = request.POST.get('ending_time')
+        meeting_link = request.POST.get('meeting_link')
+        interviewer_name = request.POST.get('interviewer_name')
+        notes = request.POST.get('notes')
+
+        # Fetch the teacher based on teacher_id
+        try:
+            teacher = Teacher.objects.get(id=teacher_id)
+            first_name = teacher.first_name
+            last_name = teacher.last_name
+            teacher_email = teacher.email  # Retrieve teacher's email
+        except Teacher.DoesNotExist:
+            messages.error(request, 'Teacher not found!')
+            return redirect('interview_teacher')
+
+        # Store interview details in the database
+        interview = TeacherInterview.objects.create(
+            teacher=teacher,
+            interview_date=interview_date,
+            starting_time=starting_time,
+            ending_time=ending_time,
+            meeting_link=meeting_link,
+            interviewer_name=interviewer_name,
+            notes=notes
+        )
+
+        # Email content
+        subject = "Interview Scheduled for Teacher"
+        message = f"""
+        Dear {first_name} {last_name},
+
+        You are scheduled for an interview.
+
+        Interview Details:
+        Date: {interview_date}
+        Starting Time: {starting_time}
+        Ending Time: {ending_time}
+        Meeting Link: {meeting_link}
+
+        Interviewer: {interviewer_name}
+        Notes: {notes}
+
+        Please make sure to attend the meeting on time.
+
+        Best regards,
+        {interviewer_name}
+        """
+
+        # Sending the email
+        send_mail(
+            subject,
+            message,
+            'divyaantony2025@mca.ajce.in',  # From email (replace with your configuration)
+            [teacher_email],  # Recipient email
+            fail_silently=False,
+        )
+
+        messages.success(request, f'Interview scheduled successfully, and email sent to {teacher_email}!')
+        return redirect('admin_dashboard')
+
+    return render(request, 'interview_teacher.html', {'teachers': teachers})
+
+
+
+from datetime import datetime, timedelta
+
+def add_course(request):
+    if request.method == 'POST':
+        course_name = request.POST.get('course_name')
+        description = request.POST.get('description')
+        duration = request.POST.get('duration')  # Duration is 1 hour
+        price = request.POST.get('price')
+        image = request.FILES.get('image')
+        start_date = request.POST.get('start_date')  # getting the start date
+        
+        # Convert start_date string to a datetime object
+        start_date = datetime.strptime(start_date, "%Y-%m-%d")
+        
+        # Calculate the end_date by adding one year to the start_date
+        end_date = start_date + timedelta(days=365)
+
+        # Create and save the new course object
+        new_course = Course(
+            course_name=course_name, 
+            description=description, 
+            duration=int(duration), 
+            price=price, 
+            image=image,
+            starting_date=start_date,
+            ending_date=end_date
+        )
+        new_course.save()
+
+        messages.success(request, 'Course added successfully!')
+        return redirect('course_list')
+    else:
+        return render(request, 'add_courses.html')
+
+
+
+def course_list(request):
+    courses = Course.objects.all()  
+    return render(request, 'course_list.html', {'courses': courses})
+
+from django.shortcuts import render, redirect
+from .models import Course, ClassSchedule, Teacher, TeacherCourse
+from datetime import date, datetime
+
+def schedule_class(request):
+    teacher_id = request.session.get('teacher_id')  # Get teacher ID from session
+    if not teacher_id:
+        return redirect('login')  # Redirect to login if teacher ID is missing
+    
+    try:
+        teacher = Teacher.objects.get(id=teacher_id)  # Fetch the logged-in teacher
+    except Teacher.DoesNotExist:
+        return redirect('login')  # Redirect to login if teacher is not found
+
+    # Fetch the assigned courses from TeacherCourse model
+    assigned_courses = TeacherCourse.objects.filter(teacher=teacher)
+    
+    if not assigned_courses.exists():
+        error_message = "No course is assigned to you."
+        return render(request, 'schedule_class.html', {
+            'today': date.today(),
+            'error_message': error_message
+        })
+
+    today = date.today()
+    error_message = None
+
+    if request.method == 'POST':
+        class_name = request.POST.get('class_name')
+        selected_date_str = request.POST.get('date')
+        start_time_str = request.POST.get('start_time')
+        end_time_str = request.POST.get('end_time')
+        meeting_link = request.POST.get('meeting_link')
+        selected_course_id = request.POST.get('assigned_course')  # Get selected course ID from dropdown
+
+        # Convert strings to appropriate date and time objects
+        try:
+            selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+            start_time = datetime.strptime(start_time_str, '%H:%M').time()
+            end_time = datetime.strptime(end_time_str, '%H:%M').time()
+        except ValueError:
+            error_message = "Invalid date or time format. Please use the correct format."
+            return render(request, 'schedule_class.html', {
+                'assigned_courses': assigned_courses,
+                'today': today,
+                'error_message': error_message
+            })
+
+        # Validate that the selected date is not in the past
+        if selected_date < today:
+            error_message = "The selected date cannot be in the past."
+            return render(request, 'schedule_class.html', {
+                'assigned_courses': assigned_courses,
+                'today': today,
+                'error_message': error_message
+            })
+        
+        # Fetch the selected course to validate dates
+        course = Course.objects.get(id=selected_course_id)  # Fetch the course by ID
+        
+        # Validate that the scheduled date is within the course's start and end dates
+        if selected_date < course.starting_date or selected_date > course.ending_date:
+            error_message = f"The scheduled date must be between {course.starting_date} and {course.ending_date}."
+            return render(request, 'schedule_class.html', {
+                'assigned_courses': assigned_courses,
+                'today': today,
+                'error_message': error_message
+            })
+
+        # Check that the end time is after the start time
+        if end_time <= start_time:
+            error_message = "End time must be after the start time."
+            return render(request, 'schedule_class.html', {
+                'assigned_courses': assigned_courses,
+                'today': today,
+                'error_message': error_message
+            })
+        
+        # Overlap validation - Check if the new class conflicts with any existing scheduled classes for any teacher
+        overlapping_classes = ClassSchedule.objects.filter(
+            date=selected_date,
+            start_time__lt=end_time,  # An overlap if the class starts before the new one ends
+            end_time__gt=start_time   # And ends after the new one starts
+        )
+
+        if overlapping_classes.exists():
+            error_message = "The scheduled class overlaps with an existing class scheduled by another teacher."
+            return render(request, 'schedule_class.html', {
+                'assigned_courses': assigned_courses,
+                'today': today,
+                'error_message': error_message
+            })
+
+        # Create the class schedule record in the database
+        schedule = ClassSchedule(
+            class_name=class_name,
+            course_name=course,  # Use the fetched course
+            date=selected_date,
+            start_time=start_time,
+            end_time=end_time,
+            meeting_link=meeting_link,
+            teacher=teacher
+        )
+        schedule.save()
+
+        if schedule:
+            return redirect('view_teacher_schedule_class')  # Redirect to teacher's dashboard on success
+
+    # Fetch scheduled classes for this teacher
+    current_datetime = datetime.now()
+    scheduled_classes = ClassSchedule.objects.filter(
+        teacher=teacher, date__gte=today, end_time__gt=current_datetime.time()
+    )
+
+    return render(request, 'schedule_class.html', {
+        'first_name': teacher.first_name,
+        'last_name': teacher.last_name,
+        'assigned_courses': assigned_courses,
+        'today': today,
+        'scheduled_classes': scheduled_classes,
+        'error_message': error_message
+    })
+
+
+from django.shortcuts import render, redirect
+from django.utils import timezone
+from django.db.models import Q
+from .models import ClassSchedule, Teacher, Course
+
+def view_teacher_schedule_class(request):
+    # Get the teacher_id from session
+    teacher_id = request.session.get('teacher_id')
+
+    # Redirect to login if teacher_id is not present
+    if not teacher_id:
+        return redirect('login')
+
+    try:
+        teacher = Teacher.objects.get(id=teacher_id)
+    except Teacher.DoesNotExist:
+        return redirect('login')
+
+    # Get the current local time and date, automatically converted to IST if TIME_ZONE is set to 'Asia/Kolkata'
+    current_datetime = timezone.localtime()
+
+    # Debug statement to check the current IST date and time
+    print(f"Current date and time (IST): {current_datetime}")
+    print(f"Current date (IST): {current_datetime.date()}, Current time (IST): {current_datetime.time()}")
+
+    # Fetch ongoing and future classes based on the current IST date and time
+    future_classes = ClassSchedule.objects.filter(
+        teacher=teacher  # Filter classes by teacher
+    ).filter(
+        Q(date=current_datetime.date(), end_time__gt=current_datetime.time()) |  # Ongoing classes today that haven't ended
+        Q(date__gt=current_datetime.date())  # Future classes (scheduled after today)
+    ).order_by('date', 'start_time')  # Order by date and start time
+
+    # Debug statement to check the ongoing and future classes query results
+    print(f"Ongoing and future classes: {future_classes}")
+
+    # Prepare the context for rendering
+    context = {
+        'future_classes': future_classes,
+        'first_name': teacher.first_name,
+        'last_name': teacher.last_name,  # Ongoing and future classes
+    }
+
+    return render(request, 'view_teacher_schedule_class.html', context)
+
+
+
+from django.shortcuts import render, redirect # type: ignore
+from django.contrib import messages # type: ignore
+from .models import ClassSchedule
+
+def edit_class(request):
+    courses = Course.objects.all()
+    if request.method == 'POST':
+        class_id = request.POST.get('class_id')
+        course_id = request.POST.get('course_name')
+        class_name = request.POST.get('class_name')
+        date = request.POST.get('date')
+        start_time = request.POST.get('start_time')
+        end_time = request.POST.get('end_time')
+        meeting_link = request.POST.get('meeting_link')
+
+        try:
+            scheduled_class = ClassSchedule.objects.get(id=class_id)
+            scheduled_class.course_name = course_id
+            scheduled_class.class_name = class_name
+            scheduled_class.date = date
+            scheduled_class.start_time = start_time
+            scheduled_class.end_time = end_time
+            scheduled_class.meeting_link = meeting_link
+            scheduled_class.save()
+
+            messages.success(request, "Class details updated successfully.")
+        except ClassSchedule.DoesNotExist:
+            messages.error(request, "Class not found.")
+
+        return redirect('view_teacher_schedule_class', {'courses': courses})  # Redirect to the view scheduled classes page
+
+from django.contrib import messages # type: ignore
+from django.shortcuts import redirect, render # type: ignore
+from .models import ClassSchedule, CustomUser,Enrollment
+from django.utils import timezone # type: ignore
+from django.db.models import Q # type: ignore
+
+def view_scheduled_classes(request):
+    # Retrieve the custom user ID from the session
+    custom_user_id = request.session.get('custom_user_id')
+
+    if not custom_user_id:
+        messages.error(request, "You are not logged in.")
+        return redirect('login')
+
+    try:
+        # Fetch the student (CustomUser) based on the custom user ID
+        student = CustomUser.objects.get(id=custom_user_id)
+    except CustomUser.DoesNotExist:
+        messages.error(request, "Student not found.")
+        return redirect('login')
+# Fetch the enrolled courses for the student
+    enrolled_courses = Enrollment.objects.filter(student=student)
+
+    if not enrolled_courses.exists():
+        messages.error(request, "You are not registered for any course.")
+        return redirect('student_dashboard')
+
+    # Get the current date and time in IST
+    current_datetime = timezone.localtime()  # This will automatically convert to IST if TIME_ZONE is set to 'Asia/Kolkata'
+
+    # Debug statement to check the current IST date and time
+    print(f"Current date and time (IST): {current_datetime}")
+
+    # Fetch ongoing and future classes for the registered course
+    ongoing_future_classes = ClassSchedule.objects.filter(
+       course_name__in=enrolled_courses.values_list('course', flat=True)  # Correct field name here
+    ).filter( 
+        Q(date=current_datetime.date(), end_time__gt=current_datetime.time()) |  # Ongoing classes today that haven't ended
+        Q(date__gt=current_datetime.date())  # Future classes (after today)
+    ).order_by('date', 'start_time')  # Order by date and start time
+
+    # Check if there are any ongoing or future classes
+    if not ongoing_future_classes.exists():
+        messages.info(request, "No ongoing or upcoming classes found.")
+
+    # Pass the classes to the template
+    return render(request, 'view_scheduled_classes.html', {'scheduled_classes': ongoing_future_classes})
+
+
+from django.shortcuts import render, redirect # type: ignore
+from .models import CustomUser, ClassSchedule, Parent
+
+def view_class_schedule(request):
+    parent_id = request.session.get('parent_id')
+    
+    if not parent_id:
+        
+        return redirect('login')
+    
+    try:
+        parent = Parent.objects.get(id=parent_id)
+    except Parent.DoesNotExist:
+       
+        return redirect('error_page')
+
+    child_username = parent.student_username
+    child = CustomUser.objects.get(username=child_username)
+    child_schedule = ClassSchedule.objects.filter(course_name=child.course)
+
+    context = {
+        'child': child,
+        'child_schedule': child_schedule,
+    }
+    
+    return render(request, 'view_class_schedule.html', context)
+
+
+from .models import CustomUser, Parent, Teacher
+from .models import Parent
+
+
+def change_password(request):
+    parent_id = request.session.get('parent_id')
+    
+    # Check if parent is logged in
+    if not parent_id:
+        messages.error(request, 'You are not logged in as a parent.')
+        return redirect('login')
+
+    try:
+        # Fetch the parent instance
+        parent = Parent.objects.get(id=parent_id)
+    except Parent.DoesNotExist:
+        messages.error(request, 'Parent not found.')
+        return redirect('login')
+
+    if request.method == 'POST':
+        old_password = request.POST.get('old_password')
+        new_password1 = request.POST.get('new_password')
+        new_password2 = request.POST.get('confirm_password')
+
+        # Check if new passwords match
+        if new_password1 != new_password2:
+            messages.error(request, 'New passwords do not match.')
+            return redirect('change_password')
+
+        # Check if the old password is correct
+        if old_password != parent.auto_generated_password:
+            messages.error(request, 'Old password is incorrect.')
+            return redirect('change_password')
+
+        # Update the password in the database
+        parent.auto_generated_password = new_password1
+        parent.save()
+        messages.success(request, 'Your password has been successfully updated.')
+        return redirect('login')
+
+    return render(request, 'change_password.html')
+
+
+from django.shortcuts import render, redirect # type: ignore
+from django.contrib import messages # type: ignore
+from django.contrib.auth import update_session_auth_hash # type: ignore
+from .models import CustomUser, Parent, Teacher
+from .models import Teacher
+
+def teacher_changepassword(request):
+    teacher_id = request.session.get('teacher_id')
+    
+    # Check if teacher is logged in
+    if not teacher_id:
+        messages.error(request, 'You are not logged in as a teacher.')
+        return redirect('login')
+
+    try:
+        # Fetch the teacher instance
+        teacher = Teacher.objects.get(id=teacher_id)
+    except Teacher.DoesNotExist:
+        messages.error(request, 'Teacher not found.')
+        return redirect('login')
+
+    if request.method == 'POST':
+        old_password = request.POST.get('old_password')
+        new_password1 = request.POST.get('new_password')
+        new_password2 = request.POST.get('confirm_password')
+
+        # Check if new passwords match
+        if new_password1 != new_password2:
+            messages.error(request, 'New passwords do not match.')
+            return redirect('teacher_changepassword')
+
+        # Check if the old password is correct
+        if old_password != teacher.auto_generated_password:
+            messages.error(request, 'Old password is incorrect.')
+            return redirect('teacher_changepassword')
+
+        # Update the password in the database
+        teacher.auto_generated_password = new_password1
+        teacher.save()
+        messages.success(request, 'Your password has been successfully updated.')
+        return redirect('login')
+
+    return render(request, 'teacher_changepassword.html')
+
+
+
+from .models import Teacher
+
+def teacher_updateprofile(request):
+    teacher_id = request.session.get('teacher_id')
+    
+    if not teacher_id:
+        messages.error(request, 'No teacher ID found in session.')
+        return redirect('login')
+
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+
+    if request.method == 'POST':
+        # Fetch the form data
+        teacher.first_name = request.POST.get('first_name')
+        teacher.last_name = request.POST.get('last_name')
+        teacher.gender = request.POST.get('gender')
+        teacher.date_of_birth = datetime.strptime(request.POST.get('date_of_birth'), '%Y-%m-%d').date()
+        teacher.email = request.POST.get('email')
+        teacher.contact = request.POST.get('contact')
+        teacher.address_line1 = request.POST.get('address_line1')
+        teacher.address_line2 = request.POST.get('address_line2')
+        teacher.city = request.POST.get('city')
+        teacher.state = request.POST.get('state')
+        teacher.zip_code = request.POST.get('zip_code')
+        teacher.qualification = request.POST.get('qualification')
+        teacher.experience = request.POST.get('experience')
+
+        # Handle file uploads
+        if 'qualification_certificate' in request.FILES:
+            teacher.qualification_certificate = request.FILES['qualification_certificate']
+        if 'experience_certificate' in request.FILES:
+            teacher.experience_certificate = request.FILES['experience_certificate']
+        # Save the updated teacher details
+        teacher.save()
+        messages.success(request, 'Profile updated successfully.')
+        return redirect('view_profile')  
+
+    context = {'teacher': teacher,
+               'first_name': teacher.first_name,
+               'last_name': teacher.last_name,
+        }
+    return render(request, 'teacher_updateprofile.html', context)
+
+
+from .models import Parent
+import json
+import uuid
+import re
+from django.shortcuts import render, redirect
+from django.contrib.auth.hashers import make_password
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib import messages
+from django.utils.crypto import get_random_string
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
+import requests
+from .models import CustomUser, Course, FinalExam, FinalExamQuestion, Parent, TeacherMessage, TeacherStudent, Material, MaterialSummary
+import cv2
+import numpy as np
+from datetime import datetime, timedelta
+import os
+from django.shortcuts import render
+from django.http import JsonResponse
+from .models import Attendance
+import base64
+from transformers import MarianMTModel, MarianTokenizer
+import torch
+from .models import StudentFaceData
+from django.views.decorators.csrf import csrf_exempt
+from scipy.spatial.distance import cosine
+from django.shortcuts import render, redirect
+from .models import ClassSchedule
+from django.utils import timezone
+import mediapipe as mp
+from django.core.files.base import ContentFile
+from PIL import Image
+import io
+from skimage.metrics import structural_similarity as ssim  # Add this import
+from ml_code.create_db import create_data
+from ml_code.face_recognition import face_recognize
+from django.core.paginator import Paginator
+from .models import ParentTeacherMessage, Teacher, Parent
+from django.db.models import Q
+from django.utils import timezone
+from .models import Course, WhiteboardShare
+from django.http import JsonResponse
+from .models import EventSuggestion, CalendarEvent
+from django.views.decorators.http import require_POST
+from .models import MindMap
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import ensure_csrf_cookie
+import os
+from dotenv import load_dotenv
+from gtts import gTTS
+from django.http import FileResponse, HttpResponse
+from django.shortcuts import get_object_or_404
+from .models import Material
+import PyPDF2
+import docx
+import tempfile
+from transformers import SpeechT5Processor, SpeechT5ForTextToSpeech, SpeechT5HifiGan
+import soundfile as sf
+from datasets import load_dataset
+import pyttsx3
+import threading
+from .models import TeacherNote, Course
+from django.contrib import messages
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from io import BytesIO
+from html import unescape
+import re
+from reportlab.pdfgen import canvas
+from io import BytesIO
+from django.core.files.base import ContentFile
+# Load environment variables
+load_dotenv()
+def register(request):
+    if request.method == 'POST':
+        # Extract form data from request.POST
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        email = request.POST.get('email')
+        contact = request.POST.get('contact')
+        date_of_birth = request.POST.get('date_of_birth')
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+       
+
+        # Perform basic validation
+        if not all([first_name, last_name, email, contact, date_of_birth, username, password]):
+            messages.error(request, 'Please fill out all fields.')
+            return render(request, 'register.html')
+
+        if not username.isalnum():
+            messages.error(request, "Username should contain only alphabets or numbers.")
+            return redirect('register')
+
+        # Check if the username or email is unique for the student
+        if CustomUser.objects.filter(username=username).exists():
+            messages.error(request, 'Username is already taken.')
+            return render(request, 'register.html')
+
+        if CustomUser.objects.filter(email=email).exists():
+            messages.error(request, 'Email is already registered.')
+            return render(request, 'register.html')
+
+        # Validate email format
+        
+        # Validate password complexity
+       
+
+
+        # Create and save student user instance
+        student_user = CustomUser(
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            contact=contact,
+            date_of_birth=date_of_birth,
+            password=make_password(password),
+            is_active=True,  # Ensure the user is active upon registration
+        )
+        student_user.save()
+
+        # Auto-generate a unique parent username using UUID
+        parent_username = f'parent_{uuid.uuid4().hex[:8]}'  # Generate an 8-character unique username
+
+        # Generate a random secure password for the parent
+        parent_password = get_random_string(12)  # Generate a 12-character password
+
+        # Create the parent instance linked to the student user
+        parent = Parent.objects.create(
+            auto_generated_username=parent_username,
+            auto_generated_password=parent_password,
+            student_username=student_user.username  # Link to the student's username
+        )
+
+        # Send email with parent's auto-generated credentials to the student's email
+        send_mail(
+            subject='Registration Successful: Parent Login Credentials',
+            message=f'You have successfully registered.\n\n'
+                    f'Your parent\'s login details:\n'
+                    f'Username: {parent_username}\n'
+                    f'Password: {parent_password}\n',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],  # Send to the student's email
+            fail_silently=False,
+        )
+
+        messages.success(request, 'Account created successfully! Parent login credentials have been sent to your email.')
+        return redirect('login')
+    else:
+        return render(request, 'register.html')
+
+
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Teacher, Parent, CustomUser
+
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        # Check Teacher model
+        try:
+            teacher = Teacher.objects.get(auto_generated_username=username)
+            if teacher.auto_generated_password == password:
+                # Manually log in the teacher (using sessions)
+                request.session['teacher_id'] = teacher.id  # Store teacher ID in session
+                return redirect('teacher_dashboard')
+        except Teacher.DoesNotExist:
+            pass  # Not a teacher
+
+        # Check Parent model
+        try:
+            parent = Parent.objects.get(auto_generated_username=username)
+            if parent.auto_generated_password == password:
+                # Manually log in the parent (using sessions)
+                request.session['parent_id'] = parent.id  # Store parent ID in session
+                return redirect('parent_dashboard')
+        except Parent.DoesNotExist:
+            pass  # Not a parent
+
+        # Check CustomUser model
+        try:
+            custom_user = CustomUser.objects.get(username=username)
+            if not custom_user.is_active:
+                messages.error(request, 'Your account is deactivated. Please contact support.')
+            if custom_user.check_password(password):  # Assuming password is stored as plaintext
+                # Manually log in the CustomUser (using sessions)
+                request.session['custom_user_id'] = custom_user.id  # Store CustomUser ID in session
+                
+                # Check if face data exists
+                # face_data = StudentFaceData.objects.filter(user=custom_user).first()
+                # if not face_data or not face_data.is_face_captured:
+                #     return redirect('face_capture')
+                
+                return redirect('available_courses')
+            else:
+                messages.error(request, 'Invalid password for CustomUser.')
+        except CustomUser.DoesNotExist:
+            pass  # Not a CustomUser
+
+        # If no match, show an error message
+        messages.error(request, 'Invalid username or password.')
+
+    return render(request, 'login.html')
+
+def assigned_courses(request):
+    # Get the teacher ID from the session
+    teacher_id = request.session.get('teacher_id')
+
+    if teacher_id:
+        # Fetch the assigned courses from the session
+        assigned_courses = request.session.get('assigned_courses', [])
+
+        return render(request, 'assigned_courses.html', {'courses': assigned_courses})
+
+    return redirect('teacher_login')  # Redirect to login if no session found
+
+
+from django.shortcuts import render, redirect
+from django.utils import timezone
+from .models import Course, Enrollment
+
+def available_courses(request):
+    # Check if the user is authenticated via session
+    if 'custom_user_id' not in request.session:
+        return redirect('login')  # Redirect to the login page if not authenticated
+   
+    # Get the logged-in user's ID from the session
+    custom_user_id = request.session['custom_user_id']
+    custom_user = CustomUser.objects.get(id=custom_user_id)
+    # Get the current date
+    current_date = timezone.now().date()
+
+    # Filter courses to only include those that have not started and haven't reached their end date
+    courses = Course.objects.filter(starting_date__gt=current_date, ending_date__gt=current_date)
+
+    # Apply price range filter if set
+    price_range = request.GET.get('price_range')
+    if price_range:
+        if price_range == 'all':
+            pass
+        elif price_range == '0-500':
+            courses = courses.filter(price__lt=500)
+        elif price_range == '500-999':
+            courses = courses.filter(price__gte=500, price__lt=1000)
+
+        elif price_range == '1000-2000':
+            courses = courses.filter(price__gte=1000, price__lt=2000)
+        elif price_range == '2000-3000':
+            courses = courses.filter(price__gte=2000, price__lt=3000)
+        elif price_range == '3000-4000':
+            courses = courses.filter(price__gte=3000, price__lt=4000)
+        elif price_range == '4000-5000':
+            courses = courses.filter(price__gte=4000, price__lt=5000)
+        elif price_range == '5000+':
+            courses = courses.filter(price__gte=5000)
+
+    # Prepare a list to hold course data along with enrollment status
+    course_data = []
+    for course in courses:
+        # Check if the user is enrolled in the current course
+        is_enrolled = Enrollment.objects.filter(student_id=custom_user_id, course=course).exists()
+        
+        # Append course data with enrollment status and start date check
+        course_data.append({
+            'course': course,
+            'is_enrolled': is_enrolled,
+            'can_enroll': current_date < course.starting_date  # Check if course hasn't started yet
+        })
+
+    # Pass the course data and current date to the template
+    return render(request, 'available_courses.html', {
+        'custom_user': custom_user,
+        'course_data': course_data,
+        'current_date': current_date,
+        'selected_price_range': price_range,
+        
+    })
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Course, Enrollment
+from django.http import HttpResponseForbidden
+
+def enroll_course(request, course_id):
+    # Check if the user is authenticated via session
+    if 'custom_user_id' not in request.session:
+        # If the user is not authenticated, redirect to the login page
+        return redirect('login')  # Redirect to your custom login page
+
+    # Get the authenticated user's ID from the session
+    custom_user_id = request.session['custom_user_id']
+    
+    # Get the course the user is trying to enroll in
+    course = get_object_or_404(Course, id=course_id)
+
+    # Check if the user is already enrolled in this course
+    if Enrollment.objects.filter(student_id=custom_user_id, course=course).exists():
+        # You can add a message here indicating the user is already enrolled
+        return redirect('available_courses')  # Redirect back to the available courses page
+
+    # If the user is not enrolled, create a new Enrollment
+    enrollment = Enrollment.objects.create(student_id=custom_user_id, course=course)
+
+    # Optionally, you can show a success message or redirect to another page
+    return redirect('available_courses')  # Redirect to the course list page
+
+from datetime import datetime
+def student_dashboard(request):
+    custom_user_id = request.session.get('custom_user_id')
+    if not custom_user_id:
+        return redirect('login')
+
+    # Fetch the CustomUser object based on the session ID
+    try:
+        custom_user = CustomUser.objects.get(id=custom_user_id)
+        if not custom_user.is_active:
+            return redirect('login')
+    except CustomUser.DoesNotExist:
+        return redirect('login')
+
+    enrolled_courses = Course.objects.filter(enrollments__student_id=custom_user_id)
+    today = datetime.today()
+
+    # Check for unanswered feedback questions for the logged-in user
+    feedback_questions = FeedbackQuestion.objects.all()
+    answered_questions = Feedback.objects.filter(user=custom_user_id).values_list('question_id', flat=True)
+    
+    # Identify new feedback questions (not answered by the user)
+    new_feedback_questions = feedback_questions.exclude(id__in=answered_questions)
+
+    return render(request, 'student_dashboard.html', {
+        'enrolled_courses': enrolled_courses,
+        'custom_user': custom_user,
+        'new_feedback_questions': new_feedback_questions,  # This will contain unanswered questions
+        'today': today,  # Pass today's date to the template
+    })
+
+
+def teacher_dashboard(request):
+    teacher_id = request.session.get('teacher_id')
+    if not teacher_id:
+        return redirect('login')  # Redirect to login if teacher not authenticated
+
+    # Fetch the Teacher object using teacher_id
+    try:
+        teacher = Teacher.objects.get(id=teacher_id)
+    except Teacher.DoesNotExist:
+        return redirect('login')  # Redirect if the teacher doesn't exist
+    teacher_courses = TeacherCourse.objects.filter(teacher_id=teacher_id).select_related('course')
+    # Pass the teacher object to the template
+    return render(request, 'teacher_dashboard.html', {
+        'first_name': teacher.first_name,
+        'last_name': teacher.last_name,
+        'teacher_courses': teacher_courses
+    })
+
+def parent_dashboard(request):
+    parent_id = request.session.get('parent_id')
+    if not parent_id:
+        return redirect('login')
+
+    try:
+        parent = Parent.objects.get(id=parent_id)
+        student = CustomUser.objects.get(username=parent.student_username)
+        courses = Enrollment.objects.filter(student=student).select_related('course')
+        
+        # Get student's quiz answers/grades
+        grades = UserAnswers.objects.filter(
+            user=student
+        ).select_related(
+            'question__quiz',
+            'question__quiz__course'
+        ).order_by('-attempt_date')
+        
+        # Get assignment submissions for the student
+        assignment_submissions = AssignmentSubmission.objects.filter(
+            student=student
+        ).select_related(
+            'assignment',
+            'assignment__teacher',
+            'assignment__course_name'
+        ).order_by('-submitted_at')
+
+        # Calculate submission status for each submission
+        for submission in assignment_submissions:
+            # Convert submitted_at to date for comparison
+            submission_date = submission.submitted_at.date()
+            due_date = submission.assignment.end_date
+            
+            if submission_date > due_date:
+                submission.is_overdue = True
+                submission.days_overdue = (submission_date - due_date).days
+                submission.status_class = 'text-danger'
+            elif submission_date == due_date:
+                submission.is_overdue = False
+                submission.status_class = 'text-warning'
+                submission.submitted_on = 'last day'
+            else:
+                submission.is_overdue = False
+                submission.days_early = (due_date - submission_date).days
+                submission.status_class = 'text-success'
+
+        # Get attendance records
+        attendance_records = Attendance.objects.filter(student=student).order_by('-check_in_time')
+        
+        # Calculate attendance statistics
+        total_records = attendance_records.count()
+        present_count = attendance_records.filter(status='present').count()
+        absent_count = total_records - present_count
+        attendance_percentage = (present_count / total_records * 100) if total_records > 0 else 0
+
+        # Get the student's enrolled courses
+        courses = Enrollment.objects.filter(student=student).select_related('course')
+        
+        # Calculate total course fees from course prices
+        total_course_fees = sum(enrollment.course.price for enrollment in courses)
+        
+        # Use select_related and prefetch_related to optimize queries
+        teachers = Teacher.objects.filter(
+            Q(parent_messages__parent=parent) | 
+            Q(teacher_courses__course__students__username=parent.student_username)
+        ).prefetch_related('teacher_courses').distinct()
+
+        messages_list = ParentTeacherMessage.objects.filter(parent=parent).order_by('-date')
+        
+        context = {
+            'parent': parent,
+            'student': student,
+            'courses': courses,
+            'grades': grades,
+            'assignment_submissions': assignment_submissions,
+            'attendance_records': attendance_records,
+            'present_count': present_count,
+            'absent_count': absent_count,
+            'attendance_percentage': attendance_percentage,
+            'total_course_fees': total_course_fees,
+            'messages_list': messages_list,
+            'teachers': teachers,
+            'unread_count': messages_list.filter(is_read=False, message_type='teacher_to_parent').count()
+        }
+
+        try:
+            # Get enrolled courses
+            enrolled_courses = Enrollment.objects.filter(
+                student__username=parent.student_username
+            ).values_list('course', flat=True)
+
+            # Get upcoming events for enrolled courses
+            upcoming_events = CalendarEvent.objects.filter(
+                course__in=enrolled_courses,
+                end_time__gte=timezone.now()
+            ).order_by('start_time')
+
+            # Get registered events for the student
+            registered_events = EventRegistration.objects.filter(
+                user__username=parent.student_username,
+                status='registered'
+            ).select_related('event')
+
+            try:
+                # Get event suggestions for this parent
+                event_suggestions = EventSuggestion.objects.filter(
+                    parent=parent
+                ).select_related('event').order_by('-created_at')
+
+                context.update({
+                    'upcoming_events': upcoming_events,
+                    'registered_events': registered_events,
+                    'event_suggestions': event_suggestions,  # Add suggestions to context
+                })
+
+                return render(request, 'parent_dashboard.html', context)
+
+            except Exception as e:
+                print(f"Error getting event suggestions: {str(e)}")
+                return render(request, 'parent_dashboard.html', context)
+
+        except Exception as e:
+            print(f"Error in parent_dashboard: {str(e)}")
+            return render(request, 'parent_dashboard.html', context)
+
+    except Parent.DoesNotExist:
+        return redirect('login')
+    except CustomUser.DoesNotExist:
+        student = None
+        courses = []
+        grades = []
+        assignment_submissions = []
+
+    # Get all messages for this parent
+    messages_list = ParentTeacherMessage.objects.filter(
+        parent=parent,
+        message_type='parent_to_teacher'  # Only get messages sent by parent
+    ).select_related('teacher').order_by('-date')
+
+    context.update({
+        'sent_messages': messages_list,
+    })
+
+    return render(request, 'parent_dashboard.html', {
+        'parent': parent,
+        'student': student,
+        'courses': courses,
+        'grades': grades,
+        'assignment_submissions': assignment_submissions,
+        'attendance_records': attendance_records,
+        'present_count': present_count,
+        'absent_count': absent_count,
+        'attendance_percentage': attendance_percentage,
+    })
+
+
+def index_view(request):
+    return render(request, 'index.html')
+
+def about_view(request):
+    return render(request, 'about.html')
+
+def admissions_view(request):
+    return render(request, 'admissions.html')
+
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .forms import ContactMessageForm  # Adjust the import based on your structure
+
+def contact_view(request):
+    if request.method == 'POST':
+        form = ContactMessageForm(request.POST)
+        if form.is_valid():
+            form.save()  # Save the form data to the database
+            messages.success(request, 'Your message has been sent successfully!')
+            return redirect('index')  # Redirect to the index page after submitting
+        else:
+            # This line ensures that the form with error messages is re-rendered
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = ContactMessageForm()
+
+    return render(request, 'contact.html', {'form': form})  # Replace 'your_template.html' with your actual template name
+
+
+from django.shortcuts import render, redirect
+from .models import ContactMessage
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib import messages
+
+# View to display all contact messages
+def view_messages(request):
+    messages_list = ContactMessage.objects.all()
+    return render(request, 'view_messages.html', {'messages_list': messages_list})
+
+def reply_message(request, message_id):
+    message_obj = ContactMessage.objects.get(id=message_id)
+    if request.method == 'POST':
+        subject = 'Thank you for contacting us'
+        body = 'We will contact you for more clarification regarding your query.'
+        from_email = settings.DEFAULT_FROM_EMAIL
+        recipient_list = [message_obj.email]
+
+        send_mail(subject, body, from_email, recipient_list)
+
+        # Update the replied status
+        message_obj.replied = True
+        message_obj.save()
+
+        messages.success(request, 'Reply sent successfully!')
+        return redirect('view_messages')
+    return redirect('view_messages')
+
+
+
+# views.py
+from django.shortcuts import render
+from .models import Course  # Make sure the Course model is imported
+from django.utils import timezone
+
+def courses_view(request):
+    # Fetch courses that haven't reached the start date
+    available_courses = Course.objects.filter(starting_date__gt=timezone.now())
+    return render(request, 'courses.html', {'courses': available_courses})
+
+def course_detail_10(request):
+    return render(request, 'course_detail_10.html')
+
+def course_detail_higher_secondary(request):
+    return render(request, 'course_detail_higher_secondary.html')
+
+def teachers_view(request):
+    return render(request, 'teachers.html')
+
+def recover_view(request):
+    return render(request, 'recover.html')
+
+def features(request):
+    return render(request, 'features.html')
+
+def parent(request):
+    return render(request, 'parent.html')
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+
+def admin_login(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        
+        # Check against predefined credentials
+        if username == 'admin' and password == 'admin123':
+            # Create a custom session for the admin user
+            request.session['is_admin'] = True
+            return redirect('admin_dashboard')  # Redirect to admin dashboard
+        else:
+            messages.error(request, "Invalid username or password. Please try again.")
+    
+    return render(request, 'admin_login.html')
+# views.py
+from django.shortcuts import render
+from .models import CustomUser, Teacher, Course, Enrollment  # Import your models
+
+def admin_dashboard(request):
+    # Count the number of users, teachers, and courses
+    total_users = CustomUser.objects.count()
+    total_teachers = Teacher.objects.count()
+    total_courses = Course.objects.count()
+
+    # Prepare data for course enrollment visualization
+    courses = Course.objects.all()
+    course_enrollment_data = []
+
+    for course in courses:
+        enrollment_count = Enrollment.objects.filter(course=course).count()
+        course_enrollment_data.append({
+            'course_name': course.course_name,
+            'enrollment_count': enrollment_count
+        })
+
+    context = {
+        'total_users': total_users,
+        'total_teachers': total_teachers,
+        'total_courses': total_courses,
+        'course_enrollment_data': course_enrollment_data,  # Pass enrollment data to template
+    }
+
+    return render(request, 'admin_dashboard.html', context)
+
+# views.py
+from django.shortcuts import render
+from .models import Course, Enrollment  # Import your models
+
+def course_enrollment_view(request):
+    # Get enrollment counts for each course
+    course_data = []
+    courses = Course.objects.all()
+    for course in courses:
+        registration_count = Enrollment.objects.filter(course=course).count()  # Count enrollments for each course
+        course_data.append({
+            'course_name': course.course_name,
+            'registration_count': registration_count
+        })
+
+    context = {
+        'course_data': course_data,  # Pass course data to the template
+    }
+
+    return render(request, 'course_enrollment.html', context)
+
+from django.shortcuts import render
+from .models import CustomUser
+
+def manage_students(request):
+    students = CustomUser.objects.select_related('course').filter(is_active=1)
+
+    past_students = CustomUser.objects.filter(is_active=0)
+    return render(request, 'manage_students.html', {'students': students, 'past_students':past_students})
+
+
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from .models import CustomUser
+
+def delete_student(request, student_id):
+    student = get_object_or_404(CustomUser, id=student_id)
+    if request.method == 'POST':
+        student.is_active = 0  
+        student.save()  
+        messages.success(request, 'Student marked as active successfully.')
+        return redirect('manage_students')
+
+
+# views.py
+from django.core.mail import send_mail
+from django.shortcuts import redirect, get_object_or_404
+from django.contrib import messages
+from .models import CustomUser
+
+def toggle_student_status(request, student_id):
+    student = get_object_or_404(CustomUser, id=student_id)
+    if student.is_active:
+        student.is_active = 0
+        email_subject = "Account Deactivated"
+        email_message = "Your account has been deactivated. Please contact support if you have any questions."
+    else:
+        student.is_active = True
+        email_subject = "Account Activated"
+        email_message = "Your account has been activated. You can now log in to the platform."
+
+    student.save()
+
+    # Send email to the student
+    send_mail(
+        email_subject,
+        email_message,
+        'divyaantony2025@mca.ajce.in',
+        [student.email],
+        fail_silently=False,
+    )
+
+    messages.success(request, f"Student '{student.username}' status updated successfully.")
+    return redirect('manage_students')
+
+
+from django.contrib.auth import logout as auth_logout
+from django.shortcuts import redirect
+
+def logout(request):
+    auth_logout(request)
+    request.session.flush()  
+    return redirect('login')
+
+
+def recover(request):
+    return render(request, 'recover.html')
+from django.contrib.auth.views import PasswordResetView
+from django.urls import reverse_lazy
+
+class CustomPasswordResetView(PasswordResetView):
+    template_name = 'password_reset.html'
+    email_template_name = 'password_reset_email.html'
+    subject_template_name = 'password_reset_subject.txt'
+    success_url = reverse_lazy('password_reset_done')
+from django.contrib.auth.views import PasswordResetDoneView
+
+class CustomPasswordResetDoneView(PasswordResetDoneView):
+    template_name = 'password_reset_done.html'
+from django.contrib.auth.views import PasswordResetConfirmView
+from django.urls import reverse_lazy
+
+class CustomPasswordResetConfirmView(PasswordResetConfirmView):
+    template_name = 'password_reset_confirm.html'
+    success_url = reverse_lazy('password_reset_complete')
+from django.contrib.auth.views import PasswordResetCompleteView
+
+class CustomPasswordResetCompleteView(PasswordResetCompleteView):
+    template_name = 'password_reset_complete.html'
+
+
+from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import Teacher
 
@@ -15391,14 +21611,31 @@ from django.shortcuts import render, get_object_or_404
 from .models import LeaveRequest
 
 def manage_leave_requests(request):
+    teacher_id = request.session.get('teacher_id')
+    if not teacher_id:
+        return redirect('login')
+
+    # Get pending leave requests
     leave_requests = LeaveRequest.objects.filter(status='pending')
-    return render(request, 'manage_leave.html', {'leave_requests': leave_requests})
+    
+    # Get leave history (approved and rejected requests)
+    leave_history = LeaveRequest.objects.filter(
+        Q(status='approved') | Q(status='rejected'),
+        teacher_id=teacher_id
+    ).order_by('-updated_at')  # Most recent first
+
+    context = {
+        'leave_requests': leave_requests,
+        'leave_history': leave_history
+    }
+    
+    return render(request, 'manage_leave.html', context)
 
 def update_leave_status(request, leave_id, status):
     leave_request = get_object_or_404(LeaveRequest, id=leave_id)
     leave_request.status = status
     leave_request.save()
-    return redirect('teacher_dashboard')
+    return redirect('manage_leave')
 
 def student_leave_requests(request):
     custom_user_id = request.session.get('custom_user_id')

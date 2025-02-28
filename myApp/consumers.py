@@ -28,12 +28,12 @@ class WhiteboardConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_send(
             self.room_group_name,
             {
-                'type': 'draw_message',
+                'type': 'drawing_message',
                 'data': data
             }
         )
 
-    async def draw_message(self, event):
+    async def drawing_message(self, event):
         data = event['data']
         
         # Send message to WebSocket
