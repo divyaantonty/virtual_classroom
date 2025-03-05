@@ -21611,25 +21611,8 @@ from django.shortcuts import render, get_object_or_404
 from .models import LeaveRequest
 
 def manage_leave_requests(request):
-    teacher_id = request.session.get('teacher_id')
-    if not teacher_id:
-        return redirect('login')
-
-    # Get pending leave requests
     leave_requests = LeaveRequest.objects.filter(status='pending')
-    
-    # Get leave history (approved and rejected requests)
-    leave_history = LeaveRequest.objects.filter(
-        Q(status='approved') | Q(status='rejected'),
-        teacher_id=teacher_id
-    ).order_by('-updated_at')  # Most recent first
-
-    context = {
-        'leave_requests': leave_requests,
-        'leave_history': leave_history
-    }
-    
-    return render(request, 'manage_leave.html', context)
+    return render(request, 'manage_leave.html', {'leave_requests': leave_requests})
 
 def update_leave_status(request, leave_id, status):
     leave_request = get_object_or_404(LeaveRequest, id=leave_id)
@@ -25239,3 +25222,13 @@ def get_message_history(request, message_id):
             'success': False,
             'error': str(e)
         }, status=500)
+
+from django.shortcuts import render
+
+def predict_stress(request):
+    # Logic for predicting stress goes here
+    return render(request, 'predict_stress.html')
+
+def stress_management_tips(request):
+    # Logic for providing stress management tips goes here
+    return render(request, 'stress_management_tips.html')

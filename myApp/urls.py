@@ -220,6 +220,9 @@ urlpatterns = [
 
     path('get-message-history/<int:message_id>/', views.get_message_history, name='get_message_history'),
 
+    path('predict_stress/', views.predict_stress, name='predict_stress'),
+    path('stress_management_tips/', views.stress_management_tips, name='stress_management_tips'),
+
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

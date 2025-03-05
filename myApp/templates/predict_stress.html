@@ -1,0 +1,49 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predict Stress</title>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}"> <!-- Include Bootstrap for styling -->
+</head>
+<body>
+    <div class="container">
+        <h1>Stress Prediction</h1>
+        <p>Answer the following questions to help us understand your stress levels and provide personalized tips.</p>
+        <form id="stressPredictionForm" method="POST" action="{% url 'predict_stress' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="stressLevel">How stressed do you feel today?</label>
+                <input type="range" class="form-control-range" id="stressLevel" name="stress_level" min="0" max="10" step="1">
+                <small class="form-text text-muted">0 = Not stressed, 10 = Extremely stressed. Please slide to indicate your current stress level.</small>
+            </div>
+            <div class="form-group">
+                <label for="sleepQuality">How would you rate your sleep quality last night?</label>
+                <select class="form-control" id="sleepQuality" name="sleep_quality">
+                    <option value="1">Very Poor</option>
+                    <option value="2">Poor</option>
+                    <option value="3">Average</option>
+                    <option value="4">Good</option>
+                    <option value="5">Very Good</option>
+                </select>
+                <small class="form-text text-muted">Consider how well you slept and how rested you feel today.</small>
+            </div>
+            <div class="form-group">
+                <label for="exerciseFrequency">How often do you exercise?</label>
+                <select class="form-control" id="exerciseFrequency" name="exercise_frequency">
+                    <option value="0">Never</option>
+                    <option value="1">Rarely</option>
+                    <option value="2">Sometimes</option>
+                    <option value="3">Often</option>
+                    <option value="4">Very Often</option>
+                </select>
+                <small class="form-text text-muted">Regular exercise can significantly impact your stress levels.</small>
+            </div>
+            <button type="submit" class="btn btn-primary">Predict Stress</button>
+        </form>
+    </div>
+    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+</body>
+</html> 

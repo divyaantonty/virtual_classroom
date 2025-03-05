@@ -380,12 +380,20 @@
                         <i class="fas fa-chalkboard mr-2"></i>Live Whiteboard
                     </a>
                     <a href="{% url 'teacher_messages' %}" class="dashboard-box">
-                        <i class="fas fa-envelope mr-2"></i>Messages
+                        <i class="fas fa-envelope mr-2"></i>Parent Communication
                         {% if unread_messages > 0 %}
                             <span class="badge badge-light ml-2">{{ unread_messages }}</span>
                         {% endif %}
                     </a>
-                    
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-heartbeat mr-2"></i>Stress Prediction
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'predict_stress' %}"><i class="fas fa-chart-line mr-2"></i>Predict Stress</a>
+                            <a href="{% url 'stress_management_tips' %}"><i class="fas fa-lightbulb mr-2"></i>Tips to Manage Stress</a>
+                        </div>
+                    </div>
                 </div>
             </div>
 
