@@ -220,8 +220,8 @@ urlpatterns = [
 
     path('get-message-history/<int:message_id>/', views.get_message_history, name='get_message_history'),
 
-    path('predict_stress/', views.predict_stress, name='predict_stress'),
-    path('stress_management_tips/', views.stress_management_tips, name='stress_management_tips'),
+
+    path('check-material-exists/', views.check_material_exists, name='check_material_exists'),
 
 ]
 if settings.DEBUG:

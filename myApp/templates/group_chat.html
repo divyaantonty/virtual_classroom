@@ -215,10 +215,17 @@
             }
         }
 
-        .media-controls {
+        .media-controls, .file-upload-controls {
+            display: inline-flex;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .all-controls {
             display: flex;
             gap: 10px;
             padding: 10px;
+            align-items: center;
         }
 
         .media-controls button {
@@ -378,6 +385,68 @@
             color: #2c3e50;
             text-decoration: none;
         }
+
+        .online-status {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #2ecc71;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+
+        .search-container {
+            margin: 10px 0;
+            padding: 0 15px;
+        }
+
+        .message.highlighted {
+            background-color: rgba(255, 255, 0, 0.2);
+            animation: highlight 1s ease-in-out;
+        }
+
+        @keyframes highlight {
+            0% { background-color: rgba(255, 255, 0, 0.5); }
+            100% { background-color: rgba(255, 255, 0, 0.2); }
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 10px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .download-progress {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .progress {
+            height: 6px;
+            margin-bottom: 5px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+        }
+
+        .progress-bar {
+            background-color: #3498db;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            color: #666;
+        }
     </style>
 </head>
 
@@ -437,16 +506,13 @@
                     </div>
                     
 
-                    <div class="media-controls mb-3">
+                    <div class="all-controls mb-3">
                         <button type="button" id="voiceBtn" class="btn btn-secondary" onclick="startRecording('voice')">
                             <i class="fas fa-microphone"></i>
                         </button>
                         <button type="button" id="videoBtn" class="btn btn-secondary" onclick="startRecording('video')">
                             <i class="fas fa-video"></i>
                         </button>
-                    </div>
-
-                    <div class="file-upload-controls mb-3">
                         <button type="button" id="imageBtn" class="btn btn-secondary" onclick="document.getElementById('imageInput').click()">
                             <i class="fas fa-image"></i>
                         </button>
@@ -455,6 +521,29 @@
                         </button>
                         <input type="file" id="imageInput" accept="image/*" style="display: none" onchange="uploadFile(this, 'image')">
                         <input type="file" id="pdfInput" accept=".pdf" style="display: none" onchange="uploadFile(this, 'pdf')">
+                    </div>
+
+                    <div class="online-status">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Online</span>
+                    </div>
+
+                    <div class="search-container mb-3">
+                        <div class="input-group">
+                            <input type="text" id="messageSearch" class="form-control" placeholder="Search messages...">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" onclick="searchMessages()">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="download-progress" style="display: none;">
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <span class="progress-text">0%</span>
                     </div>
 
                     <form method="POST" enctype="multipart/form-data">
@@ -615,6 +704,54 @@
             tracks.forEach(track => track.stop());
         });
 
+        function showDownloadProgress(file) {
+            const progressDiv = document.querySelector('.download-progress');
+            const progressBar = progressDiv.querySelector('.progress-bar');
+            const progressText = progressDiv.querySelector('.progress-text');
+            
+            progressDiv.style.display = 'block';
+            
+            // Simulated progress for files that don't support progress tracking
+            if (!file.size) {
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += 5;
+                    updateProgress(progress);
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                        setTimeout(() => {
+                            progressDiv.style.display = 'none';
+                        }, 1000);
+                    }
+                }, 100);
+                return;
+            }
+
+            // Real progress tracking for supported files
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', uploadUrl, true);
+
+            xhr.upload.onprogress = function(e) {
+                if (e.lengthComputable) {
+                    const percentComplete = (e.loaded / e.total) * 100;
+                    updateProgress(percentComplete);
+                }
+            };
+
+            xhr.onload = function() {
+                updateProgress(100);
+                setTimeout(() => {
+                    progressDiv.style.display = 'none';
+                }, 1000);
+            };
+
+            function updateProgress(percent) {
+                const roundedPercent = Math.round(percent);
+                progressBar.style.width = roundedPercent + '%';
+                progressText.textContent = roundedPercent + '%';
+            }
+        }
+
         function uploadFile(input, type) {
             if (input.files && input.files[0]) {
                 const file = input.files[0];
@@ -622,6 +759,8 @@
                 formData.append('media_file', file);
                 formData.append('message_type', type);
                 formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+                showDownloadProgress(file);
 
                 fetch('{% url "upload_media_message" group.id %}', {
                     method: 'POST',
@@ -669,6 +808,63 @@
                 modal.onclick = function() {
                     document.body.removeChild(modal);
                 };
+            }
+        });
+
+        function searchMessages() {
+            const searchText = document.getElementById('messageSearch').value.toLowerCase();
+            const messages = document.querySelectorAll('.message');
+            let foundResults = false;
+
+            // Remove existing highlights
+            messages.forEach(message => {
+                message.classList.remove('highlighted');
+            });
+
+            // If search text is empty, return
+            if (!searchText.trim()) {
+                return;
+            }
+
+            messages.forEach(message => {
+                const messageContent = message.querySelector('.message-text');
+                const senderContent = message.querySelector('.sender');
+                
+                if (messageContent) {
+                    const content = messageContent.textContent.toLowerCase();
+                    const sender = senderContent ? senderContent.textContent.toLowerCase() : '';
+                    
+                    if (content.includes(searchText) || sender.includes(searchText)) {
+                        message.classList.add('highlighted');
+                        message.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        foundResults = true;
+                    }
+                }
+            });
+
+            // Show feedback if no results found
+            const existingNoResults = document.querySelector('.no-results');
+            if (existingNoResults) {
+                existingNoResults.remove();
+            }
+
+            if (!foundResults) {
+                const noResults = document.createElement('div');
+                noResults.className = 'no-results';
+                noResults.textContent = 'No messages found matching your search.';
+                document.querySelector('.chat-box').appendChild(noResults);
+            }
+        }
+
+        // Add real-time search functionality
+        document.getElementById('messageSearch').addEventListener('input', function(e) {
+            searchMessages();
+        });
+
+        // Add enter key support
+        document.getElementById('messageSearch').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchMessages();
             }
         });
     </script>

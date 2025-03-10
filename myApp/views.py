@@ -13373,6 +13373,7 @@ def view_materials(request):
 
     # Ensure the student is registered for any courses
     enrollments = Enrollment.objects.filter(student=custom_user)
+    enrolled_courses = [enrollment.course for enrollment in enrollments]
     
     if not enrollments:
         messages.error(request, 'You are not registered for any course.')
@@ -13397,8 +13398,13 @@ def view_materials(request):
         course_materials = Material.objects.filter(course=enrollment.course, uploaded_at__gte=enrollment_datetime)
         materials.extend(course_materials)
 
+        context = {
+        'materials': materials,
+        'enrolled_courses': enrolled_courses,  # Add this line
+    }
+
     # Render the materials in the template
-    return render(request, 'view_materials.html', {'materials': materials})
+    return render(request, 'view_materials.html', context)
 
 # views.py
 from .models import Material, Parent, CustomUser
@@ -25259,12 +25265,19 @@ def get_message_history(request, message_id):
             'error': str(e)
         }, status=500)
 
-from django.shortcuts import render
 
-def predict_stress(request):
-    # Logic for predicting stress goes here
-    return render(request, 'predict_stress.html')
 
-def stress_management_tips(request):
-    # Logic for providing stress management tips goes here
-    return render(request, 'stress_management_tips.html')
+
+from django.http import JsonResponse
+
+def check_material_exists(request):
+    title = request.GET.get('title')
+    course_id = request.GET.get('course')
+    
+    exists = Material.objects.filter(
+        description__in=[title, f"Note: {title}"],
+        course_id=course_id
+    ).exists()
+    
+    return JsonResponse({'exists': exists})
+

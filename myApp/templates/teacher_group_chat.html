@@ -213,26 +213,65 @@
 
         .message {
             margin-bottom: 15px;
+            max-width: 70%;
+            clear: both;
+        }
+
+        .message-content {
             padding: 10px;
-            border-radius: 10px;
-        }
-
-        .message .sender {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .message .timestamp {
-            font-size: 0.8em;
-            color: #6c757d;
+            border-radius: 15px;
+            position: relative;
         }
 
         .student-message {
-            background-color: #e0f7fa;
+            float: left;
+        }
+
+        .student-message .message-content {
+            background-color: #e3f2fd;
+            margin-right: auto;
         }
 
         .teacher-message {
-            background-color: #ffecb3;
+            float: right;
+        }
+
+        .teacher-message .message-content {
+            background-color: #fff3e0;
+            margin-left: auto;
+        }
+
+        .message .sender {
+            font-size: 0.8em;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        .message .timestamp {
+            font-size: 0.7em;
+            color: #999;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .message-content img {
+            max-width: 200px;
+            border-radius: 8px;
+            margin-top: 5px;
+        }
+
+        .message-content audio,
+        .message-content video {
+            max-width: 250px;
+            border-radius: 8px;
+            margin-top: 5px;
+        }
+
+        .message-content .pdf-preview {
+            background-color: rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            padding: 8px;
+            margin-top: 5px;
         }
 
         .btn-primary {
@@ -282,89 +321,66 @@
         }
 
         /* Media Controls Styling */
-        .media-controls, .file-upload-controls {
+        .media-controls-container {
             display: flex;
             gap: 10px;
-            padding: 10px;
+            margin-bottom: 15px;
         }
 
-        .media-controls button, .file-upload-controls button {
-            border-radius: 50%;
+        .media-controls-container button {
             width: 40px;
             height: 40px;
+            border-radius: 50%;
+            border: none;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.3s ease;
+            color: white;
         }
 
         #voiceBtn {
             background-color: #00897b;
-            border: none;
-            color: white;
-        }
-
-        #voiceBtn:hover {
-            background-color: #00695c;
-            transform: scale(1.1);
         }
 
         #videoBtn {
             background-color: #e53935;
-            border: none;
-            color: white;
-        }
-
-        #videoBtn:hover {
-            background-color: #c62828;
-            transform: scale(1.1);
         }
 
         #imageBtn {
             background-color: #2ecc71;
-            border: none;
-            color: white;
-        }
-
-        #imageBtn:hover {
-            background-color: #27ae60;
-            transform: scale(1.1);
         }
 
         #pdfBtn {
             background-color: #e74c3c;
-            border: none;
-            color: white;
         }
 
-        #pdfBtn:hover {
-            background-color: #c0392b;
+        .media-controls-container button:hover {
             transform: scale(1.1);
+            opacity: 0.9;
         }
 
-        /* Message content styling for media */
-        .message-content img {
-            max-width: 200px;
-            border-radius: 8px;
-            margin-top: 5px;
-            cursor: pointer;
+        /* Add these new styles */
+        .blink {
+            animation: blink 1s infinite;
         }
 
-        .message-content audio,
-        .message-content video {
-            max-width: 250px;
-            border-radius: 8px;
-            margin-top: 5px;
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0; }
+            100% { opacity: 1; }
         }
 
-        .message-content .pdf-preview {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            margin-top: 5px;
+        #recordingStatus {
+            display: none;
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .timer {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
         }
 
         .recording {
@@ -373,8 +389,64 @@
 
         @keyframes pulse {
             0% { transform: scale(1); }
-            70% { transform: scale(1.1); }
+            50% { transform: scale(1.1); }
             100% { transform: scale(1); }
+        }
+
+        /* Add these new styles */
+        .message-type {
+            margin-left: 8px;
+            color: #666;
+        }
+
+        .message-media {
+            margin: 10px 0;
+        }
+
+        .audio-player {
+            width: 250px;
+            height: 40px;
+        }
+
+        .video-player {
+            max-width: 250px;
+            border-radius: 8px;
+        }
+
+        .shared-image {
+            max-width: 200px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .shared-image:hover {
+            transform: scale(1.05);
+        }
+
+        .pdf-preview {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .pdf-preview a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .pdf-preview a:hover {
+            text-decoration: underline;
+        }
+
+        .timestamp {
+            font-size: 0.75em;
+            color: #888;
+            margin-top: 5px;
+            text-align: right;
         }
     </style>
 
@@ -481,69 +553,94 @@
                         {% for message in messages %}
                         <div class="message {% if message.sender %}student-message{% elif message.teacher %}teacher-message{% endif %}">
                             <div class="message-content">
-                                <p class="sender">
+                                <div class="sender">
                                     {% if message.sender %}
-                                        {{ message.sender.username }}:
+                                        {{ message.sender.username }}
                                     {% elif message.teacher %}
-                                        <strong>Teacher {{ message.teacher.first_name }} {{ message.teacher.last_name }}:</strong>
+                                        Teacher {{ message.teacher.first_name }} {{ message.teacher.last_name }}
                                     {% endif %}
-                                </p>
-                                {% if message.message_type == 'voice' %}
-                                    <audio controls>
-                                        <source src="{{ message.media_file.url }}" type="audio/webm">
-                                        Your browser does not support audio playback.
-                                    </audio>
-                                {% elif message.message_type == 'video' %}
-                                    <video controls width="250">
-                                        <source src="{{ message.media_file.url }}" type="video/webm">
-                                        Your browser does not support video playback.
-                                    </video>
-                                {% elif message.message_type == 'image' %}
-                                    <img src="{{ message.media_file.url }}" alt="Shared image" onclick="showImagePreview(this.src)">
-                                {% elif message.message_type == 'pdf' %}
-                                    <div class="pdf-preview">
-                                        <i class="fas fa-file-pdf"></i>
-                                        <a href="{{ message.media_file.url }}" target="_blank">View PDF Document</a>
-                                    </div>
-                                {% else %}
-                                    <p>{{ message.content }}</p>
-                                {% endif %}
-                                <p class="timestamp">{{ message.timestamp }}</p>
+                                    <span class="message-type">
+                                        {% if message.message_type == 'voice' %}
+                                            <i class="fas fa-microphone"></i>
+                                        {% elif message.message_type == 'video' %}
+                                            <i class="fas fa-video"></i>
+                                        {% elif message.message_type == 'image' %}
+                                            <i class="fas fa-image"></i>
+                                        {% elif message.message_type == 'pdf' %}
+                                            <i class="fas fa-file-pdf"></i>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                
+                                <div class="message-media">
+                                    {% if message.message_type == 'voice' %}
+                                        <audio controls class="audio-player">
+                                            <source src="{{ message.media_file.url }}" type="audio/webm">
+                                            Your browser does not support audio playback.
+                                        </audio>
+                                    {% elif message.message_type == 'video' %}
+                                        <video controls class="video-player">
+                                            <source src="{{ message.media_file.url }}" type="video/webm">
+                                            Your browser does not support video playback.
+                                        </video>
+                                    {% elif message.message_type == 'image' %}
+                                        <img src="{{ message.media_file.url }}" alt="Shared image" class="shared-image" onclick="showImagePreview(this.src)">
+                                    {% elif message.message_type == 'pdf' %}
+                                        <div class="pdf-preview">
+                                            <i class="fas fa-file-pdf"></i>
+                                            <a href="{{ message.media_file.url }}" target="_blank">View PDF Document</a>
+                                        </div>
+                                    {% else %}
+                                        <p>{{ message.content }}</p>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="timestamp">
+                                    {{ message.timestamp|date:"M d, Y" }} at {{ message.timestamp|time:"H:i" }}
+                                </div>
                             </div>
                         </div>
                         {% endfor %}
                     </div>
 
-                    <div class="media-controls mb-3">
-                        <button type="button" id="voiceBtn" class="btn btn-secondary" onclick="startRecording('voice')">
+                    <div class="media-controls-container">
+                        <button type="button" id="voiceBtn" data-toggle="tooltip" title="Record Voice">
                             <i class="fas fa-microphone"></i>
                         </button>
-                        <button type="button" id="videoBtn" class="btn btn-secondary" onclick="startRecording('video')">
+                        <button type="button" id="videoBtn" data-toggle="tooltip" title="Record Video">
                             <i class="fas fa-video"></i>
                         </button>
-                    </div>
-
-                    <div class="file-upload-controls mb-3">
-                        <button type="button" id="imageBtn" class="btn btn-secondary" onclick="document.getElementById('imageInput').click()">
+                        <button type="button" id="imageBtn" onclick="document.getElementById('imageInput').click()">
                             <i class="fas fa-image"></i>
                         </button>
-                        <button type="button" id="pdfBtn" class="btn btn-secondary" onclick="document.getElementById('pdfInput').click()">
+                        <button type="button" id="pdfBtn" onclick="document.getElementById('pdfInput').click()">
                             <i class="fas fa-file-pdf"></i>
                         </button>
-                        <input type="file" id="imageInput" accept="image/*" style="display: none" onchange="uploadFile(this, 'image')">
-                        <input type="file" id="pdfInput" accept=".pdf" style="display: none" onchange="uploadFile(this, 'pdf')">
+                        <input type="file" 
+                               id="imageInput" 
+                               accept=".png,.jpg,.jpeg,image/png,image/jpeg" 
+                               style="display: none" 
+                               onchange="uploadFile(this, 'image')">
+                        <input type="file" 
+                               id="pdfInput" 
+                               accept=".pdf" 
+                               style="display: none" 
+                               onchange="uploadFile(this, 'pdf')">
                     </div>
 
                     <div class="modal fade" id="recordingModal" tabindex="-1">
                         <div class="modal-dialog">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title">Recording</h5>
+                                    <h5 class="modal-title" id="recordingModalTitle">Recording</h5>
                                     <button type="button" class="close" data-dismiss="modal">&times;</button>
                                 </div>
                                 <div class="modal-body text-center">
                                     <div class="timer mb-3">00:00</div>
                                     <video id="videoPreview" autoplay muted style="display: none; width: 100%; max-width: 400px;"></video>
+                                    <div id="recordingStatus" class="mb-3">
+                                        <i class="fas fa-circle text-danger blink"></i> Recording...
+                                    </div>
                                     <div class="mt-3">
                                         <button id="startRecordingBtn" class="btn btn-primary">Start Recording</button>
                                         <button id="stopRecordingBtn" class="btn btn-danger" style="display: none;">Stop Recording</button>
@@ -581,6 +678,210 @@
     <script src="{% static 'js/jquery.fancybox.min.js' %}"></script>
     <script src="{% static 'js/jquery.sticky.js' %}"></script>
     <script src="{% static 'js/main.js' %}"></script>
+
+    <script>
+    let mediaRecorder;
+    let recordedChunks = [];
+    let isRecording = false;
+    let recordingType = '';
+    let timerInterval;
+    let startTime;
+
+    function updateTimer() {
+        const currentTime = new Date().getTime();
+        const diff = currentTime - startTime;
+        const seconds = Math.floor(diff / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const displaySeconds = (seconds % 60).toString().padStart(2, '0');
+        const displayMinutes = minutes.toString().padStart(2, '0');
+        document.querySelector('.timer').textContent = `${displayMinutes}:${displaySeconds}`;
+    }
+
+    async function startRecording(type) {
+        recordingType = type;
+        const constraints = {
+            audio: true,
+            video: type === 'video'
+        };
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            mediaRecorder = new MediaRecorder(stream);
+            
+            // Show modal
+            $('#recordingModal').modal('show');
+            
+            // Update modal title based on recording type
+            document.getElementById('recordingModalTitle').textContent = 
+                type === 'video' ? 'Video Recording' : 'Voice Recording';
+
+            if (type === 'video') {
+                const videoPreview = document.getElementById('videoPreview');
+                videoPreview.style.display = 'block';
+                videoPreview.srcObject = stream;
+            }
+
+            // Setup recording handlers
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, {
+                    type: recordingType === 'video' ? 'video/webm' : 'audio/webm'
+                });
+                uploadRecording(blob);
+                recordedChunks = [];
+                
+                // Stop all tracks
+                stream.getTracks().forEach(track => track.stop());
+                
+                // Reset UI
+                document.getElementById('videoPreview').style.display = 'none';
+                document.getElementById('recordingStatus').style.display = 'none';
+                document.getElementById('startRecordingBtn').style.display = 'block';
+                document.getElementById('stopRecordingBtn').style.display = 'none';
+                clearInterval(timerInterval);
+                document.querySelector('.timer').textContent = '00:00';
+                
+                // Close modal
+                $('#recordingModal').modal('hide');
+            };
+
+            // Show recording UI
+            document.getElementById('startRecordingBtn').style.display = 'none';
+            document.getElementById('stopRecordingBtn').style.display = 'block';
+            document.getElementById('recordingStatus').style.display = 'block';
+            
+            // Start timer
+            startTime = new Date().getTime();
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            isRecording = true;
+            mediaRecorder.start();
+
+            // Auto-stop after 5 minutes
+            setTimeout(() => {
+                if (isRecording) {
+                    stopRecording();
+                }
+            }, 300000);
+
+        } catch (err) {
+            console.error('Error accessing media devices:', err);
+            alert('Unable to access ' + type + ' recording device');
+            $('#recordingModal').modal('hide');
+        }
+    }
+
+    function stopRecording() {
+        if (mediaRecorder && isRecording) {
+            mediaRecorder.stop();
+            isRecording = false;
+            clearInterval(timerInterval);
+        }
+    }
+
+    function uploadRecording(blob) {
+        const formData = new FormData();
+        const fileName = `${recordingType}_${Date.now()}.webm`;
+        formData.append('media_file', blob, fileName);
+        formData.append('message_type', recordingType);
+        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+        fetch('{% url "upload_media_message" group.id %}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Failed to upload recording');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to upload recording');
+        });
+    }
+
+    function uploadFile(input, type) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            
+            // Validate image file type
+            if (type === 'image') {
+                const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+                if (!validTypes.includes(file.type)) {
+                    alert('Please upload only PNG, JPG, or JPEG images');
+                    return;
+                }
+                
+                // Optional: Check file size (e.g., max 5MB)
+                const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+                if (file.size > maxSize) {
+                    alert('Image size should be less than 5MB');
+                    return;
+                }
+            }
+
+            const formData = new FormData();
+            formData.append('media_file', file);
+            formData.append('message_type', type);
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+            // Show loading state
+            const btn = document.getElementById(type + 'Btn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+
+            fetch('{% url "upload_media_message" group.id %}', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Failed to upload file');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to upload file');
+            })
+            .finally(() => {
+                // Reset button state
+                btn.innerHTML = type === 'image' ? 
+                    '<i class="fas fa-image"></i>' : 
+                    '<i class="fas fa-file-pdf"></i>';
+                btn.disabled = false;
+            });
+        }
+    }
+
+    // Add click handlers for recording buttons
+    document.getElementById('voiceBtn').addEventListener('click', () => startRecording('voice'));
+    document.getElementById('videoBtn').addEventListener('click', () => startRecording('video'));
+    document.getElementById('stopRecordingBtn').addEventListener('click', stopRecording);
+
+    // Handle modal close
+    $('#recordingModal').on('hidden.bs.modal', function () {
+        if (isRecording) {
+            stopRecording();
+        }
+    });
+
+    // Initialize tooltips if you're using Bootstrap
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+    </script>
 </body>
 
 </html>
