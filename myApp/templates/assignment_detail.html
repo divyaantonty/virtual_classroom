@@ -120,14 +120,31 @@
             text-align: center;
             text-decoration: none;
             font-size: 16px;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dashboard-box:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.5s ease;
+        }
+
+        .dashboard-box:hover:before {
+            left: 100%;
         }
 
         .dashboard-box:hover {
             background-color: #2980b9;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
         }
 
         .dashboard-content {
@@ -141,11 +158,10 @@
 
         .content-wrapper {
             padding: 30px;
-            background-color: rgba(255, 255, 255, 0.9);
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            max-width: 1500px;
-            width: 500%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            animation: slideInUp 0.6s ease-out;
         }
 
         .content-wrapper h2 {
@@ -154,21 +170,44 @@
         }
 
         table {
-            width: 50%;
-            border-collapse: collapse;
-            background-color: #fff;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
         }
 
-        th, td {
-            padding: 12px;
-            border: 1px solid #ddd;
-            text-align: left;
+        tr {
+            transition: all 0.3s ease;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        tr:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            background-color: #f0f7ff;
         }
 
         th {
-            background-color: #3498db;
+            background: linear-gradient(135deg, #2193b0, #6dd5ed);
             color: white;
+            padding: 15px;
+            font-size: 0.9em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            transition: all 0.3s ease;
         }
 
         td span {
@@ -178,11 +217,17 @@
         td a {
             color: #3498db;
             text-decoration: none;
-            transition: color 0.3s ease;
+            transition: all 0.3s ease;
+            display: inline-block;
+            padding: 8px 15px;
+            border-radius: 4px;
+            background-color: #f8f9fa;
         }
 
         td a:hover {
             color: #2980b9;
+            background-color: #e9ecef;
+            transform: translateY(-2px);
         }
 
         form {
@@ -191,21 +236,156 @@
         }
 
         input[type="file"] {
-            margin-bottom: 10px;
+            margin: 15px 0;
+            padding: 10px;
+            border: 2px dashed #3498db;
+            border-radius: 6px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        input[type="file"]:hover {
+            border-color: #2980b9;
+            background-color: #f8f9fa;
         }
 
         button {
-            padding: 8px 12px;
+            padding: 10px 20px;
             background-color: #2ecc71;
             border: none;
             color: white;
             cursor: pointer;
-            border-radius: 4px;
-            transition: background-color 0.3s ease;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
         }
 
         button:hover {
             background-color: #27ae60;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-submitted {
+            color: #2ecc71;
+            background: rgba(46, 204, 113, 0.1);
+            padding: 8px 12px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            animation: pulse 2s infinite;
+        }
+
+        .status-submitted::before {
+            content: '✓';
+            font-weight: bold;
+        }
+
+        .status-pending {
+            color: #f39c12;
+            font-weight: 600;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .status-late {
+            color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+            padding: 8px 12px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-late::before {
+            content: '⚠';
+        }
+
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: #3498db;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            margin: 5px 0;
+        }
+
+        .action-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .download-btn {
+            background: #2ecc71;
+        }
+
+        .download-btn:hover {
+            background: #27ae60;
+        }
+
+        .grade {
+            font-weight: bold;
+            color: #3498db;
+            padding: 5px 10px;
+            border-radius: 15px;
+            background: rgba(52, 152, 219, 0.1);
+        }
+
+        @keyframes slideInUp {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(46, 204, 113, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(46, 204, 113, 0);
+            }
+        }
+
+        .page-title {
+            font-size: 2em;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            position: relative;
+            padding-left: 45px;
+            animation: slideInLeft 0.6s ease-out;
+        }
+
+        .page-title::before {
+            content: '📚';
+            position: absolute;
+            left: 0;
+            font-size: 1.2em;
         }
 
         @media (max-width: 768px) {
@@ -233,6 +413,20 @@
 
             .profile-dropdown {
                 margin-top: 10px;
+            }
+
+            .content-wrapper {
+                padding: 15px;
+                margin: 10px;
+            }
+
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+
+            td, th {
+                white-space: nowrap;
             }
         }
     </style>
@@ -294,21 +488,21 @@
 
             <div class="dashboard-content">
                 <div class="content-wrapper">
-                    <h2>Assignment Details</h2>
+                    <h1 class="page-title">Assignment Details</h1>
                     <table>
                         <thead>
                             <tr>
-                                <th>Assignment Title</th>
-                                <th>Description</th>
-                                <th>Start Date</th>
-                                <th>End Date</th>
-                                <th>Start Time</th>
-                                <th>End Time</th>
-                                <th>Course</th>
-                                <th>Teacher</th>
-                                <th>Status</th>
-                                <th>Grade</th>
-                                <th>Action</th>
+                                <th><i class="fas fa-tasks"></i> Assignment Title</th>
+                                <th><i class="fas fa-info-circle"></i> Description</th>
+                                <th><i class="fas fa-calendar"></i> Start Date</th>
+                                <th><i class="fas fa-calendar-check"></i> End Date</th>
+                                <th><i class="fas fa-clock"></i> Start Time</th>
+                                <th><i class="fas fa-hourglass-end"></i> End Time</th>
+                                <th><i class="fas fa-book"></i> Course</th>
+                                <th><i class="fas fa-chalkboard-teacher"></i> Teacher</th>
+                                <th><i class="fas fa-info-circle"></i> Status</th>
+                                <th><i class="fas fa-star"></i> Grade</th>
+                                <th><i class="fas fa-cogs"></i> Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -324,31 +518,35 @@
                                 <td>{{ detail.assignment.teacher }}</td>
                                 <td>
                                     {% if detail.submission %}
-                                        <span style="color: green;">Submitted</span>
+                                        <span class="status-submitted">Submitted</span>
                                     {% else %}
                                         {% if detail.has_reached_deadline %}
-                                            <span style="color: red;">Not submitted before the deadline</span>
+                                            <span class="status-late">Not submitted before the deadline</span>
                                         {% else %}
-                                            <span style="color: orange;">Pending</span>
+                                            <span class="status-pending">Pending</span>
                                         {% endif %}
                                     {% endif %}
                                 </td>
                                 <td>
                                     {% if detail.submission and detail.submission.grade %}
-                                        <span style="color: blue;">Grade: {{ detail.submission.grade }}</span>
+                                        <span class="grade">{{ detail.submission.grade }}</span>
                                     {% else %}
                                         <span style="color: gray;">Not graded yet</span>
                                     {% endif %}
                                 </td>
                                 <td>
                                     {% if detail.assignment.file %}
-                                        <a href="{{ detail.assignment.file.url }}" download>Download Question</a>
+                                        <a href="{{ detail.assignment.file.url }}" class="action-btn download-btn">
+                                            <i class="fas fa-download"></i> Download Question
+                                        </a>
                                     {% else %}
                                         <span>No question file available</span>
                                     {% endif %}
                                     <br><br>
                                     {% if detail.submission %}
-                                        <a href="{{ detail.submission.file.url }}" download>Download your submission</a>
+                                        <a href="{{ detail.submission.file.url }}" class="action-btn">
+                                            <i class="fas fa-file-alt"></i> View Submission
+                                        </a>
                                         {% if detail.submission_allowed %}
                                             <p>You can still update your submission before the deadline.</p>
                                             <form method="post" enctype="multipart/form-data">

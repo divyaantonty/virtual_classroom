@@ -1,4 +1,5 @@
 {% load static %}
+{% load event_tags %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -284,12 +285,53 @@
         }
 
         .event-card {
-            background: white;
+            position: relative;
+            border-left: 4px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .event-card.upcoming {
+            border-left-color: #2ecc71; /* Green for upcoming events */
             border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-            overflow: hidden;
-            transition: transform 0.3s ease;
+            box-shadow: 0 4px 6px rgba(46, 204, 113, 0.1);
+        }
+
+        .event-card.ongoing {
+            border-left-color: #f39c12; /* Orange for ongoing events */
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(243, 156, 18, 0.1);
+        }
+
+        .event-card.ended {
+            border-left-color: #e74c3c; /* Red for ended events */
+            border-radius: 12px;
+            opacity: 0.8;
+            box-shadow: 0 4px 6px rgba(231, 76, 60, 0.1);
+        }
+
+        .event-status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 500;
+        }
+
+        .status-upcoming {
+            background-color: #2ecc71;
+            color: white;
+        }
+
+        .status-ongoing {
+            background-color: #f39c12;
+            color: white;
+        }
+
+        .status-ended {
+            background-color: #e74c3c;
+            color: white;
         }
 
         .event-card:hover {
@@ -717,14 +759,24 @@
                     </div>
 
                     <!-- Event Details Section -->
-                    <div class="event-details-section">
+                    <div class="events-container">
                         <h2 class="section-title">Event Details</h2>
                         <div class="event-cards">
-                            {% for event in events %}
-                            <div class="event-card" data-event-id="{{ event.id }}">
+                            {% for event in events|dictsort:"start_time" reversed %}
+                            {% with event_status=event|get_event_status:now %}
+                            <div class="event-card {{ event_status }}" data-event-id="{{ event.id }}">
                                 <div class="event-header">
                                     <h3 class="event-title">{{ event.title }}</h3>
                                     <span class="event-badge">{{ event.event_type }}</span>
+                                    <span class="event-status-badge status-{{ event_status }}">
+                                        {% if event_status == 'upcoming' %}
+                                            Upcoming
+                                        {% elif event_status == 'ongoing' %}
+                                            Ongoing
+                                        {% else %}
+                                            Ended
+                                        {% endif %}
+                                    </span>
                                 </div>
                                 <div class="event-body">
                                     <div class="event-info">
@@ -787,22 +839,27 @@
                                         </div>
                                     </div>
                                     <div class="event-action">
-                                        {% if event.start_time|date:'Y-m-d' < now|date:'Y-m-d' %}
+                                        {% if event_status == 'ended' %}
                                             <button class="btn-expired" disabled>
-                                                <i class="fas fa-clock"></i> Event Started
+                                                <i class="fas fa-clock"></i> Event Ended
+                                            </button>
+                                        {% elif event_status == 'ongoing' %}
+                                            <button class="btn-expired" disabled>
+                                                <i class="fas fa-clock"></i> Event In Progress
                                             </button>
                                         {% elif event.is_registered %}
                                             <button class="btn-registered" disabled>
                                                 <i class="fas fa-check-circle"></i> Already Registered
                                             </button>
                                         {% else %}
-                                            <a href="{% url 'register_event' event.id %}" class="btn-register">
+                                            <button onclick="checkAndRegister({{ event.id }}, '{{ event.start_time|date:'Y-m-d' }}')" class="btn-register">
                                                 <i class="fas fa-user-plus"></i> Register Now
-                                            </a>
+                                            </button>
                                         {% endif %}
                                     </div>
                                 </div>
                             </div>
+                            {% endwith %}
                             {% endfor %}
                         </div>
                     </div>
@@ -840,7 +897,22 @@
                     {% endfor %}
                 ],
                 eventClick: function(event) {
-                    // Check if already registered
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    
+                    const eventStart = new Date(event.start);
+                    eventStart.setHours(0, 0, 0, 0);
+                    
+                    if (eventStart <= today) {
+                        Swal.fire({
+                            title: 'Registration Closed',
+                            text: 'This event has already started. Registration is no longer available.',
+                            icon: 'info',
+                            confirmButtonText: 'OK'
+                        });
+                        return;
+                    }
+
                     if (event.is_registered) {
                         Swal.fire({
                             title: 'Already Registered!',
@@ -851,7 +923,7 @@
                         return;
                     }
 
-                    // If not registered, show registration confirmation
+                    // If not registered and event hasn't started, show registration confirmation
                     Swal.fire({
                         title: event.title,
                         html: `
@@ -864,7 +936,7 @@
                                     <p><i class="fas fa-info-circle"></i> Description: ${event.description}</p>
                                 </div>
                                 <div class="event-actions">
-                                    <button class="btn-register" onclick="registerForEvent(${event.id})">
+                                    <button class="btn-register" onclick="window.location.href='/register_event/${event.id}/'">
                                         <i class="fas fa-user-plus"></i> Register Now
                                     </button>
                                 </div>
@@ -880,60 +952,25 @@
             });
         });
 
-        // Function to handle event registration
-        function registerForEvent(eventId) {
-            // Send AJAX request to check and register
-            $.ajax({
-                url: `/register_event/${eventId}/`,
-                type: 'POST',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                success: function(response) {
-                    if (response.status === 'success') {
-                        Swal.fire({
-                            title: 'Success!',
-                            text: 'You have been registered for this event.',
-                            icon: 'success',
-                            confirmButtonText: 'OK'
-                        }).then(() => {
-                            // Reload page to update calendar
-                            location.reload();
-                        });
-                    } else {
-                        Swal.fire({
-                            title: 'Error!',
-                            text: response.message,
-                            icon: 'error',
-                            confirmButtonText: 'OK'
-                        });
-                    }
-                },
-                error: function() {
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'Something went wrong. Please try again.',
-                        icon: 'error',
-                        confirmButtonText: 'OK'
-                    });
-                }
-            });
-        }
-
-        // Function to get CSRF token
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
+        function checkAndRegister(eventId, startDate) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const eventStart = new Date(startDate);
+            eventStart.setHours(0, 0, 0, 0);
+            
+            if (eventStart <= today) {
+                Swal.fire({
+                    title: 'Registration Closed',
+                    text: 'This event has already started. Registration is no longer available.',
+                    icon: 'info',
+                    confirmButtonText: 'OK'
+                });
+                return;
             }
-            return cookieValue;
+            
+            // If date is valid, proceed to registration page
+            window.location.href = `/register_event/${eventId}/`;
         }
     </script>
 </body>
