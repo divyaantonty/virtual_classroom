@@ -21225,12 +21225,12 @@ from django.utils import timezone
 from datetime import datetime
 
 def student_events(request):
-    CustomUser = get_user_model()  # Fetch the custom user model
+    CustomUser = get_user_model()
     custom_user_id = request.session.get('custom_user_id')
 
     if not custom_user_id:
         messages.error(request, 'You must be logged in as a student to view events.')
-        return redirect('login')  # Redirect to login if no user session
+        return redirect('login')
 
     # Fetch the CustomUser (student) object using the session ID
     student = get_object_or_404(CustomUser, id=custom_user_id)
@@ -21240,35 +21240,71 @@ def student_events(request):
 
     if not enrollments.exists():
         messages.error(request, 'You are not registered for any courses.')
-        return redirect('student_dashboard')  # Redirect if no enrollments are found
+        return redirect('student_dashboard')
 
     # Create a list of enrolled courses with their enrollment dates and times
-    enrolled_courses = [(enrollment.course, enrollment.enrollment_date, enrollment.enrollment_time) for enrollment in enrollments]
+    enrolled_courses = [(enrollment.course, enrollment.enrollment_date, enrollment.enrollment_time) 
+                       for enrollment in enrollments]
 
-    # Current date and time for filtering events
+    # Get current date and time
     current_datetime = timezone.localtime()
 
     # Fetch events for the enrolled courses
-    events = CalendarEvent.objects.filter(course__in=[course for course, _, _ in enrolled_courses])
+    events = CalendarEvent.objects.filter(
+        course__in=[course for course, _, _ in enrolled_courses]
+    ).order_by('-start_time')  # Sort by start time, newest first
 
     # Further filter events based on the enrollment date and time
     filtered_events = []
     for course, enrollment_date, enrollment_time in enrolled_courses:
-        enrollment_datetime = timezone.make_aware(datetime.combine(enrollment_date, enrollment_time or datetime.min.time()))
+        enrollment_datetime = timezone.make_aware(
+            datetime.combine(enrollment_date, enrollment_time or datetime.min.time())
+        )
         # Fetch events that start after the enrollment date and time
-        filtered_events.extend(events.filter(course=course, start_time__gte=enrollment_datetime))
+        course_events = events.filter(course=course, start_time__gte=enrollment_datetime)
+        
+        # Add event status based on start and end times
+        for event in course_events:
+            event.status = get_event_status(event, current_datetime)
+            filtered_events.append(event)
 
     # Filter by event type if provided in the GET request
     event_type = request.GET.get('event_type', '')
     if event_type:
         filtered_events = [event for event in filtered_events if event.event_type == event_type]
 
+    # Sort filtered events by start time (newest first)
+    filtered_events.sort(key=lambda x: x.start_time, reverse=True)
+
     context = {
         'events': filtered_events,
-        'courses': [course for course, _, _ in enrolled_courses],  # Display course names
+        'courses': [course for course, _, _ in enrolled_courses],
+        'now': current_datetime,  # Add current datetime to context
     }
 
     return render(request, 'student_event.html', context)
+
+def get_event_status(event, current_datetime):
+    """
+    Determine the status of an event based on its start and end times
+    """
+    current_date = current_datetime.date()
+    start_date = event.start_time.date()
+    end_date = event.end_time.date()
+    
+    if current_date < start_date:
+        return 'upcoming'
+    elif current_date > end_date:
+        return 'ended'
+    else:
+        # Check if event is currently ongoing
+        if (current_datetime >= event.start_time and 
+            current_datetime <= event.end_time):
+            return 'ongoing'
+        elif current_datetime > event.end_time:
+            return 'ended'
+        else:
+            return 'upcoming'
 
 
 from django.http import JsonResponse

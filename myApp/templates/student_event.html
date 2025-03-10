@@ -1,5 +1,5 @@
 {% load static %}
-{% load event_tags %}
+{% load event_filters %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -311,12 +311,15 @@
 
         .event-status-badge {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 50%;  /* Center vertically */
+            right: 20px;  /* Adjust right spacing */
+            transform: translateY(-50%);  /* Perfect vertical centering */
             padding: 4px 12px;
             border-radius: 12px;
             font-size: 0.75em;
             font-weight: 500;
+            min-width: 80px;  /* Set minimum width */
+            text-align: center;  /* Center the text */
         }
 
         .status-upcoming {
@@ -339,6 +342,7 @@
         }
 
         .event-header {
+            position: relative;
             background: #f8f9fa;
             padding: 20px;
             border-bottom: 1px solid #eee;
@@ -348,19 +352,12 @@
         }
 
         .event-title {
-            font-size: 20px;
-            color: #2c3e50;
+            flex: 1;  /* Take up available space */
             margin: 0;
-            font-weight: 600;
         }
 
         .event-badge {
-            background: #3498db;
-            color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 14px;
-            text-transform: capitalize;
+            margin: 0 10px;  /* Add some spacing */
         }
 
         .event-body {
@@ -672,6 +669,40 @@
             background-color: #27ae60;
             border-color: #27ae60;
         }
+
+        /* Style for the Guest and status container */
+        .status-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;  /* Space between Guest and status */
+        }
+
+        .event-type-badge {
+            background: #3498db;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+
+        .status-label {
+            background: #2ecc71;  /* Green for upcoming */
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 80px;  /* Ensure consistent width */
+            text-align: center;
+        }
+
+        .status-label.ongoing {
+            background: #f39c12;  /* Orange for ongoing */
+        }
+
+        .status-label.ended {
+            background: #e74c3c;  /* Red for ended */
+        }
     </style>
 </head>
 
@@ -768,15 +799,12 @@
                                 <div class="event-header">
                                     <h3 class="event-title">{{ event.title }}</h3>
                                     <span class="event-badge">{{ event.event_type }}</span>
-                                    <span class="event-status-badge status-{{ event_status }}">
-                                        {% if event_status == 'upcoming' %}
-                                            Upcoming
-                                        {% elif event_status == 'ongoing' %}
-                                            Ongoing
-                                        {% else %}
-                                            Ended
-                                        {% endif %}
-                                    </span>
+                                    <div class="status-container">
+                                        
+                                        <span class="status-label {% if event_status == 'ongoing' %}ongoing{% elif event_status == 'ended' %}ended{% endif %}">
+                                            {{ event_status|title }}
+                                        </span>
+                                    </div>
                                 </div>
                                 <div class="event-body">
                                     <div class="event-info">
