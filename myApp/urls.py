@@ -224,7 +224,8 @@ urlpatterns = [
     path('check-material-exists/', views.check_material_exists, name='check_material_exists'),
 
  
-
+    path('check-plagiarism/<int:submission_id>/', views.check_plagiarism, name='check_plagiarism'),
+    path('get-plagiarism-details/<int:submission_id>/', views.get_plagiarism_details, name='get_plagiarism_details'),
 
 ]
 if settings.DEBUG:

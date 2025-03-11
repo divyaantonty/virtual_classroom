@@ -6,11 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Assignment Details</title>
     <script type="text/javascript">
-        function preventBack() {
-            window.history.forward(); 
-        }
-        setTimeout("preventBack()", 0);
-        window.onunload = function () { null };
     </script>
     <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
@@ -429,6 +424,71 @@
                 white-space: nowrap;
             }
         }
+
+        .submission-form {
+            margin-top: 15px;
+            width: 100%;
+        }
+
+        .file-upload-wrapper {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .file-upload-input {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-upload-label {
+            display: inline-block;
+            padding: 12px 20px;
+            background: #3498db;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload-label:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .selected-file-name {
+            margin-left: 10px;
+            color: #666;
+        }
+
+        .submit-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 25px;
+            background: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            background: #27ae60;
+            transform: translateY(-2px);
+        }
+
+        .submit-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+        }
     </style>
 </head>
 <body>
@@ -506,7 +566,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for detail in assignment_details %}
+                            {% for detail in assignment_details|dictsortreversed:"assignment.start_date" %}
                             <tr>
                                 <td>{{ detail.assignment.title }}</td>
                                 <td>{{ detail.assignment.description }}</td>
@@ -536,7 +596,7 @@
                                 </td>
                                 <td>
                                     {% if detail.assignment.file %}
-                                        <a href="{{ detail.assignment.file.url }}" class="action-btn download-btn">
+                                        <a href="{{ detail.assignment.file.url }}" class="action-btn download-btn" target="_blank" rel="noopener noreferrer">
                                             <i class="fas fa-download"></i> Download Question
                                         </a>
                                     {% else %}
@@ -558,11 +618,24 @@
                                         {% endif %}
                                     {% else %}
                                         {% if not detail.has_reached_deadline %}
-                                            <form method="post" enctype="multipart/form-data">
+                                            <form method="post" enctype="multipart/form-data" class="submission-form">
                                                 {% csrf_token %}
                                                 <input type="hidden" name="assignment_id" value="{{ detail.assignment.id }}">
-                                                <input type="file" name="file" required>
-                                                <button type="submit">Submit Assignment</button>
+                                                <div class="file-upload-wrapper">
+                                                    <input type="file" 
+                                                           name="file" 
+                                                           required 
+                                                           accept=".pdf,.doc,.docx"
+                                                           class="file-upload-input"
+                                                           id="file-upload-{{ detail.assignment.id }}">
+                                                    <label for="file-upload-{{ detail.assignment.id }}" class="file-upload-label">
+                                                        <i class="fas fa-cloud-upload-alt"></i> Choose File
+                                                    </label>
+                                                    <span class="selected-file-name"></span>
+                                                </div>
+                                                <button type="submit" class="submit-btn">
+                                                    <i class="fas fa-paper-plane"></i> Submit Assignment
+                                                </button>
                                             </form>
                                         {% else %}
                                             <span>Submission is closed.</span>
@@ -581,10 +654,64 @@
     <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.min.js' %}"></script>
     <script type="text/javascript">
-        window.history.forward();
-        function noBack() {
-            window.history.forward();
-        }
+        // Remove or comment out these lines:
+        // function preventBack() {
+        //     window.history.forward();
+        // }
+        // function noBack() {
+        //     window.history.forward();
+        // }
+    </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle file input change
+        const fileInputs = document.querySelectorAll('input[type="file"]');
+        
+        fileInputs.forEach(input => {
+            input.addEventListener('change', function(e) {
+                const fileName = e.target.files[0]?.name;
+                const fileSize = e.target.files[0]?.size;
+                const fileType = e.target.files[0]?.type;
+                const wrapper = this.closest('.file-upload-wrapper');
+                const submitBtn = wrapper.nextElementSibling;
+                const fileNameSpan = wrapper.querySelector('.selected-file-name');
+
+                // Check file type
+                const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+                if (fileName) {
+                    if (allowedTypes.includes(fileType)) {
+                        // Check file size (max 10MB)
+                        if (fileSize <= 10 * 1024 * 1024) {
+                            fileNameSpan.textContent = fileName;
+                            fileNameSpan.style.color = '#2ecc71';
+                            submitBtn.disabled = false;
+                        } else {
+                            fileNameSpan.textContent = 'File size should be less than 10MB';
+                            fileNameSpan.style.color = '#e74c3c';
+                            submitBtn.disabled = true;
+                        }
+                    } else {
+                        fileNameSpan.textContent = 'Please select a PDF or Word document';
+                        fileNameSpan.style.color = '#e74c3c';
+                        submitBtn.disabled = true;
+                    }
+                }
+            });
+        });
+
+        // Handle form submission
+        const forms = document.querySelectorAll('.submission-form');
+        forms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const fileInput = this.querySelector('input[type="file"]');
+                if (!fileInput.files[0]) {
+                    e.preventDefault();
+                    alert('Please select a file to submit');
+                    return;
+                }
+            });
+        });
+    });
     </script>
 </body>
 </html>

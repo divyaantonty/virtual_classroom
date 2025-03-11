@@ -34,4 +34,8 @@ def quiz_stats(grades, course):
 
 @register.filter
 def get_class_name(obj):
-    return obj.__class__.__name__ 
+    return obj.__class__.__name__
+
+@register.filter
+def multiply(value, arg):
+    return float(value) * float(arg) 

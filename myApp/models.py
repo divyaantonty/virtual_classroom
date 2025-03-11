@@ -296,6 +296,8 @@ class AssignmentSubmission(models.Model):
     file = models.FileField(upload_to='submissions/', blank=True, null=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
     grade = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # New field for grade
+    plagiarism_percentage = models.FloatField(null=True, blank=True)
+    plagiarism_details = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f"Submission by {self.student} for {self.assignment}"

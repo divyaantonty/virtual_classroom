@@ -20835,98 +20835,132 @@ from datetime import datetime
 from .models import Assignment, AssignmentSubmission, CustomUser, Enrollment  # Ensure to import Enrollment
 
 def assignment_submission_view(request):
-    # Retrieve the custom user ID from the session
     custom_user_id = request.session.get('custom_user_id')
 
     if not custom_user_id:
         messages.error(request, "You are not logged in.")
-        return redirect('login')  # Redirect to login page if user ID is not in session
+        return redirect('login')
 
     try:
-        # Fetch the student (CustomUser) based on the custom user ID
         student = CustomUser.objects.get(id=custom_user_id)
     except CustomUser.DoesNotExist:
         messages.error(request, "Student not found.")
         return redirect('login')
 
-    # Fetch the enrolled courses for the student along with the enrollment date and time
     enrollments = Enrollment.objects.filter(student=student)
 
     if not enrollments:
         messages.error(request, "You are not registered for any course.")
         return redirect('student_dashboard')
 
-    # Create a list to store the courses and their enrollment date and time
-    enrolled_courses_with_dates = [(enrollment.course, enrollment.enrollment_date, enrollment.enrollment_time) for enrollment in enrollments]
-
-    # Create a list to hold the course names and the minimum enrollment datetime
-    enrolled_courses = [course for course, _, _ in enrolled_courses_with_dates]
-    
-    # Fetch assignments based on the registered courses and filter by enrollment datetime
-    current_date = timezone.now()
+    enrolled_courses = [enrollment.course for enrollment in enrollments]
     assignment_details = []
 
-    for course, enrollment_date, enrollment_time in enrolled_courses_with_dates:
-        # Combine enrollment date and time to create a full datetime object
-        if enrollment_time:
-            enrollment_datetime = datetime.combine(enrollment_date, enrollment_time)
-        else:
-            enrollment_datetime = datetime.combine(enrollment_date, datetime.min.time())
-
-        # Make the combined enrollment datetime timezone-aware
-        enrollment_datetime = timezone.make_aware(enrollment_datetime)
-
-        # Get assignments for the current course, considering enrollment datetime
-        assignments = Assignment.objects.filter(course_name=course, start_date__gte=enrollment_datetime)
-
-        for assignment in assignments:
-            current_datetime = timezone.now()
-            assignment_end_datetime = datetime.combine(assignment.end_date, assignment.end_time)
-            assignment_end_datetime = timezone.make_aware(assignment_end_datetime)
-
-            has_reached_deadline = assignment_end_datetime <= current_datetime
-
-            # Check if the student has submitted the assignment
-            submission = AssignmentSubmission.objects.filter(assignment=assignment, student=student).first()
-
-            # Build the details for each assignment
-            assignment_detail = {
-                'assignment': assignment,
-                'submission': submission,
-                'has_reached_deadline': has_reached_deadline,
-                'can_submit': not has_reached_deadline and not submission,
-                'submission_allowed': not has_reached_deadline and submission,  # Option to re-submit before the deadline
-            }
-            assignment_details.append(assignment_detail)
-
-    # Handle the file upload if the request method is POST
+    # Handle file upload
     if request.method == 'POST':
-        assignment_id = request.POST.get('assignment_id')  # Get the assignment ID from the form
+        assignment_id = request.POST.get('assignment_id')
         file = request.FILES.get('file')
-        if file and assignment_id:
-            # Fetch the specific assignment based on the assignment ID
-            assignment = Assignment.objects.filter(id=assignment_id, course_name__in=enrolled_courses).first()
+        
+        if not file:
+            messages.error(request, 'Please select a file to upload.')
+            return redirect('assignment_detail')
+            
+        if not assignment_id:
+            messages.error(request, 'Invalid assignment selection.')
+            return redirect('assignment_detail')
 
-            if assignment and not has_reached_deadline and not submission:
-                # Create a new submission
-                submission = AssignmentSubmission(
+        try:
+            assignment = Assignment.objects.get(
+                id=assignment_id, 
+                course_name__in=enrolled_courses
+            )
+            
+            # Check file type
+            file_name = file.name.lower()
+            if not file_name.endswith(('.pdf', '.doc', '.docx')):
+                messages.error(request, 'Please upload only PDF or Word documents.')
+                return redirect('assignment_detail')
+
+            # Check file size (10MB limit)
+            if file.size > 10 * 1024 * 1024:
+                messages.error(request, 'File size should be less than 10MB.')
+                return redirect('assignment_detail')
+
+            # Check deadline
+            current_datetime = timezone.now()
+            assignment_end_datetime = timezone.make_aware(
+                datetime.combine(assignment.end_date, assignment.end_time)
+            )
+            
+            if assignment_end_datetime <= current_datetime:
+                messages.error(request, "Assignment deadline has passed.")
+                return redirect('assignment_detail')
+
+            # Update or create submission
+            try:
+                submission = AssignmentSubmission.objects.get(
+                    assignment=assignment,
+                    student=student
+                )
+                submission.file = file
+                submission.save()
+                messages.success(request, 'Your submission has been updated successfully!')
+            except AssignmentSubmission.DoesNotExist:
+                AssignmentSubmission.objects.create(
                     assignment=assignment,
                     student=student,
                     file=file
                 )
-                submission.save()
                 messages.success(request, 'Your submission has been uploaded successfully!')
-                return redirect('student_dashboard')  # Redirect to your desired page
-            else:
-                if has_reached_deadline:
-                    messages.error(request, "Assignment deadline has passed, submission not allowed.")
-                else:
-                    messages.error(request, "Assignment already submitted.")
-        else:
-            messages.error(request, 'Please upload a file and select an assignment.')
+            
+            return redirect('assignment_detail')
 
-    # Render the assignment details template with the list of assignment details
-    return render(request, 'assignment_detail.html', {'assignment_details': assignment_details})
+        except Assignment.DoesNotExist:
+            messages.error(request, 'Invalid assignment.')
+            return redirect('assignment_detail')
+        except Exception as e:
+            messages.error(request, f'Error submitting assignment: {str(e)}')
+            return redirect('assignment_detail')
+
+    # Prepare assignment details for display
+    for enrollment in enrollments:
+        enrollment_datetime = timezone.make_aware(
+            datetime.combine(
+                enrollment.enrollment_date,
+                enrollment.enrollment_time or datetime.min.time()
+            )
+        )
+
+        assignments = Assignment.objects.filter(
+            course_name=enrollment.course,
+            start_date__gte=enrollment.enrollment_date
+        )
+
+        for assignment in assignments:
+            current_datetime = timezone.now()
+            assignment_end_datetime = timezone.make_aware(
+                datetime.combine(assignment.end_date, assignment.end_time)
+            )
+
+            submission = AssignmentSubmission.objects.filter(
+                assignment=assignment,
+                student=student
+            ).first()
+
+            assignment_details.append({
+                'assignment': assignment,
+                'submission': submission,
+                'has_reached_deadline': assignment_end_datetime <= current_datetime,
+                'can_submit': assignment_end_datetime > current_datetime and not submission,
+                'submission_allowed': assignment_end_datetime > current_datetime
+            })
+
+    # Sort assignments by start date (newest first)
+    assignment_details.sort(key=lambda x: x['assignment'].start_date, reverse=True)
+
+    return render(request, 'assignment_detail.html', {
+        'assignment_details': assignment_details
+    })
 
 
 from django.shortcuts import render, redirect  # type: ignore
@@ -25281,3 +25315,71 @@ def check_material_exists(request):
     
     return JsonResponse({'exists': exists})
 
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+import difflib
+
+@require_POST
+def check_plagiarism(request, submission_id):
+    try:
+        submission = AssignmentSubmission.objects.get(id=submission_id)
+        other_submissions = AssignmentSubmission.objects.filter(
+            assignment=submission.assignment
+        ).exclude(id=submission_id)
+
+        max_similarity = 0
+        plagiarism_details = []
+
+        # Read the content of the current submission
+        try:
+            current_content = submission.file.read().decode('utf-8')
+        except UnicodeDecodeError:
+            # For binary files (like PDFs), you'll need a PDF parser here
+            return JsonResponse({
+                'success': False,
+                'error': 'File format not supported for plagiarism check'
+            })
+
+        # Compare with other submissions
+        for other_submission in other_submissions:
+            try:
+                other_content = other_submission.file.read().decode('utf-8')
+                similarity = difflib.SequenceMatcher(
+                    None,
+                    current_content,
+                    other_content
+                ).ratio() * 100
+
+                if similarity > max_similarity:
+                    max_similarity = similarity
+
+                if similarity > 30:  # Only record significant matches
+                    plagiarism_details.append({
+                        'student': other_submission.student.username,
+                        'similarity': round(similarity, 2)
+                    })
+
+            except Exception as e:
+                continue
+
+        # Save the results
+        submission.plagiarism_percentage = round(max_similarity, 2)
+        submission.plagiarism_details = str(plagiarism_details)
+        submission.save()
+
+        return JsonResponse({'success': True})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def get_plagiarism_details(request, submission_id):
+    submission = AssignmentSubmission.objects.get(id=submission_id)
+    if submission.plagiarism_details:
+        details = eval(submission.plagiarism_details)  # Be careful with eval in production
+        html = '<ul>'
+        for detail in details:
+            html += f'<li>Similar to {detail["student"]}: {detail["similarity"]}%</li>'
+        html += '</ul>'
+        return JsonResponse({'details': html})
+    return JsonResponse({'details': 'No detailed information available'})

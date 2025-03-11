@@ -7,6 +7,7 @@
     <title>View Assignments</title>
 
     {% load static %}
+    {% load custom_filters %}
 
     <link href="https://fonts.googleapis.com/css?family=Muli:300,400,700,900" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'fonts/icomoon/style.css' %}">
@@ -21,6 +22,8 @@
     <link rel="stylesheet" href="{% static 'css/jquery.mb.YTPlayer.min.css' %}" media="all">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome-animation/0.3.0/font-awesome-animation.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
 
     <style>
         body {
@@ -177,12 +180,11 @@
         }
 
         .content-wrapper {
-            background-color: rgba(255, 255, 255, 0.9);
+            background-color: transparent;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 60px;
-            max-width: 1000px;
-            width: 90%;
+            padding: 30px;
+            max-width: 1200px;
+            width: 95%;
             margin: auto;
         }
 
@@ -190,6 +192,7 @@
             color: #2c3e50;
             margin-bottom: 20px;
             text-align: center;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
         }
 
         table {
@@ -220,9 +223,14 @@
         }
 
         .badge {
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-weight: bold;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
         }
 
         .badge-danger {
@@ -263,6 +271,140 @@
             .dashboard-content {
                 width: 100%;
             }
+        }
+
+        /* Enhanced Table Styles */
+        .assignment-table {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.5s ease-in-out;
+            width: 100%;
+            font-size: 15px;
+        }
+
+        .assignment-table th {
+            background: #2980b9;
+            color: white;
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 14px;
+            padding: 18px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .assignment-table tr {
+            transition: all 0.3s ease;
+            animation: slideIn 0.5s ease-in-out;
+        }
+
+        .assignment-table td {
+            padding: 18px 15px;
+            border-bottom: 1px solid #eee;
+            vertical-align: middle;
+        }
+
+        .assignment-table tr:hover {
+            background-color: #f8f9fa;
+            transform: translateX(5px);
+        }
+
+        /* Download Button Style */
+        .download-btn {
+            padding: 8px 15px;
+            background: #3498db;
+            color: white;
+            border-radius: 20px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+            font-size: 13px;
+        }
+
+        .download-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+        /* Course Select Styling */
+        .course-filter {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .course-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .course-select:focus {
+            outline: none;
+            border-color: #2980b9;
+            box-shadow: 0 0 0 2px rgba(41, 128, 185, 0.2);
+        }
+
+        /* Status Badge Animations */
+        .badge:hover {
+            transform: none;
+            opacity: 0.9;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Empty State Styling */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #bdc3c7;
+        }
+
+        /* Status text styles */
+        .status-ongoing {
+            background-color: #2ecc71;
+            padding: 8px 15px;
+            border-radius: 20px;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-completed {
+            background-color: #e74c3c;
+            padding: 8px 15px;
+            border-radius: 20px;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
         }
     </style>
 
@@ -373,10 +515,12 @@
                     <h1>View Assignments</h1>
 
                     <!-- Course filter dropdown -->
-                    <div class="mb-4">
+                    <div class="course-filter">
                         <form method="get" action="{% url 'view_assignment' %}">
-                            <label for="courseSelect">Select Course:</label>
-                            <select name="course_id" id="courseSelect" class="form-control" onchange="this.form.submit()">
+                            <label for="courseSelect" class="mb-2">
+                                <i class="fas fa-book-reader mr-2"></i>Select Course:
+                            </label>
+                            <select name="course_id" id="courseSelect" class="course-select" onchange="this.form.submit()">
                                 <option value="">All Courses</option>
                                 {% for course in courses %}
                                     <option value="{{ course.id }}" {% if course.id|stringformat:"s" == selected_course_id %}selected{% endif %}>
@@ -387,52 +531,72 @@
                         </form>
                     </div>
 
-                    <table>
+                    <table class="assignment-table">
                         <thead>
                             <tr>
-                                <th>Assignment Title</th>
-                                <th>Description</th>
-                                <th>Course</th>
-                                <th>Start Date</th>
-                                <th>Start Time</th>
-                                <th>End Date</th>
-                                <th>End Time</th>
-                                <th>File</th>
-                                <th>Status</th>
+                                <th><i class="fas fa-tasks mr-2"></i>Title</th>
+                                <th><i class="fas fa-info-circle mr-2"></i>Description</th>
+                                <th><i class="fas fa-book mr-2"></i>Course</th>
+                                <th><i class="fas fa-calendar mr-2"></i>Start Date</th>
+                                <th><i class="fas fa-clock mr-2"></i>Start Time</th>
+                                <th><i class="fas fa-calendar-check mr-2"></i>End Date</th>
+                                <th><i class="fas fa-hourglass-end mr-2"></i>End Time</th>
+                                <th><i class="fas fa-file-alt mr-2"></i>File</th>
+                                <th><i class="fas fa-info-circle mr-2"></i>Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for assignment in assignments %}
-                            <tr>
+                            {% for assignment in assignments|dictsortreversed:"start_date" %}
+                            <tr class="animate__animated animate__fadeIn" style="animation-delay: {{ forloop.counter0|multiply:0.1 }}s">
                                 <td>{{ assignment.title }}</td>
                                 <td>{{ assignment.description }}</td>
                                 <td>{{ assignment.course_name.course_name }}</td>
-                                <td>{{ assignment.start_date }}</td>
-                                <td>{{ assignment.start_time }}</td>
-                                <td>{{ assignment.end_date }}</td>
-                                <td>{{ assignment.end_time }}</td>
+                                <td><i class="far fa-calendar-alt mr-2"></i>{{ assignment.start_date }}</td>
+                                <td><i class="far fa-clock mr-2"></i>{{ assignment.start_time }}</td>
+                                <td><i class="far fa-calendar-check mr-2"></i>{{ assignment.end_date }}</td>
+                                <td><i class="far fa-clock mr-2"></i>{{ assignment.end_time }}</td>
                                 <td>
                                     {% if assignment.file %}
-                                        <a href="{{ assignment.file.url }}" download>Download</a>
+                                        <a href="{{ assignment.file.url }}" class="download-btn" download>
+                                            <i class="fas fa-download faa-bounce animated-hover"></i>
+                                            Download
+                                        </a>
                                     {% else %}
-                                        No file attached
+                                        <span class="text-muted">
+                                            <i class="fas fa-times-circle"></i>
+                                            No file
+                                        </span>
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <span class="badge {% if assignment.status == 'Completed' %}badge-danger{% else %}badge-success{% endif %}">
-                                        {{ assignment.status }}
-                                    </span>
+                                    {% if assignment.status == 'Completed' %}
+                                        <span class="status-completed">
+                                            <i class="fas fa-check-circle"></i>
+                                            Completed
+                                        </span>
+                                    {% else %}
+                                        <span class="status-ongoing">
+                                            <i class="fas fa-clock"></i>
+                                            Ongoing
+                                        </span>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="9" class="text-center">No assignments available.</td>
+                                <td colspan="9" class="empty-state">
+                                    <i class="fas fa-folder-open faa-shake animated"></i>
+                                    <p>No assignments available.</p>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
 
-                    <a href="{% url 'teacher_dashboard' %}" class="back-button">Back to Teacher Dashboard</a>
+                    <a href="{% url 'teacher_dashboard' %}" class="back-button animate__animated animate__fadeIn">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Back to Teacher Dashboard
+                    </a>
                 </div>
             </div>
         </div>

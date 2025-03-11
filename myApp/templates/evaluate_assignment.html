@@ -248,6 +248,74 @@
                 width: 100%;
             }
         }
+
+        .plagiarism-result {
+            margin-top: 10px;
+        }
+
+        .badge {
+            padding: 8px 12px;
+            font-size: 0.9em;
+        }
+
+        .badge-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .badge-warning {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .badge-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .check-plagiarism-btn {
+            background-color: #17a2b8;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .check-plagiarism-btn:hover {
+            background-color: #138496;
+            transform: translateY(-2px);
+        }
+
+        .plagiarism-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .plagiarism-modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 20px;
+            width: 80%;
+            max-width: 700px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            right: 15px;
+            top: 10px;
+            font-size: 24px;
+            cursor: pointer;
+        }
     </style>
 
     <script type="text/javascript">
@@ -378,7 +446,8 @@
                                 <th>Assignment Title</th>
                                 <th>Submission</th>
                                 <th>Submitted At</th>
-                                <th>Grade</th>
+                                <th>Plagiarism Check</th>
+                                <th>Mark</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -389,13 +458,37 @@
                                 <td>{{ submission.assignment.title }}</td>
                                 <td><a href="{{ submission.file.url }}" target="_blank">View Submission</a></td>
                                 <td>{{ submission.submitted_at }}</td>
+                                <td>
+                                    <form action="{% url 'check_plagiarism' submission.id %}" method="post" class="plagiarism-form">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-warning btn-sm check-plagiarism-btn">
+                                            <i class="fas fa-search"></i> Check Plagiarism
+                                        </button>
+                                    </form>
+                                    {% if submission.plagiarism_percentage is not None %}
+                                        <div class="mt-2 plagiarism-result">
+                                            <span class="badge {% if submission.plagiarism_percentage > 70 %}badge-danger{% elif submission.plagiarism_percentage > 40 %}badge-warning{% else %}badge-success{% endif %}">
+                                                {{ submission.plagiarism_percentage }}% Similar
+                                            </span>
+                                            {% if submission.plagiarism_details %}
+                                                <button class="btn btn-link btn-sm" onclick="showPlagiarismDetails('{{ submission.id }}')">
+                                                    View Details
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </td>
                                 <td>{{ submission.grade|default:"Not graded yet" }}</td>
                                 <td>
-                                    <form action="{% url 'submit_grade' submission.id %}" method="post">
-                                        {% csrf_token %}
-                                        <input type="number" name="grade" min="1" max="6" class="form-control" placeholder="Enter Grade" required>
-                                        <button type="submit" class="btn btn-success mt-2">Submit Grade</button>
-                                    </form>
+                                    {% if submission.grade %}
+                                        <div class="text-muted">Grade already submitted</div>
+                                    {% else %}
+                                        <form action="{% url 'submit_grade' submission.id %}" method="post">
+                                            {% csrf_token %}
+                                            <input type="number" name="grade" min="1" max="6" class="form-control" placeholder="Enter Grade" required>
+                                            <button type="submit" class="btn btn-success mt-2">Submit Grade</button>
+                                        </form>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% empty %}
@@ -426,6 +519,77 @@
     <script src="{% static 'js/jquery.fancybox.min.js' %}"></script>
     <script src="{% static 'js/jquery.sticky.js' %}"></script>
     <script src="{% static 'js/main.js' %}"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle plagiarism check form submission
+        const plagiarismForms = document.querySelectorAll('.plagiarism-form');
+        plagiarismForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const button = form.querySelector('button');
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error checking plagiarism: ' + data.error);
+                        button.disabled = false;
+                        button.innerHTML = '<i class="fas fa-search"></i> Check Plagiarism';
+                    }
+                })
+                .catch(error => {
+                    alert('Error checking plagiarism');
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-search"></i> Check Plagiarism';
+                });
+            });
+        });
+    });
+
+    function showPlagiarismDetails(submissionId) {
+        // Create and show modal with plagiarism details
+        const modal = document.createElement('div');
+        modal.className = 'plagiarism-modal';
+        modal.innerHTML = `
+            <div class="plagiarism-modal-content">
+                <span class="close-modal">&times;</span>
+                <h3>Plagiarism Details</h3>
+                <div id="plagiarism-details-content">Loading...</div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        modal.style.display = 'block';
+
+        // Fetch plagiarism details
+        fetch(`/get-plagiarism-details/${submissionId}/`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('plagiarism-details-content').innerHTML = data.details;
+            })
+            .catch(error => {
+                document.getElementById('plagiarism-details-content').innerHTML = 'Error loading details';
+            });
+
+        // Handle modal close
+        modal.querySelector('.close-modal').onclick = function() {
+            modal.remove();
+        };
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.remove();
+            }
+        };
+    }
+    </script>
 </body>
 
 </html>
