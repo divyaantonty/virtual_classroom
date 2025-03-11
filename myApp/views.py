@@ -22691,7 +22691,7 @@ def extract_text_from_document(document):
 
 def generate_questions_from_text(text, count, marks, difficulty):
     try:
-        model = genai.GenerativeModel('gemini-pro')
+        model = genai.GenerativeModel('gemini-1.5-pro')
         
         # Calculate mark distribution
         concept_marks = marks // 3
@@ -23204,7 +23204,7 @@ def generate_summary(request):
             # Configure Google's Generative AI
             GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
             genai.configure(api_key=GOOGLE_API_KEY)
-            model = genai.GenerativeModel('gemini-pro')
+            model = genai.GenerativeModel('gemini-1.5-pro')
 
             # ... rest of the code remains the same until saving ...
 

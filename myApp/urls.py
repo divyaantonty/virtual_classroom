@@ -223,6 +223,9 @@ urlpatterns = [
 
     path('check-material-exists/', views.check_material_exists, name='check_material_exists'),
 
+ 
+
+
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

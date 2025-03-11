@@ -488,113 +488,6 @@
             align-items: center;
             gap: 5px;
         }
-
-        .header-actions {
-            margin-left: auto;
-            padding-right: 20px;
-        }
-
-        .new-message-btn {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-        }
-
-        .new-message-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .compose-modal {
-            position: relative;
-            background: white;
-            width: 90%;
-            max-width: 600px;
-            margin: 50px auto;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.2);
-            animation: slideDown 0.3s ease;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #2c3e50;
-            font-weight: 500;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            font-family: inherit;
-            transition: border-color 0.3s ease;
-        }
-
-        .form-control:focus {
-            border-color: #3498db;
-            outline: none;
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .send-btn {
-            background: linear-gradient(135deg, #2ecc71, #27ae60);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .cancel-btn {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .send-btn:hover, .cancel-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
     </style>
 </head>
 <body>
@@ -613,11 +506,6 @@
                         <i class="fas fa-user-circle mr-2"></i>
                         <span>{{ first_name }} {{ last_name }}</span>
                     </a>
-                </div>
-                <div class="header-actions">
-                    <button class="new-message-btn" onclick="showNewMessageModal()">
-                        <i class="fas fa-pen"></i> New Message
-                    </button>
                 </div>
             </div>
         </header>
@@ -689,45 +577,6 @@
         </div>
         <div class="message-thread" id="messageThread">
             <!-- Messages will be loaded here dynamically -->
-        </div>
-    </div>
-
-    <!-- Add this new modal for composing messages -->
-    <div class="modal" id="newMessageModal">
-        <div class="modal-content compose-modal">
-            <span class="close-modal" onclick="closeNewMessageModal()">&times;</span>
-            <h3><i class="fas fa-pen"></i> Compose New Message</h3>
-            
-            <form id="composeMessageForm" onsubmit="sendNewMessage(event)">
-                <div class="form-group">
-                    <label for="studentSelect">Select Student:</label>
-                    <select id="studentSelect" class="form-control" required>
-                        <option value="">Choose a student...</option>
-                        {% for student in students %}
-                        <option value="{{ student.id }}">{{ student.username }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="messageSubject">Subject:</label>
-                    <input type="text" id="messageSubject" class="form-control" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="messageContent">Message:</label>
-                    <textarea id="messageContent" class="form-control" rows="5" required></textarea>
-                </div>
-
-                <div class="form-actions">
-                    <button type="submit" class="send-btn">
-                        <i class="fas fa-paper-plane"></i> Send Message
-                    </button>
-                    <button type="button" class="cancel-btn" onclick="closeNewMessageModal()">
-                        Cancel
-                    </button>
-                </div>
-            </form>
         </div>
     </div>
 
@@ -854,67 +703,6 @@
 
     // Close history when clicking overlay
     document.getElementById('overlay').addEventListener('click', closeHistory);
-
-    function showNewMessageModal() {
-        document.getElementById('newMessageModal').style.display = 'block';
-    }
-
-    function closeNewMessageModal() {
-        document.getElementById('newMessageModal').style.display = 'none';
-        // Reset form
-        document.getElementById('composeMessageForm').reset();
-    }
-
-    function sendNewMessage(event) {
-        event.preventDefault();
-        
-        const studentId = document.getElementById('studentSelect').value;
-        const subject = document.getElementById('messageSubject').value;
-        const content = document.getElementById('messageContent').value;
-
-        // Disable form while sending
-        const form = event.target;
-        const submitBtn = form.querySelector('button[type="submit"]');
-        submitBtn.disabled = true;
-
-        fetch('/send-teacher-message/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                student_id: studentId,
-                subject: subject,
-                content: content
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Message sent successfully!');
-                closeNewMessageModal();
-                // Optionally reload the page to show the new message
-                location.reload();
-            } else {
-                alert('Failed to send message: ' + data.error);
-                submitBtn.disabled = false;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Failed to send message');
-            submitBtn.disabled = false;
-        });
-    }
-
-    // Close modal when clicking outside
-    window.onclick = function(event) {
-        const modal = document.getElementById('newMessageModal');
-        if (event.target == modal) {
-            closeNewMessageModal();
-        }
-    }
     </script>
 </body>
 </html> 
