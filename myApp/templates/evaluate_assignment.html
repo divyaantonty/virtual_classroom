@@ -249,72 +249,31 @@
             }
         }
 
-        .plagiarism-result {
-            margin-top: 10px;
-        }
-
-        .badge {
-            padding: 8px 12px;
-            font-size: 0.9em;
-        }
-
-        .badge-danger {
-            background-color: #dc3545;
-            color: white;
-        }
-
-        .badge-warning {
-            background-color: #ffc107;
-            color: black;
-        }
-
-        .badge-success {
-            background-color: #28a745;
-            color: white;
-        }
-
-        .check-plagiarism-btn {
-            background-color: #17a2b8;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .check-plagiarism-btn:hover {
-            background-color: #138496;
-            transform: translateY(-2px);
-        }
-
-        .plagiarism-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            z-index: 1000;
-        }
-
-        .plagiarism-modal-content {
-            background-color: white;
-            margin: 10% auto;
+        .plagiarism-results {
             padding: 20px;
-            width: 80%;
-            max-width: 700px;
-            border-radius: 8px;
-            position: relative;
+        }
+        
+        .plagiarism-details {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
         }
 
-        .close-modal {
-            position: absolute;
-            right: 15px;
-            top: 10px;
-            font-size: 24px;
-            cursor: pointer;
+        .plagiarism-details h5 {
+            color: #2c3e50;
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+
+        .text-danger { color: #dc3545 !important; }
+        .text-warning { color: #ffc107 !important; }
+        .text-success { color: #28a745 !important; }
+
+        .spinner-border {
+            width: 1rem;
+            height: 1rem;
+            margin-right: 5px;
         }
     </style>
 
@@ -446,39 +405,32 @@
                                 <th>Assignment Title</th>
                                 <th>Submission</th>
                                 <th>Submitted At</th>
-                                <th>Plagiarism Check</th>
                                 <th>Mark</th>
+                                <th>Plagiarism</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for submission in submissions %}
+                            {% for submission in submissions|dictsortreversed:"submitted_at" %}
                             <tr>
                                 <td>{{ submission.student.username }}</td>
                                 <td>{{ submission.assignment.title }}</td>
                                 <td><a href="{{ submission.file.url }}" target="_blank">View Submission</a></td>
                                 <td>{{ submission.submitted_at }}</td>
+                                <td>{{ submission.grade|default:"Not graded yet" }}</td>
                                 <td>
-                                    <form action="{% url 'check_plagiarism' submission.id %}" method="post" class="plagiarism-form">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-warning btn-sm check-plagiarism-btn">
+                                    {% if submission.plagiarism_score %}
+                                        <button class="btn btn-info" onclick="viewPlagiarismDetails('{{ submission.id }}')">
+                                            View Results ({{ submission.plagiarism_score }}%)
+                                        </button>
+                                    {% else %}
+                                        <button class="btn btn-primary check-plagiarism-btn" 
+                                                onclick="checkPlagiarism('{{ submission.id }}', this)"
+                                                data-submission-id="{{ submission.id }}">
                                             <i class="fas fa-search"></i> Check Plagiarism
                                         </button>
-                                    </form>
-                                    {% if submission.plagiarism_percentage is not None %}
-                                        <div class="mt-2 plagiarism-result">
-                                            <span class="badge {% if submission.plagiarism_percentage > 70 %}badge-danger{% elif submission.plagiarism_percentage > 40 %}badge-warning{% else %}badge-success{% endif %}">
-                                                {{ submission.plagiarism_percentage }}% Similar
-                                            </span>
-                                            {% if submission.plagiarism_details %}
-                                                <button class="btn btn-link btn-sm" onclick="showPlagiarismDetails('{{ submission.id }}')">
-                                                    View Details
-                                                </button>
-                                            {% endif %}
-                                        </div>
                                     {% endif %}
                                 </td>
-                                <td>{{ submission.grade|default:"Not graded yet" }}</td>
                                 <td>
                                     {% if submission.grade %}
                                         <div class="text-muted">Grade already submitted</div>
@@ -493,11 +445,28 @@
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="6" class="text-center">No submissions available for evaluation.</td>
+                                <td colspan="7" class="text-center">No submissions available for evaluation.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
+
+                    <!-- Plagiarism Details Modal -->
+                    <div class="modal fade" id="plagiarismModal" tabindex="-1" role="dialog">
+                        <div class="modal-dialog modal-lg" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Plagiarism Check Results</h5>
+                                    <button type="button" class="close" data-dismiss="modal">
+                                        <span>&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <div id="plagiarismDetails"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <a href="{% url 'teacher_dashboard' %}" class="back-button">Back to Teacher Dashboard</a>
                 </div>
@@ -521,73 +490,101 @@
     <script src="{% static 'js/main.js' %}"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Handle plagiarism check form submission
-        const plagiarismForms = document.querySelectorAll('.plagiarism-form');
-        plagiarismForms.forEach(form => {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const button = form.querySelector('button');
-                button.disabled = true;
-                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
-
-                fetch(form.action, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
-                    },
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert('Error checking plagiarism: ' + data.error);
-                        button.disabled = false;
-                        button.innerHTML = '<i class="fas fa-search"></i> Check Plagiarism';
-                    }
-                })
-                .catch(error => {
-                    alert('Error checking plagiarism');
-                    button.disabled = false;
-                    button.innerHTML = '<i class="fas fa-search"></i> Check Plagiarism';
-                });
-            });
-        });
+        
     });
+    </script>
+    <script>
+    function checkPlagiarism(submissionId, button) {
+        // Disable button and show loading state
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Checking...';
+        
+        fetch(`/check-plagiarism/${submissionId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Calculate plagiarism score
+                const score = Math.round(data.ai_content_probability * 100);
+                
+                // Update button to show results
+                button.className = 'btn btn-info';
+                button.innerHTML = `View Results (${score}%)`;
+                button.onclick = () => viewPlagiarismDetails(submissionId);
+                
+                // Show results modal
+                showPlagiarismResults(data);
+            } else {
+                button.innerHTML = 'Check Failed';
+                alert('Error checking plagiarism: ' + data.error);
+            }
+        })
+        .catch(error => {
+            button.disabled = false;
+            button.innerHTML = 'Check Plagiarism';
+            console.error('Error:', error);
+        });
+    }
 
-    function showPlagiarismDetails(submissionId) {
-        // Create and show modal with plagiarism details
-        const modal = document.createElement('div');
-        modal.className = 'plagiarism-modal';
-        modal.innerHTML = `
-            <div class="plagiarism-modal-content">
-                <span class="close-modal">&times;</span>
-                <h3>Plagiarism Details</h3>
-                <div id="plagiarism-details-content">Loading...</div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        modal.style.display = 'block';
-
-        // Fetch plagiarism details
+    function viewPlagiarismDetails(submissionId) {
         fetch(`/get-plagiarism-details/${submissionId}/`)
             .then(response => response.json())
             .then(data => {
-                document.getElementById('plagiarism-details-content').innerHTML = data.details;
+                if (data.success) {
+                    showPlagiarismResults(data);
+                } else {
+                    alert('Error loading plagiarism details: ' + data.error);
+                }
             })
-            .catch(error => {
-                document.getElementById('plagiarism-details-content').innerHTML = 'Error loading details';
-            });
+            .catch(error => console.error('Error:', error));
+    }
 
-        // Handle modal close
-        modal.querySelector('.close-modal').onclick = function() {
-            modal.remove();
-        };
-        window.onclick = function(event) {
-            if (event.target == modal) {
-                modal.remove();
+    function showPlagiarismResults(data) {
+        const score = Math.round(data.ai_content_probability * 100);
+        const scoreClass = score > 70 ? 'text-danger' : score > 40 ? 'text-warning' : 'text-success';
+        
+        const detailsHtml = `
+            <div class="plagiarism-results">
+                <h4>Plagiarism Score: <span class="${scoreClass}">${score}%</span></h4>
+                <div class="plagiarism-details">
+                    <h5>Content Analysis Results</h5>
+                    <p><strong>Originality Score:</strong> ${100 - score}%</p>
+                    <p><strong>AI Content Probability:</strong> ${score}%</p>
+                    
+                    <h5>Writing Style Analysis</h5>
+                    <p>${data.writing_style_analysis || 'Analysis not available'}</p>
+                    
+                    <h5>Suspicious Patterns</h5>
+                    <p>${data.suspicious_patterns || 'No suspicious patterns detected'}</p>
+                    
+                    <h5>Overall Assessment</h5>
+                    <p>${data.overall_assessment || 'Assessment not available'}</p>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('plagiarismDetails').innerHTML = detailsHtml;
+        $('#plagiarismModal').modal('show');
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
             }
-        };
+        }
+        return cookieValue;
     }
     </script>
 </body>

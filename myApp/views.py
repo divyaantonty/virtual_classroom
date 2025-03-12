@@ -25318,68 +25318,240 @@ def check_material_exists(request):
 
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-import difflib
+import google.generativeai as genai
+from dotenv import load_dotenv
+import os
+import json
+from .models import AssignmentSubmission
+import PyPDF2
+import docx
+import io
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+
+# Load environment variables
+load_dotenv()
+
+# Configure Gemini API
+genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
+
+class PlagiarismChecker:
+    def __init__(self):
+        self.model = genai.GenerativeModel('gemini-1.5-pro')
+
+    def analyze_text(self, text):
+        """Analyze text for plagiarism and AI content"""
+        try:
+            # Limit text length for API
+            text_to_analyze = text[:15000]
+            
+            prompt = f"""
+            Analyze this text for plagiarism and AI-generated content. Provide a detailed analysis including:
+
+            1. Originality Assessment:
+               - Score from 0-100%
+               - Identify any potential copied content
+               - Check for common academic writing patterns
+
+            2. AI Content Detection:
+               - Probability of AI generation (0-100%)
+               - Identify AI-like patterns
+               - Note any unusual language structures
+
+            3. Writing Style Analysis:
+               - Consistency check
+               - Vocabulary usage
+               - Sentence structure patterns
+
+            4. Specific Findings:
+               - List suspicious phrases
+               - Note any academic integrity concerns
+               - Highlight unusual patterns
+
+            Text to analyze:
+            {text_to_analyze}
+
+            Provide the results in this JSON format:
+            {{
+                "originality_score": number,
+                "ai_probability": number,
+                "writing_style": string,
+                "suspicious_patterns": [string],
+                "potential_sources": [string],
+                "recommendations": string,
+                "overall_assessment": string
+            }}
+            """
+
+            response = self.model.generate_content(prompt)
+            result = json.loads(response.text)
+            
+            # Structure the results
+            analysis = {
+                'originality_score': result['originality_score'],
+                'ai_detection': {
+                    'score': result['ai_probability'],
+                    'indicators': result['suspicious_patterns']
+                },
+                'writing_style': result['writing_style'],
+                'potential_sources': result.get('potential_sources', []),
+                'recommendations': result['recommendations'],
+                'assessment': result['overall_assessment']
+            }
+            
+            return analysis
+
+        except Exception as e:
+            print(f"Error in analysis: {str(e)}")
+            return None
+
+def extract_text_from_file(file):
+    """Extract text from various file formats"""
+    try:
+        file_name = file.name.lower()
+        
+        if file_name.endswith('.pdf'):
+            pdf_reader = PyPDF2.PdfReader(file)
+            text = ""
+            for page in pdf_reader.pages:
+                text += page.extract_text()
+            return text
+            
+        elif file_name.endswith('.docx'):
+            doc = docx.Document(file)
+            text = "\n".join([paragraph.text for paragraph in doc.paragraphs])
+            return text
+            
+        elif file_name.endswith('.txt'):
+            return file.read().decode('utf-8')
+            
+        else:
+            return None
+            
+    except Exception as e:
+        print(f"Error extracting text: {str(e)}")
+        return None
 
 @require_POST
 def check_plagiarism(request, submission_id):
+    """Handle plagiarism check requests"""
     try:
-        submission = AssignmentSubmission.objects.get(id=submission_id)
-        other_submissions = AssignmentSubmission.objects.filter(
-            assignment=submission.assignment
-        ).exclude(id=submission_id)
-
-        max_similarity = 0
-        plagiarism_details = []
-
-        # Read the content of the current submission
-        try:
-            current_content = submission.file.read().decode('utf-8')
-        except UnicodeDecodeError:
-            # For binary files (like PDFs), you'll need a PDF parser here
+        submission = get_object_or_404(AssignmentSubmission, id=submission_id)
+        
+        # Check if file exists
+        if not submission.file:
             return JsonResponse({
                 'success': False,
-                'error': 'File format not supported for plagiarism check'
+                'error': 'No file found for analysis'
             })
-
-        # Compare with other submissions
-        for other_submission in other_submissions:
-            try:
-                other_content = other_submission.file.read().decode('utf-8')
-                similarity = difflib.SequenceMatcher(
-                    None,
-                    current_content,
-                    other_content
-                ).ratio() * 100
-
-                if similarity > max_similarity:
-                    max_similarity = similarity
-
-                if similarity > 30:  # Only record significant matches
-                    plagiarism_details.append({
-                        'student': other_submission.student.username,
-                        'similarity': round(similarity, 2)
-                    })
-
-            except Exception as e:
-                continue
-
-        # Save the results
-        submission.plagiarism_percentage = round(max_similarity, 2)
-        submission.plagiarism_details = str(plagiarism_details)
+        
+        # Extract text from file
+        text = extract_text_from_file(submission.file)
+        if not text:
+            return JsonResponse({
+                'success': False,
+                'error': 'Could not extract text from file'
+            })
+        
+        # Initialize checker and analyze text
+        checker = PlagiarismChecker()
+        results = checker.analyze_text(text)
+        
+        if not results:
+            return JsonResponse({
+                'success': False,
+                'error': 'Error analyzing content'
+            })
+        
+        # Save results
+        submission.plagiarism_percentage = 100 - results['originality_score']
+        submission.plagiarism_details = json.dumps(results)
         submission.save()
-
-        return JsonResponse({'success': True})
-
+        
+        return JsonResponse({
+            'success': True,
+            'plagiarism_score': submission.plagiarism_percentage,
+            'details': results
+        })
+        
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
 
 def get_plagiarism_details(request, submission_id):
-    submission = AssignmentSubmission.objects.get(id=submission_id)
-    if submission.plagiarism_details:
-        details = eval(submission.plagiarism_details)  # Be careful with eval in production
-        html = '<ul>'
-        for detail in details:
-            html += f'<li>Similar to {detail["student"]}: {detail["similarity"]}%</li>'
-        html += '</ul>'
-        return JsonResponse({'details': html})
-    return JsonResponse({'details': 'No detailed information available'})
+    """Get detailed plagiarism analysis results"""
+    try:
+        submission = get_object_or_404(AssignmentSubmission, id=submission_id)
+        if submission.plagiarism_details:
+            results = json.loads(submission.plagiarism_details)
+            
+            # Generate severity class
+            severity = 'low-severity'
+            if results['originality_score'] < 50:
+                severity = 'high-severity'
+            elif results['originality_score'] < 75:
+                severity = 'medium-severity'
+            
+            html = f'''
+            <div class="plagiarism-results">
+                <div class="score-section {severity}">
+                    <h4>Content Analysis Results</h4>
+                    <div class="score-item">
+                        <span class="label">Originality Score:</span>
+                        <span class="value">{results['originality_score']}%</span>
+                    </div>
+                    <div class="score-item">
+                        <span class="label">AI Content Probability:</span>
+                        <span class="value">{results['ai_detection']['score']}%</span>
+                    </div>
+                </div>
+
+                <div class="analysis-section">
+                    <h5>Writing Style Analysis</h5>
+                    <p>{results['writing_style']}</p>
+                </div>
+
+                <div class="suspicious-section">
+                    <h5>Suspicious Patterns</h5>
+                    <ul class="patterns-list">
+            '''
+            
+            for pattern in results['ai_detection']['indicators']:
+                html += f'<li>{pattern}</li>'
+            
+            html += '''
+                    </ul>
+                </div>
+            '''
+            
+            if results.get('potential_sources'):
+                html += '''
+                <div class="sources-section">
+                    <h5>Potential Similar Sources</h5>
+                    <ul class="sources-list">
+                '''
+                for source in results['potential_sources']:
+                    html += f'<li>{source}</li>'
+                html += '</ul></div>'
+            
+            html += f'''
+                <div class="recommendations-section">
+                    <h5>Recommendations</h5>
+                    <p>{results['recommendations']}</p>
+                </div>
+
+                <div class="assessment-section">
+                    <h5>Overall Assessment</h5>
+                    <p>{results['assessment']}</p>
+                </div>
+            </div>
+            '''
+            
+            return JsonResponse({'details': html})
+            
+        return JsonResponse({'details': 'No analysis details available'})
+        
+    except Exception as e:
+        return JsonResponse({'details': f'Error retrieving details: {str(e)}'})
