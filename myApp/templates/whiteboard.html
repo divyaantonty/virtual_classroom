@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,6 +13,86 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/canvg/3.0.9/canvg.min.js"></script>
     <style>
+        /* Light Mode (Default) */
+        body.light-mode {
+            background-color: white;
+            color: black;
+        }
+        
+        body.light-mode .toolbar,
+        body.light-mode .side-toolbar,
+        body.light-mode .zoom-controls,
+        body.light-mode .header {
+            background-color: white;
+            color: black;
+        }
+
+        body.light-mode .tool-btn {
+            background-color: white;
+            color: #333;
+        }
+
+        body.light-mode canvas {
+            background-color: white;
+        }
+
+        /* Dark Mode */
+        body.dark-mode {
+            background-color: #121212;
+            color: white;
+        }
+        
+        body.dark-mode .toolbar,
+        body.dark-mode .side-toolbar,
+        body.dark-mode .zoom-controls,
+        body.dark-mode .header {
+            background-color: #1e1e1e;
+            color: white;
+            box-shadow: 0 2px 10px rgba(255,255,255,0.1);
+        }
+
+        body.dark-mode .tool-btn {
+            background-color: #1e1e1e;
+            color: white;
+        }
+
+        body.dark-mode .tool-btn:hover {
+            background-color: #2d2d2d;
+        }
+
+        body.dark-mode .tool-btn.active {
+            background-color: #3d3d3d;
+        }
+
+        body.dark-mode canvas {
+            background-color: #2d2d2d;
+        }
+
+        body.dark-mode .header-container {
+            background-color: #1e1e1e;
+        }
+
+        body.dark-mode .dashboard-heading {
+            color: white;
+        }
+
+        body.dark-mode .profile-dropdown .nav-link {
+            color: white;
+        }
+
+        body.dark-mode .profile-dropdown-content {
+            background-color: #1e1e1e;
+            box-shadow: 0 8px 16px rgba(255,255,255,0.1);
+        }
+
+        body.dark-mode .profile-dropdown-content a {
+            color: white;
+        }
+
+        body.dark-mode .profile-dropdown-content a:hover {
+            background-color: #2d2d2d;
+        }
+
         body {
             margin: 0;
             overflow: hidden;
@@ -19,7 +100,7 @@
         }
         .toolbar {
             position: fixed;
-            top: 20px;
+            top: 100px;
             left: 50%;
             transform: translateX(-50%);
             background: white;
@@ -107,22 +188,240 @@
             color: white;
             font-size: 24px;
         }
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        .header-content h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #333;
+        }
+        .header-actions {
+            display: flex;
+            align-items: center;
+        }
+        .dashboard-link {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        .dashboard-link:hover {
+            background-color: #0056b3;
+            color: white;
+            text-decoration: none;
+        }
+        .dashboard-link i {
+            margin-right: 8px;
+        }
+        .site-navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .site-logo {
+            width: 120px;
+        }
+        .site-logo img {
+            max-width: 100%;
+            height: auto;
+        }
+        .dashboard-heading {
+            margin: 0;
+            font-size: 24px;
+            color: #333;
+        }
+        .profile-dropdown {
+            position: relative;
+        }
+        .profile-dropdown .nav-link {
+            color: #333;
+            text-decoration: none;
+        }
+        .profile-dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: white;
+            min-width: 160px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            z-index: 1;
+            border-radius: 4px;
+        }
+        .profile-dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+        .profile-dropdown-content a:hover {
+            background-color: #f8f9fa;
+        }
+        .profile-dropdown:hover .profile-dropdown-content {
+            display: block;
+        }
+        .dark-theme {
+            background-color: #121212;
+            color: #ffffff;
+        }
+        .dark-theme .toolbar {
+            background-color: #1e1e1e;
+        }
+        .dark-theme .header {
+            background-color: #1e1e1e;
+            color: #ffffff;
+        }
+
+        /* Modal styles for dark mode */
+        body.dark-mode .modal-content {
+            background-color: #1e1e1e;
+            color: white;
+        }
+
+        body.dark-mode .modal-header {
+            border-bottom: 1px solid #2d2d2d;
+        }
+
+        body.dark-mode .modal-footer {
+            border-top: 1px solid #2d2d2d;
+        }
+
+        body.dark-mode .form-control {
+            background-color: #2d2d2d;
+            color: white;
+            border: 1px solid #3d3d3d;
+        }
+
+        body.dark-mode .btn-close {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
+
+        /* Progress bar styles for dark mode */
+        body.dark-mode .progress {
+            background-color: #2d2d2d;
+        }
+
+        /* Loading overlay styles for dark mode */
+        body.dark-mode .loading-overlay {
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        /* Add these to your existing styles */
+        .form-control-color {
+            width: 100px;
+        }
+
+        /* Dark mode styles for the modal */
+        body.dark-mode .modal-content {
+            background-color: #1e1e1e;
+            color: white;
+        }
+
+        body.dark-mode .modal-header {
+            border-bottom: 1px solid #2d2d2d;
+        }
+
+        body.dark-mode .modal-footer {
+            border-top: 1px solid #2d2d2d;
+        }
+
+        body.dark-mode .form-control {
+            background-color: #2d2d2d;
+            color: white;
+            border: 1px solid #3d3d3d;
+        }
+
+        body.dark-mode .form-check-label {
+            color: white;
+        }
+
+        body.dark-mode .btn-close {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
+
+        .color-preset {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .color-preset:hover {
+            transform: scale(1.1);
+        }
+
+        .color-preset.active {
+            outline: 2px solid #007bff;
+        }
+
+        /* Dark mode styles for color presets */
+        body.dark-mode .color-preset {
+            border: 1px solid #ffffff3d;
+        }
     </style>
 </head>
-<body>
+<body class="light-mode">
+    <header class="site-navbar js-sticky-header site-navbar-target" role="banner">
+        <div class="header-container">
+            <div class="site-logo">
+                <a href="{% url 'student_dashboard' %}" class="d-block">
+                    <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid">
+                </a>
+            </div>
+            <h2 class="dashboard-heading">Whiteboard</h2>
+            <div class="profile-dropdown">
+                <a href="#" class="nav-link text-right d-flex align-items-center">
+                    <i class="fas fa-user-circle mr-2"></i>
+                    <span>{{ custom_user.username }}</span>
+                </a>
+                <div class="profile-dropdown-content">
+                    <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
     <div class="toolbar">
         <button class="tool-btn active" id="pencil" title="Pencil"><i class="fas fa-pencil-alt"></i></button>
         <button class="tool-btn" id="eraser" title="Eraser"><i class="fas fa-eraser"></i></button>
         <button class="tool-btn" id="text" title="Text"><i class="fas fa-font"></i></button>
         <button class="tool-btn" id="rect" title="Rectangle"><i class="fas fa-square"></i></button>
         <button class="tool-btn" id="circle" title="Circle"><i class="fas fa-circle"></i></button>
-        <button class="tool-btn" id="convertText" title="Convert to Text"><i class="fas fa-font"></i></button>
+        <button class="tool-btn" id="convertText" title="Convert to Text"><i class="fas fa-camera"></i></button>
         <button class="tool-btn" id="selectArea" title="Select Area for OCR"><i class="fas fa-crop"></i></button>
         <button class="tool-btn" id="export" title="Export"><i class="fas fa-file-export"></i></button>
+        <button class="tool-btn" onclick="toggleTheme()" title="Toggle Theme"><i class="fas fa-adjust"></i></button>
+        
         <input type="color" id="colorPicker" value="#000000" title="Color">
         <input type="range" id="strokeWidth" min="1" max="20" value="2" title="Stroke Width">
         <button class="tool-btn" id="clear" title="Clear All"><i class="fas fa-trash"></i></button>
-        
     </div>
 
     <div class="side-toolbar">
@@ -140,6 +439,10 @@
     <canvas id="canvas"></canvas>
 
     <!-- Add this modal for course selection -->
+
+    <!-- Add this modal for grid customization -->
+    
+    
     
 
     <!-- Add this modal for OCR results -->
@@ -168,6 +471,8 @@
         </div>
     </div>
 
+   
+
     <script>
         // Initialize canvas and context
         const canvas = document.getElementById('canvas');
@@ -190,6 +495,16 @@
         let isSelecting = false;
 
         let frames = []; // Array to store frames
+
+        let showGrid = false;
+        let gridColor = '#e0e0e0';
+        let gridSpacing = 20;
+
+        let isDarkTheme = false;
+
+        let actions = []; // Store drawing actions
+
+        let layers = [];
 
         // Set canvas size
         function resizeCanvas() {
@@ -430,10 +745,15 @@
 
         // Save functionality
         document.getElementById('save').addEventListener('click', () => {
-            const link = document.createElement('a');
-            link.download = 'whiteboard.png';
-            link.href = canvas.toDataURL();
-            link.click();
+            const fileName = prompt("Enter a name for your file:", "drawing");
+            if (fileName) {
+                const link = document.createElement('a');
+                link.download = `${fileName}.png`; // Set the filename with .png extension
+                link.href = canvas.toDataURL(); // Get the canvas data as a PNG
+                link.click(); // Trigger the download
+            } else {
+                alert("File name cannot be empty.");
+            }
         });
 
         // Zoom controls
@@ -599,16 +919,9 @@
         // Export as PDF
         function exportAsPDF() {
             const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF({
-                orientation: 'portrait', // or 'landscape'
-                unit: 'px', // Use pixels for dimensions
-                format: [canvas.width, canvas.height], // Set PDF size to match canvas size
-                putOnlyUsedFonts: true,
-                floatPrecision: 16 // Optional: Adjust for precision
-            });
-
+            const pdf = new jsPDF();
             const imgData = canvas.toDataURL('image/png');
-            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height); // Adjust size as needed
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 4, canvas.height / 4); // Adjust size as needed
             pdf.save('drawing.pdf');
         }
 
@@ -635,6 +948,313 @@
             link.click();
             URL.revokeObjectURL(url); // Clean up
         }
+
+        document.getElementById('backToDashboard').addEventListener('click', () => {
+            window.location.href = 'student_dashboard'; // Update with the actual path
+        });
+
+        function drawGrid() {
+            if (showGrid) {
+                const canvasWidth = canvas.width;
+                const canvasHeight = canvas.height;
+                
+                ctx.save();
+                ctx.strokeStyle = gridColor;
+                ctx.lineWidth = 0.5;
+
+                // Draw vertical lines
+                for (let x = 0; x < canvasWidth; x += gridSpacing) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, canvasHeight);
+                    ctx.stroke();
+                }
+
+                // Draw horizontal lines
+                for (let y = 0; y < canvasHeight; y += gridSpacing) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvasWidth, y);
+                    ctx.stroke();
+                }
+                
+                ctx.restore();
+            }
+        }
+
+        document.getElementById('toggleGrid').addEventListener('click', () => {
+            showGrid = !showGrid;
+            document.getElementById('toggleGrid').classList.toggle('active');
+            redrawCanvas();
+        });
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            document.body.classList.toggle('light-mode'); // Ensure light mode is also toggled
+        }
+
+        function saveAction(action) {
+            actions.push(action);
+        }
+
+        function replayActions() {
+            let index = 0;
+
+            const interval = setInterval(() => {
+                if (index < actions.length) {
+                    const action = actions[index];
+                    // Execute the action (e.g., draw line, shape, etc.)
+                    // Implement your drawing logic here based on the action
+                    index++;
+                } else {
+                    clearInterval(interval);
+                }
+            }, 100); // Adjust speed as needed
+        }
+
+        function addLayer() {
+            const newLayer = document.createElement('canvas');
+            newLayer.width = canvas.width;
+            newLayer.height = canvas.height;
+            layers.push(newLayer);
+        }
+
+        function drawOnLayer(layerIndex, drawingFunction) {
+            const layer = layers[layerIndex];
+            const ctx = layer.getContext('2d');
+            drawingFunction(ctx); // Pass the drawing function to draw on the layer
+        }
+
+        // Example of toggling layer visibility
+        function toggleLayerVisibility(layerIndex) {
+            const layer = layers[layerIndex];
+            layer.style.display = layer.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function applyGridSettings() {
+            showGrid = document.getElementById('showGrid').checked;
+            gridColor = document.getElementById('gridColor').value;
+            gridSpacing = parseInt(document.getElementById('gridSpacing').value);
+            
+            // Close the modal
+            const gridModal = bootstrap.Modal.getInstance(document.getElementById('gridCustomizeModal'));
+            gridModal.hide();
+            
+            // Redraw the canvas with new grid settings
+            redrawCanvas();
+        }
+
+        // Add event listener for grid spacing range input
+        document.getElementById('gridSpacing').addEventListener('input', (e) => {
+            document.getElementById('gridSpacingValue').textContent = e.target.value + 'px';
+        });
+
+        function drawGrid() {
+            if (showGrid) {
+                ctx.strokeStyle = gridColor;
+                ctx.lineWidth = 0.5;
+
+                // Draw vertical lines
+                for (let x = 0; x < canvas.width; x += gridSpacing) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, canvas.height);
+                    ctx.stroke();
+                }
+
+                // Draw horizontal lines
+                for (let y = 0; y < canvas.height; y += gridSpacing) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // Add these styles for dark mode compatibility
+        function redrawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+            // Redraw your existing canvas content here
+        }
+
+        // Add color preset functionality
+        document.querySelectorAll('.color-preset').forEach(button => {
+            button.addEventListener('click', () => {
+                const color = button.dataset.color;
+                document.getElementById('gridColor').value = color;
+                
+                // Remove active class from all presets
+                document.querySelectorAll('.color-preset').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                // Add active class to clicked preset
+                button.classList.add('active');
+                
+                // Update grid color immediately if grid is showing
+                gridColor = color;
+                if (showGrid) {
+                    redrawCanvas();
+                }
+            });
+        });
+
+        // Make sure the modal exists in your HTML
+        if (!document.getElementById('gridCustomizeModal')) {
+            // Add the modal HTML if it doesn't exist
+            const modalHTML = `
+                <div class="modal fade" id="gridCustomizeModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Customize Grid</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Grid Color</label>
+                                    <div class="d-flex gap-2 mb-2">
+                                        <button class="color-preset" style="background-color: #e0e0e0" data-color="#e0e0e0"></button>
+                                        <button class="color-preset" style="background-color: #90caf9" data-color="#90caf9"></button>
+                                        <button class="color-preset" style="background-color: #a5d6a7" data-color="#a5d6a7"></button>
+                                        <button class="color-preset" style="background-color: #ffcc80" data-color="#ffcc80"></button>
+                                        <button class="color-preset" style="background-color: #ef9a9a" data-color="#ef9a9a"></button>
+                                    </div>
+                                    <input type="color" class="form-control form-control-color" id="gridColor" value="#e0e0e0">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="gridSpacing" class="form-label">Grid Spacing (px)</label>
+                                    <input type="range" class="form-range" id="gridSpacing" min="10" max="50" value="20">
+                                    <span id="gridSpacingValue">20px</span>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="showGrid">
+                                    <label class="form-check-label" for="showGrid">
+                                        Show Grid
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="button" class="btn btn-primary" onclick="applyGridSettings()">Apply</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+        }
+
+        // Add necessary styles if they don't exist
+        if (!document.querySelector('style#gridCustomizeStyles')) {
+            const styleSheet = `
+                <style id="gridCustomizeStyles">
+                    .color-preset {
+                        width: 40px;
+                        height: 40px;
+                        border: none;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        transition: transform 0.2s;
+                    }
+
+                    .color-preset:hover {
+                        transform: scale(1.1);
+                    }
+
+                    .color-preset.active {
+                        outline: 2px solid #007bff;
+                    }
+
+                    body.dark-mode .color-preset {
+                        border: 1px solid #ffffff3d;
+                    }
+                </style>
+            `;
+            document.head.insertAdjacentHTML('beforeend', styleSheet);
+        }
+
+        // Initialize color preset functionality
+        function initializeColorPresets() {
+            document.querySelectorAll('.color-preset').forEach(button => {
+                button.addEventListener('click', () => {
+                    const color = button.dataset.color;
+                    document.getElementById('gridColor').value = color;
+                    
+                    // Remove active class from all presets
+                    document.querySelectorAll('.color-preset').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    
+                    // Add active class to clicked preset
+                    button.classList.add('active');
+                    
+                    // Update grid color immediately if grid is showing
+                    gridColor = color;
+                    if (showGrid) {
+                        redrawCanvas();
+                    }
+                });
+            });
+        }
+
+        // Call initialize function when the document is ready
+        document.addEventListener('DOMContentLoaded', initializeColorPresets);
+
+        // Add this code to your existing JavaScript
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get the toggle button and modal elements
+            const toggleGridBtn = document.getElementById('toggleGrid');
+            const gridModal = document.getElementById('gridCustomizeModal');
+            
+            // Initialize the Bootstrap modal
+            const modal = new bootstrap.Modal(gridModal);
+            
+            // Add click event listener to the toggle button
+            toggleGridBtn.addEventListener('click', function() {
+                modal.show(); // Show the modal when the button is clicked
+            });
+
+            // Initialize the grid settings
+            function applyGridSettings() {
+                showGrid = document.getElementById('showGrid').checked;
+                gridColor = document.getElementById('gridColor').value;
+                gridSpacing = parseInt(document.getElementById('gridSpacing').value);
+                
+                // Close the modal
+                modal.hide();
+                
+                // Redraw the canvas with new grid settings
+                redrawCanvas();
+            }
+
+            // Make applyGridSettings available globally
+            window.applyGridSettings = applyGridSettings;
+
+            // Add event listener for grid spacing range input
+            document.getElementById('gridSpacing').addEventListener('input', function(e) {
+                document.getElementById('gridSpacingValue').textContent = e.target.value + 'px';
+            });
+
+            // Initialize color presets
+            document.querySelectorAll('.color-preset').forEach(button => {
+                button.addEventListener('click', function() {
+                    const color = this.dataset.color;
+                    document.getElementById('gridColor').value = color;
+                    gridColor = color;
+                    
+                    // Remove active class from all presets
+                    document.querySelectorAll('.color-preset').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    
+                    // Add active class to clicked preset
+                    this.classList.add('active');
+                });
+            });
+        });
     </script>
 </body>
 </html>

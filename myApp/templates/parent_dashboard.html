@@ -2821,7 +2821,13 @@
                     <div class="events-container">
                         {% if upcoming_events %}
                             {% for event in upcoming_events %}
-                                <div class="event-card" data-event-id="{{ event.id }}" onclick="showEventDetails(this)">
+                                <div class="event-card" 
+                                     data-event-id="{{ event.id }}"
+                                     data-event-title="{{ event.title }}"
+                                     data-event-description="{{ event.description }}"
+                                     data-event-location="{{ event.location|default:'Online' }}"
+                                     data-event-start="{{ event.start_time|date:'Y-m-d H:i' }}"
+                                     onclick="showEventDetails(this)">
                                     <div class="event-date">
                                         <span class="date">{{ event.start_time|date:"d" }}</span>
                                         <span class="month">{{ event.start_time|date:"M" }}</span>
@@ -2852,7 +2858,14 @@
                         {% if registered_events %}
                             {% for registration in registered_events %}
                                 <div class="event-card registered" 
-                                     onclick="showEventDetails(this, true, '{{ registration.registration_date|date:"M d, Y" }}')">
+                                     data-event-id="{{ registration.event.id }}"
+                                     data-event-title="{{ registration.event.title }}"
+                                     data-event-description="{{ registration.event.description }}"
+                                     data-event-location="{{ registration.event.location|default:'Online' }}"
+                                     data-event-start="{{ registration.event.start_time|date:'Y-m-d H:i' }}"
+                                     data-registration-date="{{ registration.registration_date|date:'M d, Y' }}"
+                                     data-is-registered="true"
+                                     onclick="showEventDetails(this)">
                                     <div class="event-date">
                                         <span class="date">{{ registration.event.start_time|date:"d" }}</span>
                                         <span class="month">{{ registration.event.start_time|date:"M" }}</span>
@@ -4073,66 +4086,93 @@
 
     <script>
     // Update the showEventDetails function
-    function showEventDetails(event, isRegistered = false, registrationDate = null) {
+    function showEventDetails(eventCard) {
+        // Get the modal
         const modal = document.getElementById('eventDetailsModal');
-        const title = document.getElementById('eventTitle');
-        const date = document.getElementById('eventDate');
-        const time = document.getElementById('eventTime');
-        const description = document.getElementById('eventDescription');
-        const location = document.getElementById('eventLocation');
-        const registrationStatus = document.getElementById('registrationStatus');
+        
+        // Get event details from data attributes
+        const eventId = eventCard.getAttribute('data-event-id');
+        const title = eventCard.getAttribute('data-event-title');
+        const description = eventCard.getAttribute('data-event-description');
+        const location = eventCard.getAttribute('data-event-location');
+        const startTime = eventCard.getAttribute('data-event-start');
+        const isRegistered = eventCard.getAttribute('data-is-registered') === 'true';
+        const registrationDate = eventCard.getAttribute('data-registration-date');
+        
+        // Update modal content
+        document.getElementById('eventTitle').textContent = title;
+        document.getElementById('eventDescription').textContent = description;
+        document.getElementById('eventLocation').textContent = location;
+        
+        // Format and set date/time
+        const eventDate = new Date(startTime);
+        document.getElementById('eventDate').innerHTML = 
+            `<i class="fas fa-calendar-alt"></i> ${eventDate.toLocaleDateString()}`;
+        document.getElementById('eventTime').innerHTML = 
+            `<i class="fas fa-clock"></i> ${eventDate.toLocaleTimeString()}`;
+        
+        // Show/hide sections based on registration status
+        const registrationInfo = document.getElementById('registrationInfo');
         const registrationDetails = document.getElementById('registrationDetails');
         const suggestionSection = document.getElementById('suggestionSection');
-        const eventId = event.getAttribute('data-event-id');
-        modal.setAttribute('data-event-id', eventId);
-
-        // Populate modal with event details
-        title.textContent = event.querySelector('h4').textContent;
         
-        const eventDate = event.querySelector('.date').textContent + ' ' + 
-                         event.querySelector('.month').textContent;
-        date.innerHTML = `<i class="fas fa-calendar-alt"></i> ${eventDate}`;
-        
-        const eventTime = event.querySelector('.event-time').textContent.trim();
-        time.innerHTML = `<i class="fas fa-clock"></i> ${eventTime}`;
-        
-        description.textContent = event.querySelector('p').textContent;
-        
-        const eventLocation = event.querySelector('.event-location') ? 
-                             event.querySelector('.event-location').textContent.trim() : 
-                             'Online';
-        location.textContent = eventLocation;
-
-        // Update registration status and details
         if (isRegistered) {
-            registrationStatus.textContent = `Registered on: ${registrationDate}`;
+            // For registered events
+            registrationInfo.style.display = 'block';
             registrationDetails.style.display = 'block';
+            suggestionSection.style.display = 'none'; // Hide suggestion box
+            
+            // Update registration status and details
+            document.getElementById('registrationStatus').textContent = `Registered`;
             document.getElementById('registeredStudent').textContent = "{{ student.username }}";
-            document.getElementById('registrationDateTime').textContent = registrationDate;
-            suggestionSection.style.display = 'none';
+            document.getElementById('registrationDateTime').textContent = `Registration Date: ${registrationDate}`;
+            
+            // Fetch and show previous suggestions
+            if (eventId) {
+                fetchEventSuggestions(eventId);
+            }
         } else {
-            registrationStatus.textContent = 'Not registered';
+            // For unregistered events
+            registrationInfo.style.display = 'block';
             registrationDetails.style.display = 'none';
             suggestionSection.style.display = 'block';
+            document.getElementById('registrationStatus').textContent = 'Not registered';
+            
+            // Fetch suggestions for unregistered events
+            if (eventId) {
+                fetchEventSuggestions(eventId);
+            }
         }
-
-        // Fetch suggestions for this event
-        const eventId = event.getAttribute('data-event-id');
-        fetchEventSuggestions(eventId);
-
+        
+        // Store event ID on modal
+        modal.setAttribute('data-event-id', eventId);
+        
+        // Show the modal
         modal.style.display = 'block';
     }
 
     function fetchEventSuggestions(eventId) {
+        if (!eventId) {
+            console.error("Cannot fetch suggestions: No event ID provided");
+            return;
+        }
+
         fetch(`/get-event-suggestions/${eventId}/`, {
-            method: 'GET',
             headers: {
+                'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRFToken': '{{ csrf_token }}'
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             const suggestionsContainer = document.getElementById('previousSuggestions');
+            suggestionsContainer.style.display = 'block'; // Always show previous suggestions
+            
             if (data.suggestions && data.suggestions.length > 0) {
                 let suggestionsHTML = `
                     <div class="card-header">
@@ -4165,7 +4205,6 @@
                 
                 suggestionsHTML += `</div>`;
                 suggestionsContainer.innerHTML = suggestionsHTML;
-                suggestionsContainer.style.display = 'block';
             } else {
                 suggestionsContainer.innerHTML = `
                     <div class="no-suggestions">
@@ -4180,75 +4219,29 @@
         });
     }
 
-    // Add function to handle sending suggestions
-    function sendSuggestion() {
-        const suggestionText = document.getElementById('suggestionText').value;
-        const eventTitle = document.getElementById('eventTitle').textContent;
-        const eventId = document.getElementById('eventDetailsModal').getAttribute('data-event-id');
-        
-        if (!suggestionText.trim()) {
-            alert('Please write a suggestion first.');
-            return;
-        }
-
-        // Create form data
-        const formData = new FormData();
-        formData.append('event_id', eventId);
-        formData.append('suggestion_text', suggestionText);
-        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-
-        // Send suggestion to backend
-        fetch('{% url "send_event_suggestion" %}', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(`Your suggestion for "${eventTitle}" has been sent to your child!`);
-                document.getElementById('suggestionText').value = '';
-                closeEventModal();
-            } else {
-                alert('Failed to send suggestion: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Suggestion sent successfully.');
-        });
-    }
-
-    // Add click event listeners to event cards
-    document.addEventListener('DOMContentLoaded', function() {
-        // For available events
-        const availableEvents = document.querySelectorAll('.events-section:first-of-type .event-card');
-        availableEvents.forEach(event => {
-            event.addEventListener('click', function() {
-                const isRegistered = this.classList.contains('registered');
-                showEventDetails(this, isRegistered);
-            });
-        });
-
-        // For registered events
-        const registeredEvents = document.querySelectorAll('.events-section:last-of-type .event-card');
-        registeredEvents.forEach(event => {
-            event.addEventListener('click', function() {
-                const registrationDate = this.querySelector('.registration-date').textContent.split(': ')[1];
-                showEventDetails(this, true, registrationDate);
-            });
-        });
-    });
-
-    // Close modal when clicking outside
-    window.onclick = function(event) {
+    // Close modal functionality
+    function closeEventModal() {
         const modal = document.getElementById('eventDetailsModal');
-        if (event.target == modal) {
-            modal.style.display = 'none';
-        }
+        modal.style.display = 'none';
+        document.getElementById('suggestionText').value = ''; // Clear suggestion text
     }
+
+    // Add event listeners when document loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('eventDetailsModal');
+            if (event.target == modal) {
+                closeEventModal();
+            }
+        };
+
+        // Close modal when clicking the close button
+        const closeButtons = document.getElementsByClassName('close-modal');
+        for (let button of closeButtons) {
+            button.onclick = closeEventModal;
+        }
+    });
     </script>
 
 </body>

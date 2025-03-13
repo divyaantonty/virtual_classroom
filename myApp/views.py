@@ -24683,22 +24683,36 @@ from django.http import JsonResponse
 from .models import EventSuggestion
 
 def get_event_suggestions(request, event_id):
-    suggestions = EventSuggestion.objects.filter(
-        event_id=event_id,
-        parent=request.user
-    ).order_by('-created_at')
+    parent_id = request.session.get('parent_id')
     
-    suggestions_data = [{
-        'suggestion_text': suggestion.suggestion_text,
-        'created_at': suggestion.created_at.strftime('%b %d, %Y %H:%M'),
-        'is_read': suggestion.is_read
-    } for suggestion in suggestions]
-    
-    return JsonResponse({
-        'success': True,
-        'suggestions': suggestions_data
-    })
+    if not parent_id:
+        return JsonResponse({
+            'success': False,
+            'message': 'Not authenticated'
+        })
 
+    try:
+        parent = Parent.objects.get(id=parent_id)
+        suggestions = EventSuggestion.objects.filter(
+            event_id=event_id,
+            parent=parent
+        ).order_by('-created_at')
+        
+        suggestions_data = [{
+            'suggestion_text': suggestion.suggestion_text,
+            'created_at': suggestion.created_at.strftime('%b %d, %Y %H:%M'),
+            'is_read': suggestion.is_read
+        } for suggestion in suggestions]
+        
+        return JsonResponse({
+            'success': True,
+            'suggestions': suggestions_data
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        })
 from django.http import JsonResponse
 from .models import MindMap
 import json
