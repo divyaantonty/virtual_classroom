@@ -225,7 +225,8 @@ urlpatterns = [
 
     path('check-material-exists/', views.check_material_exists, name='check_material_exists'),
 
-  
+    path('get-course-students/', views.get_course_students, name='get_course_students'),
+    path('send-message-to-parent/', views.send_message_to_parent, name='send_message_to_parent'),
 
 
 ]

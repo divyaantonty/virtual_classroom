@@ -24128,6 +24128,7 @@ def whiteboard(request):
 
 import cv2
 import numpy as np
+
 from scipy.spatial.distance import cosine
 from django.shortcuts import render, redirect
 from .models import Attendance, StudentFaceData, ClassSchedule
@@ -25202,6 +25203,12 @@ def teacher_messages(request):
         return redirect('login')
     
     try:
+        # Fetch the logged-in teacher
+        teacher = Teacher.objects.get(id=teacher_id)
+        
+        # Fetch assigned courses from TeacherCourse model
+        assigned_courses = TeacherCourse.objects.filter(teacher=teacher)
+        
         # Get messages where the logged-in teacher is the recipient
         messages = ParentTeacherMessage.objects.filter(
             teacher_id=teacher_id,
@@ -25210,7 +25217,6 @@ def teacher_messages(request):
         
         # Check for existing replies and mark messages as read
         for message in messages:
-            # Check if this message has been replied to
             message.has_reply = ParentTeacherMessage.objects.filter(
                 teacher_id=teacher_id,
                 parent=message.parent,
@@ -25218,23 +25224,98 @@ def teacher_messages(request):
                 subject__startswith=f"Re: {message.subject}"
             ).exists()
             
-            # Mark message as read if it hasn't been read yet
             if not message.is_read:
                 message.is_read = True
                 message.save()
         
-        # Get teacher's name from session
-        first_name = request.session.get('first_name', '')
-        last_name = request.session.get('last_name', '')
-        
-        return render(request, 'teacher_messages.html', {
+        context = {
             'messages': messages,
-            'first_name': first_name,
-            'last_name': last_name,
-        })
+            'assigned_courses': assigned_courses,
+            'first_name': request.session.get('first_name', ''),
+            'last_name': request.session.get('last_name', ''),
+        }
+        
+        return render(request, 'teacher_messages.html', context)
+        
     except Exception as e:
         print(f"Error in teacher_messages view: {e}")
         return redirect('login')
+
+# Add new view to get students for a course
+def get_course_students(request):
+    teacher_id = request.session.get('teacher_id')
+    if not teacher_id:
+        return JsonResponse({'error': 'Not authenticated'})
+    
+    try:
+        course_id = request.GET.get('course_id')
+        if not course_id:
+            return JsonResponse({'error': 'Course ID is required'})
+        
+        # Verify teacher has access to this course
+        teacher_course = TeacherCourse.objects.filter(
+            teacher_id=teacher_id,
+            course_id=course_id
+        ).exists()
+        
+        if not teacher_course:
+            return JsonResponse({'error': 'Course not assigned to you'})
+        
+        # Get enrolled students
+        enrolled_students = Enrollment.objects.filter(
+            course_id=course_id
+        ).select_related('student')
+        
+        students_data = [{
+            'id': enrollment.student.id,
+            'name': f"{enrollment.student.first_name} {enrollment.student.last_name}",
+            'username': enrollment.student.username
+        } for enrollment in enrolled_students]
+        
+        return JsonResponse({
+            'success': True,
+            'students': students_data
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)})
+
+# Add new view to send message to parent
+@require_POST
+def send_message_to_parent(request):
+    teacher_id = request.session.get('teacher_id')
+    if not teacher_id:
+        return JsonResponse({'error': 'Not authenticated'})
+    
+    try:
+        data = json.loads(request.body)
+        student_id = data.get('student_id')
+        content = data.get('content')
+        subject = data.get('subject', 'Message from Teacher')
+        
+        # Get student's parent
+        student = CustomUser.objects.get(id=student_id)
+        parent = Parent.objects.get(student_username=student.username)
+        
+        # Create new message
+        message = ParentTeacherMessage.objects.create(
+            teacher_id=teacher_id,
+            parent=parent,
+            subject=subject,
+            content=content,
+            message_type='teacher_to_parent'
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message_id': message.id
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
     
 @csrf_exempt
 def send_teacher_reply(request):

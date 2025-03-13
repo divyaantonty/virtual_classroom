@@ -115,6 +115,7 @@
         <button class="tool-btn" id="rect" title="Rectangle"><i class="fas fa-square"></i></button>
         <button class="tool-btn" id="circle" title="Circle"><i class="fas fa-circle"></i></button>
         <button class="tool-btn" id="convertText" title="Convert to Text"><i class="fas fa-font"></i></button>
+        <button class="tool-btn" id="selectArea" title="Select Area for OCR"><i class="fas fa-crop"></i></button>
         <input type="color" id="colorPicker" value="#000000" title="Color">
         <input type="range" id="strokeWidth" min="1" max="20" value="2" title="Stroke Width">
         <button class="tool-btn" id="clear" title="Clear All"><i class="fas fa-trash"></i></button>
@@ -181,14 +182,17 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" id="copyText">Copy Text</button>
+                    <button type="button" class="btn btn-success" id="insertText">Insert as Text</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Initialize Socket.IO
-        const socket = io('http://localhost:3000');
+        // Initialize canvas and context
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
         let isDrawing = false;
         let currentTool = 'pencil';
         let currentColor = '#000000';
@@ -196,26 +200,38 @@
         let startX, startY;
         let lastX = 0;
         let lastY = 0;
-        let isTeacher = {{ is_teacher|yesno:"true,false" }};
-        let sessionId = "{{ session_id }}";
+        let scale = 1;
+        
+        // Drawing history for undo/redo
+        const history = [];
+        let historyIndex = -1;
 
         // Set canvas size
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
+            redrawCanvas(); // Redraw content after resize
         }
+        
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
+
+        // Save current state to history
+        function saveState() {
+            historyIndex++;
+            history[historyIndex] = canvas.toDataURL();
+            history.length = historyIndex + 1; // Remove any redo states
+        }
 
         // Drawing functions
         function startDrawing(e) {
             isDrawing = true;
             const rect = canvas.getBoundingClientRect();
-            startX = e.clientX - rect.left;
-            startY = e.clientY - rect.top;
+            startX = (e.clientX - rect.left) / scale;
+            startY = (e.clientY - rect.top) / scale;
             lastX = startX;
             lastY = startY;
-            
+
             ctx.beginPath();
             ctx.moveTo(startX, startY);
         }
@@ -224,38 +240,86 @@
             if (!isDrawing) return;
             
             const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+            const x = (e.clientX - rect.left) / scale;
+            const y = (e.clientY - rect.top) / scale;
 
-            ctx.strokeStyle = currentTool === 'eraser' ? '#ffffff' : currentColor;
-            ctx.lineWidth = currentWidth;
-            ctx.lineCap = 'round';
-
-            ctx.beginPath();
-            ctx.moveTo(lastX, lastY);
-            ctx.lineTo(x, y);
-            ctx.stroke();
-
-            // Emit drawing data
-            socket.emit('draw', {
-                x0: lastX,
-                y0: lastY,
-                x1: x,
-                y1: y,
-                color: currentColor,
-                width: currentWidth,
-                tool: currentTool
-            });
+            switch(currentTool) {
+                case 'pencil':
+                case 'eraser':
+                    drawFreehand(x, y);
+                    break;
+                case 'rect':
+                    drawRect(x, y);
+                    break;
+                case 'circle':
+                    drawCircle(x, y);
+                    break;
+                case 'text':
+                    // Handled in stopDrawing
+                    break;
+            }
 
             lastX = x;
             lastY = y;
         }
 
-        function stopDrawing() {
-            isDrawing = false;
+        function drawFreehand(x, y) {
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.strokeStyle = currentTool === 'eraser' ? '#ffffff' : currentColor;
+            ctx.lineWidth = currentWidth;
+            ctx.lineCap = 'round';
+            ctx.stroke();
         }
 
-        // Event listeners
+        function drawRect(x, y) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            redrawCanvas();
+            ctx.beginPath();
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = currentWidth;
+            ctx.strokeRect(startX, startY, x - startX, y - startY);
+        }
+
+        function drawCircle(x, y) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            redrawCanvas();
+            ctx.beginPath();
+            const radius = Math.sqrt(Math.pow(x - startX, 2) + Math.pow(y - startY, 2));
+            ctx.arc(startX, startY, radius, 0, 2 * Math.PI);
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = currentWidth;
+            ctx.stroke();
+        }
+
+        function stopDrawing() {
+            if (!isDrawing) return;
+            isDrawing = false;
+
+            if (currentTool === 'text') {
+                const text = prompt('Enter text:');
+                if (text) {
+                    ctx.font = `${currentWidth * 8}px Arial`;
+                    ctx.fillStyle = currentColor;
+                    ctx.fillText(text, startX, startY);
+                }
+            }
+
+            saveState();
+        }
+
+        function redrawCanvas() {
+            if (historyIndex >= 0) {
+                const img = new Image();
+                img.src = history[historyIndex];
+                img.onload = () => {
+                    ctx.drawImage(img, 0, 0);
+                };
+            }
+        }
+
+        // Event listeners for drawing
         canvas.addEventListener('mousedown', startDrawing);
         canvas.addEventListener('mousemove', draw);
         canvas.addEventListener('mouseup', stopDrawing);
@@ -265,18 +329,12 @@
         document.querySelectorAll('.tool-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const tool = e.currentTarget.id;
-                if (tool !== 'clear' && tool !== 'share') {
+                if (!['clear', 'share', 'undo', 'redo', 'save', 'zoomIn', 'zoomOut', 'resetZoom'].includes(tool)) {
                     currentTool = tool;
                     document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
                     e.currentTarget.classList.add('active');
                 }
             });
-        });
-
-        // Clear canvas
-        document.getElementById('clear').addEventListener('click', () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            socket.emit('clear');
         });
 
         // Color picker
@@ -286,134 +344,73 @@
 
         // Stroke width
         document.getElementById('strokeWidth').addEventListener('change', (e) => {
-            currentWidth = e.target.value;
+            currentWidth = parseInt(e.target.value);
         });
 
-        // Handle received drawing data
-        socket.on('draw', (data) => {
-            ctx.beginPath();
-            ctx.moveTo(data.x0, data.y0);
-            ctx.lineTo(data.x1, data.y1);
-            ctx.strokeStyle = data.tool === 'eraser' ? '#ffffff' : data.color;
-            ctx.lineWidth = data.width;
-            ctx.stroke();
-        });
-
-        socket.on('clear', () => {
+        // Clear canvas
+        document.getElementById('clear').addEventListener('click', () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            saveState();
         });
 
-        // WebSocket connection
-        const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
-        const socket = new WebSocket(
-            `${wsScheme}://${window.location.host}/ws/whiteboard/${sessionId}/`
-        );
-
-        socket.onopen = function(e) {
-            console.log('WebSocket connection established');
-        };
-
-        socket.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            if (data.type === 'draw') {
-                drawFromSocket(data);
+        // Undo/Redo
+        function undo() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                redrawCanvas();
             }
-        };
-
-        socket.onerror = function(error) {
-            console.error('WebSocket error:', error);
-        };
-
-        socket.onclose = function(e) {
-            console.log('WebSocket connection closed');
-        };
-
-        function drawFromSocket(data) {
-            ctx.beginPath();
-            ctx.strokeStyle = data.tool === 'eraser' ? '#ffffff' : data.color;
-            ctx.lineWidth = data.width;
-            ctx.lineCap = 'round';
-            ctx.moveTo(data.startX, data.startY);
-            ctx.lineTo(data.endX, data.endY);
-            ctx.stroke();
         }
+
+        function redo() {
+            if (historyIndex < history.length - 1) {
+                historyIndex++;
+                redrawCanvas();
+            }
+        }
+
+        document.getElementById('undo').addEventListener('click', undo);
+        document.getElementById('redo').addEventListener('click', redo);
+
+        // Save functionality
+        document.getElementById('save').addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'whiteboard.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+
+        // Zoom controls
+        document.getElementById('zoomIn').addEventListener('click', () => {
+            scale *= 1.2;
+            ctx.scale(1.2, 1.2);
+            redrawCanvas();
+        });
+
+        document.getElementById('zoomOut').addEventListener('click', () => {
+            scale /= 1.2;
+            ctx.scale(0.8333, 0.8333);
+            redrawCanvas();
+        });
+
+        document.getElementById('resetZoom').addEventListener('click', () => {
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            scale = 1;
+            redrawCanvas();
+        });
+
+        // Initialize with first history state
+        saveState();
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             if (e.ctrlKey && e.key === 'z') {
+                e.preventDefault();
                 undo();
             } else if (e.ctrlKey && e.key === 'y') {
+                e.preventDefault();
                 redo();
             }
         });
-
-        // Undo/Redo
-        document.getElementById('undo').addEventListener('click', undo);
-        document.getElementById('redo').addEventListener('click', redo);
-
-        function undo() {
-            // Implement undo functionality
-        }
-
-        function redo() {
-            // Implement redo functionality
-        }
-
-        // Zoom controls
-        document.getElementById('zoomIn').addEventListener('click', () => {
-            // Implement zoom in functionality
-        });
-
-        document.getElementById('zoomOut').addEventListener('click', () => {
-            // Implement zoom out functionality
-        });
-
-        document.getElementById('resetZoom').addEventListener('click', () => {
-            // Implement reset zoom functionality
-        });
-
-        {% if is_teacher %}
-        // Share functionality
-        document.getElementById('share').addEventListener('click', () => {
-            const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
-            shareModal.show();
-        });
-
-        function shareWithSelectedCourse() {
-            const courseSelect = document.getElementById('courseSelect');
-            const courseId = courseSelect.value;
-            
-            if (!courseId) {
-                alert('Please select a course');
-                return;
-            }
-
-            fetch('{% url "share_whiteboard" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({
-                    course_id: courseId,
-                    session_id: '{{ session_id }}',
-                    whiteboard_url: window.location.href
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(`Whiteboard shared with ${data.student_count} students in ${data.course_name}`);
-                    bootstrap.Modal.getInstance(document.getElementById('shareModal')).hide();
-                } else {
-                    alert('Error sharing whiteboard: ' + data.error);
-                }
-            })
-            .catch(error => {
-                alert('Error sharing whiteboard: ' + error);
-            });
-        }
-        {% endif %}
 
         // OCR Functionality
         document.getElementById('convertText').addEventListener('click', async () => {
@@ -430,6 +427,7 @@
                 // Initialize Tesseract
                 const worker = await Tesseract.createWorker({
                     logger: progress => {
+                        console.log(progress); // Log progress details
                         if (progress.status === 'recognizing text') {
                             const progressBar = document.querySelector('#ocrProgress .progress-bar');
                             progressBar.style.width = `${progress.progress * 100}%`;
@@ -442,6 +440,7 @@
                 await worker.initialize('eng');
                 
                 document.getElementById('ocrProgress').classList.remove('d-none');
+                console.log(dataUrl); // Log the image data
                 const result = await worker.recognize(dataUrl);
                 
                 // Display results
@@ -456,7 +455,7 @@
                 const modal = new bootstrap.Modal(document.getElementById('ocrModal'));
                 modal.show();
             } catch (error) {
-                console.error('OCR Error:', error);
+                console.error('OCR Error:', error); // Log the error
                 alert('Error converting handwriting to text. Please try again.');
                 document.querySelector('.loading-overlay')?.remove();
             }
@@ -477,11 +476,32 @@
             }, 2000);
         });
 
+        // Insert text back to canvas
+        document.getElementById('insertText').addEventListener('click', () => {
+            const text = document.getElementById('ocrResult').value;
+            if (text && selectionRect) {
+                ctx.font = '16px Arial';
+                ctx.fillStyle = currentColor;
+                ctx.fillText(text, selectionRect.x, selectionRect.y + 20);
+                
+                // Close the modal
+                bootstrap.Modal.getInstance(document.getElementById('ocrModal')).hide();
+            }
+        });
+
         // Add keyboard shortcut for OCR (Ctrl + Shift + T)
         document.addEventListener('keydown', (e) => {
             if (e.ctrlKey && e.shiftKey && e.key === 'T') {
                 document.getElementById('convertText').click();
             }
+        });
+
+        // Add OCR area selection functionality
+        document.getElementById('selectArea').addEventListener('click', () => {
+            currentTool = 'select';
+            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('selectArea').classList.add('active');
+            canvas.style.cursor = 'crosshair';
         });
     </script>
 </body>
