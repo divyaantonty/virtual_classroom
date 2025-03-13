@@ -218,13 +218,14 @@ urlpatterns = [
 
     path('send-teacher-reply/', views.send_teacher_reply, name='send_teacher_reply'),
 
+    
+
     path('get-message-history/<int:message_id>/', views.get_message_history, name='get_message_history'),
 
 
     path('check-material-exists/', views.check_material_exists, name='check_material_exists'),
 
-    path('check-plagiarism/<int:submission_id>/', views.check_plagiarism, name='check_plagiarism'),
-    path('get-plagiarism-details/<int:submission_id>/', views.get_plagiarism_details, name='get_plagiarism_details'),
+  
 
 
 ]

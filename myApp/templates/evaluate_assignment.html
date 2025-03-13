@@ -249,23 +249,6 @@
             }
         }
 
-        .plagiarism-results {
-            padding: 20px;
-        }
-        
-        .plagiarism-details {
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 15px;
-        }
-
-        .plagiarism-details h5 {
-            color: #2c3e50;
-            margin-top: 15px;
-            margin-bottom: 10px;
-        }
-
         .text-danger { color: #dc3545 !important; }
         .text-warning { color: #ffc107 !important; }
         .text-success { color: #28a745 !important; }
@@ -406,7 +389,6 @@
                                 <th>Submission</th>
                                 <th>Submitted At</th>
                                 <th>Mark</th>
-                                <th>Plagiarism</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -418,19 +400,6 @@
                                 <td><a href="{{ submission.file.url }}" target="_blank">View Submission</a></td>
                                 <td>{{ submission.submitted_at }}</td>
                                 <td>{{ submission.grade|default:"Not graded yet" }}</td>
-                                <td>
-                                    {% if submission.plagiarism_score %}
-                                        <button class="btn btn-info" onclick="viewPlagiarismDetails('{{ submission.id }}')">
-                                            View Results ({{ submission.plagiarism_score }}%)
-                                        </button>
-                                    {% else %}
-                                        <button class="btn btn-primary check-plagiarism-btn" 
-                                                onclick="checkPlagiarism('{{ submission.id }}', this)"
-                                                data-submission-id="{{ submission.id }}">
-                                            <i class="fas fa-search"></i> Check Plagiarism
-                                        </button>
-                                    {% endif %}
-                                </td>
                                 <td>
                                     {% if submission.grade %}
                                         <div class="text-muted">Grade already submitted</div>
@@ -445,28 +414,11 @@
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="7" class="text-center">No submissions available for evaluation.</td>
+                                <td colspan="6" class="text-center">No submissions available for evaluation.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
-
-                    <!-- Plagiarism Details Modal -->
-                    <div class="modal fade" id="plagiarismModal" tabindex="-1" role="dialog">
-                        <div class="modal-dialog modal-lg" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Plagiarism Check Results</h5>
-                                    <button type="button" class="close" data-dismiss="modal">
-                                        <span>&times;</span>
-                                    </button>
-                                </div>
-                                <div class="modal-body">
-                                    <div id="plagiarismDetails"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
                     <a href="{% url 'teacher_dashboard' %}" class="back-button">Back to Teacher Dashboard</a>
                 </div>
@@ -488,105 +440,6 @@
     <script src="{% static 'js/jquery.fancybox.min.js' %}"></script>
     <script src="{% static 'js/jquery.sticky.js' %}"></script>
     <script src="{% static 'js/main.js' %}"></script>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        
-    });
-    </script>
-    <script>
-    function checkPlagiarism(submissionId, button) {
-        // Disable button and show loading state
-        button.disabled = true;
-        button.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Checking...';
-        
-        fetch(`/check-plagiarism/${submissionId}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Calculate plagiarism score
-                const score = Math.round(data.ai_content_probability * 100);
-                
-                // Update button to show results
-                button.className = 'btn btn-info';
-                button.innerHTML = `View Results (${score}%)`;
-                button.onclick = () => viewPlagiarismDetails(submissionId);
-                
-                // Show results modal
-                showPlagiarismResults(data);
-            } else {
-                button.innerHTML = 'Check Failed';
-                alert('Error checking plagiarism: ' + data.error);
-            }
-        })
-        .catch(error => {
-            button.disabled = false;
-            button.innerHTML = 'Check Plagiarism';
-            console.error('Error:', error);
-        });
-    }
-
-    function viewPlagiarismDetails(submissionId) {
-        fetch(`/get-plagiarism-details/${submissionId}/`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showPlagiarismResults(data);
-                } else {
-                    alert('Error loading plagiarism details: ' + data.error);
-                }
-            })
-            .catch(error => console.error('Error:', error));
-    }
-
-    function showPlagiarismResults(data) {
-        const score = Math.round(data.ai_content_probability * 100);
-        const scoreClass = score > 70 ? 'text-danger' : score > 40 ? 'text-warning' : 'text-success';
-        
-        const detailsHtml = `
-            <div class="plagiarism-results">
-                <h4>Plagiarism Score: <span class="${scoreClass}">${score}%</span></h4>
-                <div class="plagiarism-details">
-                    <h5>Content Analysis Results</h5>
-                    <p><strong>Originality Score:</strong> ${100 - score}%</p>
-                    <p><strong>AI Content Probability:</strong> ${score}%</p>
-                    
-                    <h5>Writing Style Analysis</h5>
-                    <p>${data.writing_style_analysis || 'Analysis not available'}</p>
-                    
-                    <h5>Suspicious Patterns</h5>
-                    <p>${data.suspicious_patterns || 'No suspicious patterns detected'}</p>
-                    
-                    <h5>Overall Assessment</h5>
-                    <p>${data.overall_assessment || 'Assessment not available'}</p>
-                </div>
-            </div>
-        `;
-        
-        document.getElementById('plagiarismDetails').innerHTML = detailsHtml;
-        $('#plagiarismModal').modal('show');
-    }
-
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-    </script>
 </body>
 
 </html>
