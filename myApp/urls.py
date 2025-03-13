@@ -228,6 +228,8 @@ urlpatterns = [
     path('get-course-students/', views.get_course_students, name='get_course_students'),
     path('send-message-to-parent/', views.send_message_to_parent, name='send_message_to_parent'),
 
+    path('process-ocr/', views.process_ocr, name='process_ocr'),
+
 
 ]
 if settings.DEBUG:

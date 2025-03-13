@@ -24126,6 +24126,28 @@ def whiteboard(request):
     
     return render(request, 'whiteboard.html', context)
 
+
+from django.http import JsonResponse
+import base64
+import pytesseract
+from PIL import Image
+import io
+
+def process_ocr(request):
+    if request.method == 'POST':
+        image_data = request.POST.get('image_data')
+        if image_data:
+            # Decode the image data
+            image_data = image_data.split(',')[1]  # Remove the data URL part
+            image = Image.open(io.BytesIO(base64.b64decode(image_data)))
+
+            # Perform OCR
+            text = pytesseract.image_to_string(image)
+
+            return JsonResponse({'success': True, 'text': text})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
+
 import cv2
 import numpy as np
 
