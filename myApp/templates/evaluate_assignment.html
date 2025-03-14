@@ -388,6 +388,8 @@
                                 <th>Assignment Title</th>
                                 <th>Submission</th>
                                 <th>Submitted At</th>
+                                <th>Plagiarism Check</th>
+                                <th>AI Detection</th>
                                 <th>Mark</th>
                                 <th>Action</th>
                             </tr>
@@ -399,6 +401,28 @@
                                 <td>{{ submission.assignment.title }}</td>
                                 <td><a href="{{ submission.file.url }}" target="_blank">View Submission</a></td>
                                 <td>{{ submission.submitted_at }}</td>
+                                <td>
+                                    {% if submission.plagiarism_percentage is not None %}
+                                        <span class="{% if submission.plagiarism_percentage > 30 %}text-danger{% elif submission.plagiarism_percentage > 15 %}text-warning{% else %}text-success{% endif %}">
+                                            {{ submission.plagiarism_percentage }}%
+                                        </span>
+                                        <button type="button" class="btn btn-sm btn-info" data-toggle="modal" data-target="#plagiarismDetails{{ submission.id }}">
+                                            Details
+                                        </button>
+                                    {% else %}
+                                        <button class="btn btn-primary btn-sm check-plagiarism" data-submission-id="{{ submission.id }}">
+                                            Check Plagiarism
+                                            <span class="spinner-border d-none" role="status"></span>
+                                        </button>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-primary btn-sm check-ai" data-submission-id="{{ submission.id }}">
+                                        Check AI Content
+                                        <span class="spinner-border d-none" role="status"></span>
+                                    </button>
+                                    <div id="aiResult{{ submission.id }}" class="mt-2"></div>
+                                </td>
                                 <td>{{ submission.grade|default:"Not graded yet" }}</td>
                                 <td>
                                     {% if submission.grade %}
@@ -412,9 +436,26 @@
                                     {% endif %}
                                 </td>
                             </tr>
+
+                            <!-- Plagiarism Details Modal -->
+                            <div class="modal fade" id="plagiarismDetails{{ submission.id }}" tabindex="-1" role="dialog">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Plagiarism Details</h5>
+                                            <button type="button" class="close" data-dismiss="modal">
+                                                <span>&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body">
+                                            {{ submission.plagiarism_details|linebreaks }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             {% empty %}
                             <tr>
-                                <td colspan="6" class="text-center">No submissions available for evaluation.</td>
+                                <td colspan="8" class="text-center">No submissions available for evaluation.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -440,6 +481,74 @@
     <script src="{% static 'js/jquery.fancybox.min.js' %}"></script>
     <script src="{% static 'js/jquery.sticky.js' %}"></script>
     <script src="{% static 'js/main.js' %}"></script>
+
+    <!-- Add this JavaScript code before the closing body tag -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Plagiarism Check
+        document.querySelectorAll('.check-plagiarism').forEach(button => {
+            button.addEventListener('click', async function() {
+                const submissionId = this.dataset.submissionId;
+                const spinner = this.querySelector('.spinner-border');
+                
+                try {
+                    spinner.classList.remove('d-none');
+                    this.disabled = true;
+                    
+                    const response = await fetch(`/check-plagiarism/${submissionId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    location.reload(); // Reload to show updated results
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error checking plagiarism. Please try again.');
+                } finally {
+                    spinner.classList.add('d-none');
+                    this.disabled = false;
+                }
+            });
+        });
+
+        // AI Content Detection
+        document.querySelectorAll('.check-ai').forEach(button => {
+            button.addEventListener('click', async function() {
+                const submissionId = this.dataset.submissionId;
+                const spinner = this.querySelector('.spinner-border');
+                const resultDiv = document.querySelector(`#aiResult${submissionId}`);
+                
+                try {
+                    spinner.classList.remove('d-none');
+                    this.disabled = true;
+                    
+                    const response = await fetch(`/check-ai-content/${submissionId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    resultDiv.innerHTML = `
+                        <div class="alert ${result.ai_probability > 0.7 ? 'alert-danger' : 'alert-success'} mt-2">
+                            AI Probability: ${(result.ai_probability * 100).toFixed(1)}%
+                        </div>
+                    `;
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error checking AI content. Please try again.');
+                } finally {
+                    spinner.classList.add('d-none');
+                    this.disabled = false;
+                }
+            });
+        });
+    });
+    </script>
 </body>
 
 </html>

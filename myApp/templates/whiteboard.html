@@ -7,406 +7,171 @@
     <title>Interactive Whiteboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src='https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js'></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/canvg/3.0.9/canvg.min.js"></script>
+    <script src='https://unpkg.com/tesseract.js@4.1.1/dist/tesseract.min.js'></script>
     <style>
-        /* Light Mode (Default) */
-        body.light-mode {
-            background-color: white;
-            color: black;
-        }
-        
-        body.light-mode .toolbar,
-        body.light-mode .side-toolbar,
-        body.light-mode .zoom-controls,
-        body.light-mode .header {
-            background-color: white;
-            color: black;
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --toolbar-bg: #ffffff;
+            --canvas-bg: #ffffff;
         }
 
-        body.light-mode .tool-btn {
-            background-color: white;
-            color: #333;
-        }
-
-        body.light-mode canvas {
-            background-color: white;
-        }
-
-        /* Dark Mode */
         body.dark-mode {
-            background-color: #121212;
-            color: white;
-        }
-        
-        body.dark-mode .toolbar,
-        body.dark-mode .side-toolbar,
-        body.dark-mode .zoom-controls,
-        body.dark-mode .header {
-            background-color: #1e1e1e;
-            color: white;
-            box-shadow: 0 2px 10px rgba(255,255,255,0.1);
-        }
-
-        body.dark-mode .tool-btn {
-            background-color: #1e1e1e;
-            color: white;
-        }
-
-        body.dark-mode .tool-btn:hover {
-            background-color: #2d2d2d;
-        }
-
-        body.dark-mode .tool-btn.active {
-            background-color: #3d3d3d;
-        }
-
-        body.dark-mode canvas {
-            background-color: #2d2d2d;
-        }
-
-        body.dark-mode .header-container {
-            background-color: #1e1e1e;
-        }
-
-        body.dark-mode .dashboard-heading {
-            color: white;
-        }
-
-        body.dark-mode .profile-dropdown .nav-link {
-            color: white;
-        }
-
-        body.dark-mode .profile-dropdown-content {
-            background-color: #1e1e1e;
-            box-shadow: 0 8px 16px rgba(255,255,255,0.1);
-        }
-
-        body.dark-mode .profile-dropdown-content a {
-            color: white;
-        }
-
-        body.dark-mode .profile-dropdown-content a:hover {
-            background-color: #2d2d2d;
+            --toolbar-bg: #2d2d2d;
+            --canvas-bg: #1e1e1e;
+            background: #121212;
+            color: #ffffff;
         }
 
         body {
             margin: 0;
+            padding: 0;
             overflow: hidden;
-            background: #f0f0f0;
         }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--toolbar-bg);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            justify-content: space-between;
+        }
+
         .toolbar {
             position: fixed;
-            top: 100px;
             left: 50%;
             transform: translateX(-50%);
-            background: white;
+            top: 80px;
+            background: var(--toolbar-bg);
             padding: 10px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             display: flex;
             gap: 10px;
-            z-index: 1000;
+            z-index: 900;
         }
+
         .side-toolbar {
             position: fixed;
             left: 20px;
             top: 50%;
             transform: translateY(-50%);
-            background: white;
+            background: var(--toolbar-bg);
             padding: 10px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
             gap: 10px;
-            z-index: 1000;
+            z-index: 900;
         }
+
         .tool-btn {
             width: 40px;
             height: 40px;
             border: none;
             border-radius: 4px;
-            background: white;
+            background: var(--toolbar-bg);
+            color: var(--secondary-color);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.3s ease;
         }
+
         .tool-btn:hover {
-            background: #f0f0f0;
+            background: var(--primary-color);
+            color: white;
         }
+
         .tool-btn.active {
-            background: #e0e0e0;
+            background: var(--primary-color);
+            color: white;
         }
+
         #canvas {
-            background: white;
+            background: var(--canvas-bg);
             cursor: crosshair;
         }
+
         .color-picker {
             width: 40px;
             height: 40px;
             padding: 0;
             border: none;
+            border-radius: 4px;
             cursor: pointer;
         }
+
+        .stroke-width {
+            width: 100px;
+        }
+
         .zoom-controls {
             position: fixed;
             right: 20px;
             bottom: 20px;
-            background: white;
+            background: var(--toolbar-bg);
             padding: 10px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            z-index: 1000;
+            display: flex;
+            gap: 10px;
+            z-index: 900;
         }
-        .shape-preview {
-            position: absolute;
-            pointer-events: none;
-            border: 1px dashed #666;
-        }
-        #ocrProgress {
-            margin-top: 1rem;
-        }
+
         .loading-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.7);
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 1050;
-        }
-        .loading-spinner {
-            color: white;
-            font-size: 24px;
-        }
-        .header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 20px;
-            background-color: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             z-index: 1000;
         }
-        .header-content h1 {
-            margin: 0;
-            font-size: 24px;
-            color: #333;
-        }
-        .header-actions {
-            display: flex;
-            align-items: center;
-        }
-        .dashboard-link {
-            display: flex;
-            align-items: center;
-            padding: 8px 16px;
-            background-color: #007bff;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            transition: background-color 0.3s;
-        }
-        .dashboard-link:hover {
-            background-color: #0056b3;
-            color: white;
-            text-decoration: none;
-        }
-        .dashboard-link i {
-            margin-right: 8px;
-        }
-        .site-navbar {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1000;
-            background: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .header-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .site-logo {
-            width: 120px;
-        }
-        .site-logo img {
-            max-width: 100%;
-            height: auto;
-        }
-        .dashboard-heading {
-            margin: 0;
-            font-size: 24px;
-            color: #333;
-        }
-        .profile-dropdown {
-            position: relative;
-        }
-        .profile-dropdown .nav-link {
-            color: #333;
-            text-decoration: none;
-        }
-        .profile-dropdown-content {
-            display: none;
+
+        .selection-area {
             position: absolute;
-            right: 0;
-            background-color: white;
-            min-width: 160px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-            z-index: 1;
-            border-radius: 4px;
-        }
-        .profile-dropdown-content a {
-            color: #333;
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
-        }
-        .profile-dropdown-content a:hover {
-            background-color: #f8f9fa;
-        }
-        .profile-dropdown:hover .profile-dropdown-content {
-            display: block;
-        }
-        .dark-theme {
-            background-color: #121212;
-            color: #ffffff;
-        }
-        .dark-theme .toolbar {
-            background-color: #1e1e1e;
-        }
-        .dark-theme .header {
-            background-color: #1e1e1e;
-            color: #ffffff;
-        }
-
-        /* Modal styles for dark mode */
-        body.dark-mode .modal-content {
-            background-color: #1e1e1e;
-            color: white;
-        }
-
-        body.dark-mode .modal-header {
-            border-bottom: 1px solid #2d2d2d;
-        }
-
-        body.dark-mode .modal-footer {
-            border-top: 1px solid #2d2d2d;
-        }
-
-        body.dark-mode .form-control {
-            background-color: #2d2d2d;
-            color: white;
-            border: 1px solid #3d3d3d;
-        }
-
-        body.dark-mode .btn-close {
-            filter: invert(1) grayscale(100%) brightness(200%);
-        }
-
-        /* Progress bar styles for dark mode */
-        body.dark-mode .progress {
-            background-color: #2d2d2d;
-        }
-
-        /* Loading overlay styles for dark mode */
-        body.dark-mode .loading-overlay {
-            background: rgba(0, 0, 0, 0.7);
-        }
-
-        /* Add these to your existing styles */
-        .form-control-color {
-            width: 100px;
-        }
-
-        /* Dark mode styles for the modal */
-        body.dark-mode .modal-content {
-            background-color: #1e1e1e;
-            color: white;
-        }
-
-        body.dark-mode .modal-header {
-            border-bottom: 1px solid #2d2d2d;
-        }
-
-        body.dark-mode .modal-footer {
-            border-top: 1px solid #2d2d2d;
-        }
-
-        body.dark-mode .form-control {
-            background-color: #2d2d2d;
-            color: white;
-            border: 1px solid #3d3d3d;
-        }
-
-        body.dark-mode .form-check-label {
-            color: white;
-        }
-
-        body.dark-mode .btn-close {
-            filter: invert(1) grayscale(100%) brightness(200%);
-        }
-
-        .color-preset {
-            width: 40px;
-            height: 40px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .color-preset:hover {
-            transform: scale(1.1);
-        }
-
-        .color-preset.active {
-            outline: 2px solid #007bff;
-        }
-
-        /* Dark mode styles for color presets */
-        body.dark-mode .color-preset {
-            border: 1px solid #ffffff3d;
+            border: 2px dashed var(--primary-color);
+            background: rgba(0, 123, 255, 0.1);
+            pointer-events: none;
         }
     </style>
 </head>
-<body class="light-mode">
-    <header class="site-navbar js-sticky-header site-navbar-target" role="banner">
-        <div class="header-container">
-            <div class="site-logo">
-                <a href="{% url 'student_dashboard' %}" class="d-block">
-                    <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid">
-                </a>
-            </div>
-            <h2 class="dashboard-heading">Whiteboard</h2>
-            <div class="profile-dropdown">
-                <a href="#" class="nav-link text-right d-flex align-items-center">
-                    <i class="fas fa-user-circle mr-2"></i>
-                    <span>{{ custom_user.username }}</span>
-                </a>
-                <div class="profile-dropdown-content">
-                    <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
-                </div>
+<body>
+    <div class="header">
+        <div class="d-flex align-items-center">
+            <a href="{% url 'student_dashboard' %}" class="btn btn-outline-primary me-3">
+                <i class="fas fa-arrow-left"></i> Dashboard
+            </a>
+            <h4 class="mb-0">Interactive Whiteboard</h4>
+        </div>
+        <div class="d-flex align-items-center">
+            <button class="tool-btn me-2" onclick="toggleTheme()" title="Toggle Theme">
+                <i class="fas fa-adjust"></i>
+            </button>
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown">
+                    <i class="fas fa-user-circle"></i> {{ custom_user.username }}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                </ul>
             </div>
         </div>
-    </header>
+    </div>
 
     <div class="toolbar">
         <button class="tool-btn active" id="pencil" title="Pencil"><i class="fas fa-pencil-alt"></i></button>
@@ -414,20 +179,26 @@
         <button class="tool-btn" id="text" title="Text"><i class="fas fa-font"></i></button>
         <button class="tool-btn" id="rect" title="Rectangle"><i class="fas fa-square"></i></button>
         <button class="tool-btn" id="circle" title="Circle"><i class="fas fa-circle"></i></button>
-        <button class="tool-btn" id="convertText" title="Convert to Text"><i class="fas fa-camera"></i></button>
-        <button class="tool-btn" id="selectArea" title="Select Area for OCR"><i class="fas fa-crop"></i></button>
-        <button class="tool-btn" id="export" title="Export"><i class="fas fa-file-export"></i></button>
-        <button class="tool-btn" onclick="toggleTheme()" title="Toggle Theme"><i class="fas fa-adjust"></i></button>
-        
-        <input type="color" id="colorPicker" value="#000000" title="Color">
-        <input type="range" id="strokeWidth" min="1" max="20" value="2" title="Stroke Width">
+        <button class="tool-btn" id="line" title="Line"><i class="fas fa-minus"></i></button>
+        <button class="tool-btn" id="arrow" title="Arrow"><i class="fas fa-long-arrow-alt-right"></i></button>
+        <input type="color" id="colorPicker" class="color-picker" value="#000000" title="Color">
+        <input type="range" id="strokeWidth" class="stroke-width" min="1" max="20" value="2" title="Stroke Width">
         <button class="tool-btn" id="clear" title="Clear All"><i class="fas fa-trash"></i></button>
+        <div class="tool-separator"></div>
+        <button class="tool-btn" id="convertText" title="Convert to Text (Full Canvas)">
+            <i class="fas fa-text-width"></i>
+        </button>
+        <button class="tool-btn" id="selectArea" title="Select Area for OCR">
+            <i class="fas fa-crop-alt"></i>
+        </button>
     </div>
 
     <div class="side-toolbar">
         <button class="tool-btn" id="undo" title="Undo (Ctrl+Z)"><i class="fas fa-undo"></i></button>
         <button class="tool-btn" id="redo" title="Redo (Ctrl+Y)"><i class="fas fa-redo"></i></button>
         <button class="tool-btn" id="save" title="Save"><i class="fas fa-save"></i></button>
+        <button class="tool-btn" id="grid" title="Toggle Grid"><i class="fas fa-th"></i></button>
+        <button class="tool-btn" id="select" title="Select"><i class="fas fa-crop"></i></button>
     </div>
 
     <div class="zoom-controls">
@@ -438,12 +209,67 @@
 
     <canvas id="canvas"></canvas>
 
-    <!-- Add this modal for course selection -->
+    <!-- Add this modal for text input -->
+    <div class="modal fade" id="textInputModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Text</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="textInput" class="form-label">Enter Text:</label>
+                        <textarea class="form-control" id="textInput" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="textSize" class="form-label">Text Size:</label>
+                        <input type="range" class="form-range" id="textSize" min="12" max="72" value="24">
+                        <span id="textSizeValue">24px</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="addText">Add Text</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <!-- Add this modal for grid customization -->
-    
-    
-    
+    <!-- Add this modal for save options -->
+    <div class="modal fade" id="saveModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Save Drawing</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="fileName" class="form-label">File Name:</label>
+                        <input type="text" class="form-control" id="fileName" placeholder="Enter file name">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">File Format:</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="fileFormat" id="formatPNG" value="png" checked>
+                            <label class="btn btn-outline-primary" for="formatPNG">PNG</label>
+                            
+                            <input type="radio" class="btn-check" name="fileFormat" id="formatJPG" value="jpg">
+                            <label class="btn btn-outline-primary" for="formatJPG">JPG</label>
+                            
+                            <input type="radio" class="btn-check" name="fileFormat" id="formatPDF" value="pdf">
+                            <label class="btn btn-outline-primary" for="formatPDF">PDF</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveDrawing">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Add this modal for OCR results -->
     <div class="modal fade" id="ocrModal" tabindex="-1">
@@ -459,73 +285,51 @@
                         <textarea class="form-control" id="ocrResult" rows="10"></textarea>
                     </div>
                     <div class="progress d-none" id="ocrProgress">
-                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"></div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="copyText">Copy Text</button>
-                    <button type="button" class="btn btn-success" id="insertText">Insert as Text</button>
+                    <button type="button" class="btn btn-primary" id="copyOcrText">Copy Text</button>
+                    <button type="button" class="btn btn-success" id="insertOcrText">Insert as Text</button>
                 </div>
             </div>
         </div>
     </div>
 
-   
-
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Initialize canvas and context
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        
+
+        // Canvas state variables
         let isDrawing = false;
         let currentTool = 'pencil';
         let currentColor = '#000000';
         let currentWidth = 2;
-        let startX, startY;
-        let lastX = 0;
-        let lastY = 0;
         let scale = 1;
-        
-        // Initialize history variables
+        let startX, startY;
+        let lastX, lastY;
+
+        // History management
         const history = [];
         let historyIndex = -1;
 
-        let selectionRect = null;
-        let isSelecting = false;
-
-        let frames = []; // Array to store frames
-
+        // Grid settings
         let showGrid = false;
+        let gridSize = 20;
         let gridColor = '#e0e0e0';
-        let gridSpacing = 20;
 
-        let isDarkTheme = false;
-
-        let actions = []; // Store drawing actions
-
-        let layers = [];
-
-        // Set canvas size
+        // Initialize canvas size
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            redrawCanvas(); // Redraw content after resize
+            redrawCanvas();
         }
-        
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
 
-        // Function to save the current state to history
-        function saveState() {
-            // If we're in the middle of a history, remove any redo states
-            if (historyIndex < history.length - 1) {
-                history.length = historyIndex + 1;
-            }
-            // Save the current canvas state
-            history.push(canvas.toDataURL());
-            historyIndex++;
-        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
         // Drawing functions
         function startDrawing(e) {
@@ -538,8 +342,6 @@
 
             if (currentTool === 'select') {
                 isSelecting = true;
-                // Remove any previous selection preview
-                document.querySelectorAll('.shape-preview').forEach(el => el.remove());
             } else {
                 ctx.beginPath();
                 ctx.moveTo(startX, startY);
@@ -548,40 +350,122 @@
 
         function draw(e) {
             if (!isDrawing) return;
-            
+
             const rect = canvas.getBoundingClientRect();
             const x = (e.clientX - rect.left) / scale;
             const y = (e.clientY - rect.top) / scale;
 
-            switch(currentTool) {
-                case 'pencil':
-                case 'eraser':
-                    drawFreehand(x, y);
-                    break;
-                case 'rect':
-                    drawRect(x, y);
-                    break;
-                case 'circle':
-                    drawCircle(x, y);
-                    break;
-                case 'text':
-                    // Handled in stopDrawing
-                    break;
-                case 'select':
-                    updateSelection(x, y);
-                    break;
+            if (currentTool === 'select' && isSelecting) {
+                // Remove previous selection preview
+                document.querySelectorAll('.selection-preview').forEach(el => el.remove());
+                
+                // Create new selection preview
+                const preview = document.createElement('div');
+                preview.className = 'selection-preview';
+                preview.style.position = 'absolute';
+                preview.style.left = Math.min(startX, x) + 'px';
+                preview.style.top = Math.min(startY, y) + 'px';
+                preview.style.width = Math.abs(x - startX) + 'px';
+                preview.style.height = Math.abs(y - startY) + 'px';
+                preview.style.border = '1px dashed #000';
+                preview.style.backgroundColor = 'rgba(0, 123, 255, 0.1)';
+                document.body.appendChild(preview);
+            } else {
+                // Regular drawing tools
+                switch(currentTool) {
+                    case 'pencil':
+                        drawFreehand(x, y);
+                        break;
+                    case 'eraser':
+                        erase(x, y);
+                        break;
+                    case 'rect':
+                        drawRect(x, y);
+                        break;
+                    case 'circle':
+                        drawCircle(x, y);
+                        break;
+                    case 'line':
+                        drawLine(x, y);
+                        break;
+                    case 'arrow':
+                        drawArrow(x, y);
+                        break;
+                }
             }
-
             lastX = x;
             lastY = y;
         }
 
+        function stopDrawing() {
+            if (!isDrawing) return;
+            isDrawing = false;
+
+            if (currentTool === 'select' && isSelecting) {
+                try {
+                    const rect = canvas.getBoundingClientRect();
+                    const x = (lastX - rect.left) / scale;
+                    const y = (lastY - rect.top) / scale;
+                    
+                    selectionRect = {
+                        x: Math.min(startX, x),
+                        y: Math.min(startY, y),
+                        width: Math.abs(x - startX),
+                        height: Math.abs(y - startY)
+                    };
+
+                    if (selectionRect.width < 10 || selectionRect.height < 10) {
+                        alert('Please select a larger area');
+                        return;
+                    }
+
+                    // Create temporary canvas for selection
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = selectionRect.width;
+                    tempCanvas.height = selectionRect.height;
+                    const tempCtx = tempCanvas.getContext('2d');
+
+                    // Copy selected area to temporary canvas
+                    tempCtx.drawImage(
+                        canvas,
+                        selectionRect.x, selectionRect.y,
+                        selectionRect.width, selectionRect.height,
+                        0, 0,
+                        selectionRect.width, selectionRect.height
+                    );
+
+                    // Perform OCR on the selection
+                    performOCR(tempCanvas.toDataURL());
+                    
+                    // Reset selection
+                    isSelecting = false;
+                    document.querySelectorAll('.selection-preview').forEach(el => el.remove());
+                } catch (error) {
+                    console.error('Selection Error:', error);
+                    alert('Error processing selection. Please try again.');
+                }
+            } else {
+                saveState();
+            }
+        }
+
+        // Tool-specific drawing functions
         function drawFreehand(x, y) {
             ctx.beginPath();
             ctx.moveTo(lastX, lastY);
             ctx.lineTo(x, y);
-            ctx.strokeStyle = currentTool === 'eraser' ? '#ffffff' : currentColor;
+            ctx.strokeStyle = currentColor;
             ctx.lineWidth = currentWidth;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        }
+
+        function erase(x, y) {
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = currentWidth * 2;
             ctx.lineCap = 'round';
             ctx.stroke();
         }
@@ -606,90 +490,83 @@
             ctx.stroke();
         }
 
-        function updateSelection(x, y) {
-            // Remove any previous preview
-            document.querySelectorAll('.shape-preview').forEach(el => el.remove());
+        function drawLine(x, y) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            redrawCanvas();
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(x, y);
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = currentWidth;
+            ctx.stroke();
+        }
+
+        function drawArrow(x, y) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            redrawCanvas();
             
-            // Create selection preview
-            const preview = document.createElement('div');
-            preview.className = 'shape-preview';
-            preview.style.left = `${Math.min(startX, x)}px`;
-            preview.style.top = `${Math.min(startY, y)}px`;
-            preview.style.width = `${Math.abs(x - startX)}px`;
-            preview.style.height = `${Math.abs(y - startY)}px`;
-            document.body.appendChild(preview);
+            const angle = Math.atan2(y - startY, x - startX);
+            const headlen = 20;
+
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(x, y);
+            ctx.lineTo(x - headlen * Math.cos(angle - Math.PI / 6), y - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.moveTo(x, y);
+            ctx.lineTo(x - headlen * Math.cos(angle + Math.PI / 6), y - headlen * Math.sin(angle + Math.PI / 6));
+            
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = currentWidth;
+            ctx.stroke();
         }
 
-        function captureFrame() {
-            const frameCanvas = document.createElement('canvas');
-            frameCanvas.width = canvas.width;
-            frameCanvas.height = canvas.height;
-            const frameCtx = frameCanvas.getContext('2d');
-            frameCtx.drawImage(canvas, 0, 0); // Draw the current canvas state
-            frames.push(frameCanvas.toDataURL('image/png')); // Store the frame
-        }
-
-        function stopDrawing() {
-            if (!isDrawing) return;
-            isDrawing = false;
-
-            if (currentTool === 'text') {
-                const text = prompt('Enter text:');
-                if (text) {
-                    ctx.font = `${currentWidth * 8}px Arial`;
-                    ctx.fillStyle = currentColor;
-                    ctx.fillText(text, startX, startY);
-                }
-            } else if (currentTool === 'select' && isSelecting) {
-                isSelecting = false;
-                
-                // Get the selection rectangle
-                const selX = Math.min(startX, lastX);
-                const selY = Math.min(startY, lastY);
-                const selWidth = Math.abs(lastX - startX);
-                const selHeight = Math.abs(lastY - startY);
-                
-                if (selWidth > 10 && selHeight > 10) {
-                    selectionRect = {
-                        x: selX,
-                        y: selY,
-                        width: selWidth,
-                        height: selHeight
-                    };
-                    
-                    // Remove preview
-                    document.querySelectorAll('.shape-preview').forEach(el => el.remove());
-                    
-                    // Extract the image data from selected area
-                    const imageData = ctx.getImageData(selX, selY, selWidth, selHeight);
-                    const tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = selWidth;
-                    tempCanvas.height = selHeight;
-                    const tempCtx = tempCanvas.getContext('2d');
-                    tempCtx.putImageData(imageData, 0, 0);
-                    
-                    // Convert to base64 and perform OCR
-                    const dataUrl = tempCanvas.toDataURL('image/png');
-                    performOCROnSelection(dataUrl);
-                }
+        // Canvas state management
+        function saveState() {
+            if (historyIndex < history.length - 1) {
+                history.length = historyIndex + 1;
             }
-
-            // Save the current state after drawing
-            saveState();
+            history.push(canvas.toDataURL());
+            historyIndex++;
         }
 
         function redrawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (showGrid) {
+                drawGrid();
+            }
             if (historyIndex >= 0) {
                 const img = new Image();
                 img.src = history[historyIndex];
                 img.onload = () => {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                     ctx.drawImage(img, 0, 0);
                 };
             }
         }
 
-        // Event listeners for drawing
+        // Grid drawing
+        function drawGrid() {
+            ctx.save();
+            ctx.strokeStyle = gridColor;
+            ctx.lineWidth = 0.5;
+
+            for (let x = 0; x < canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+
+            for (let y = 0; y < canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        // Event listeners
         canvas.addEventListener('mousedown', startDrawing);
         canvas.addEventListener('mousemove', draw);
         canvas.addEventListener('mouseup', stopDrawing);
@@ -699,7 +576,7 @@
         document.querySelectorAll('.tool-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const tool = e.currentTarget.id;
-                if (!['clear', 'share', 'undo', 'redo', 'save', 'zoomIn', 'zoomOut', 'resetZoom'].includes(tool)) {
+                if (!['clear', 'save', 'undo', 'redo', 'grid', 'zoomIn', 'zoomOut', 'resetZoom'].includes(tool)) {
                     currentTool = tool;
                     document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
                     e.currentTarget.classList.add('active');
@@ -719,11 +596,13 @@
 
         // Clear canvas
         document.getElementById('clear').addEventListener('click', () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            saveState();
+            if (confirm('Are you sure you want to clear the canvas?')) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                saveState();
+            }
         });
 
-        // Undo function
+        // Undo/Redo
         function undo() {
             if (historyIndex > 0) {
                 historyIndex--;
@@ -731,7 +610,6 @@
             }
         }
 
-        // Redo function
         function redo() {
             if (historyIndex < history.length - 1) {
                 historyIndex++;
@@ -739,21 +617,72 @@
             }
         }
 
-        // Event listeners for undo/redo buttons
         document.getElementById('undo').addEventListener('click', undo);
         document.getElementById('redo').addEventListener('click', redo);
 
         // Save functionality
         document.getElementById('save').addEventListener('click', () => {
-            const fileName = prompt("Enter a name for your file:", "drawing");
-            if (fileName) {
-                const link = document.createElement('a');
-                link.download = `${fileName}.png`; // Set the filename with .png extension
-                link.href = canvas.toDataURL(); // Get the canvas data as a PNG
-                link.click(); // Trigger the download
-            } else {
-                alert("File name cannot be empty.");
+            saveModal.show();
+        });
+
+        document.getElementById('saveDrawing').addEventListener('click', () => {
+            const fileName = document.getElementById('fileName').value || 'whiteboard';
+            const format = document.querySelector('input[name="fileFormat"]:checked').value;
+            
+            switch(format) {
+                case 'png':
+                    savePNG(fileName);
+                    break;
+                case 'jpg':
+                    saveJPG(fileName);
+                    break;
+                case 'pdf':
+                    savePDF(fileName);
+                    break;
             }
+            
+            saveModal.hide();
+        });
+
+        function savePNG(fileName) {
+            const link = document.createElement('a');
+            link.download = `${fileName}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function saveJPG(fileName) {
+            const link = document.createElement('a');
+            link.download = `${fileName}.jpg`;
+            link.href = canvas.toDataURL('image/jpeg', 0.8);
+            link.click();
+        }
+
+        function savePDF(fileName) {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({
+                orientation: 'landscape',
+                unit: 'px',
+                format: [canvas.width, canvas.height]
+            });
+            
+            pdf.addImage(
+                canvas.toDataURL('image/jpeg', 1.0),
+                'JPEG',
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+            
+            pdf.save(`${fileName}.pdf`);
+        }
+
+        // Grid toggle
+        document.getElementById('grid').addEventListener('click', () => {
+            showGrid = !showGrid;
+            document.getElementById('grid').classList.toggle('active');
+            redrawCanvas();
         });
 
         // Zoom controls
@@ -775,8 +704,10 @@
             redrawCanvas();
         });
 
-        // Initialize with first history state
-        saveState();
+        // Theme toggle
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+        }
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
@@ -789,77 +720,141 @@
             }
         });
 
-        // OCR Functionality
-        document.getElementById('convertText').addEventListener('click', async () => {
-            // Get entire canvas for OCR
-            const dataUrl = canvas.toDataURL('image/png');
-            performOCROnSelection(dataUrl);
+        // Initialize with first history state
+        saveState();
+
+        // Add these functions for text tool
+        let textMode = false;
+        const textInputModal = new bootstrap.Modal(document.getElementById('textInputModal'));
+        const saveModal = new bootstrap.Modal(document.getElementById('saveModal'));
+
+        document.getElementById('text').addEventListener('click', () => {
+            textMode = true;
+            textInputModal.show();
         });
 
-        // Copy text functionality
-        document.getElementById('copyText').addEventListener('click', () => {
-            const textarea = document.getElementById('ocrResult');
-            textarea.select();
-            document.execCommand('copy');
+        document.getElementById('textSize').addEventListener('input', (e) => {
+            document.getElementById('textSizeValue').textContent = `${e.target.value}px`;
+        });
+
+        document.getElementById('addText').addEventListener('click', () => {
+            const text = document.getElementById('textInput').value;
+            const fontSize = document.getElementById('textSize').value;
             
-            // Show feedback
-            const copyBtn = document.getElementById('copyText');
-            const originalText = copyBtn.textContent;
-            copyBtn.textContent = 'Copied!';
-            setTimeout(() => {
-                copyBtn.textContent = originalText;
-            }, 2000);
-        });
-
-        // Insert text back to canvas
-        document.getElementById('insertText').addEventListener('click', () => {
-            const text = document.getElementById('ocrResult').value;
-            if (text && selectionRect) {
-                ctx.font = '16px Arial';
+            if (text) {
+                ctx.font = `${fontSize}px Arial`;
                 ctx.fillStyle = currentColor;
-                ctx.fillText(text, selectionRect.x, selectionRect.y + 20);
-                
-                // Close the modal
-                bootstrap.Modal.getInstance(document.getElementById('ocrModal')).hide();
+                ctx.fillText(text, startX || 50, startY || 50);
+                saveState();
+                textInputModal.hide();
+                document.getElementById('textInput').value = '';
             }
         });
 
-        // Add keyboard shortcut for OCR (Ctrl + Shift + T)
-        document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.shiftKey && e.key === 'T') {
-                document.getElementById('convertText').click();
+        // Update canvas click handler for text placement
+        canvas.addEventListener('click', (e) => {
+            if (textMode) {
+                const rect = canvas.getBoundingClientRect();
+                startX = (e.clientX - rect.left) / scale;
+                startY = (e.clientY - rect.top) / scale;
+                textInputModal.show();
+                textMode = false;
             }
         });
 
-        // Add OCR area selection functionality
+        // Add these variables
+        let selectionRect = null;
+        let isSelecting = false;
+        const ocrModal = new bootstrap.Modal(document.getElementById('ocrModal'));
+
+        // Add OCR functionality
+        document.getElementById('convertText').addEventListener('click', () => {
+            try {
+                // If there's no selection, convert the entire canvas
+                selectionRect = null;
+                const dataUrl = canvas.toDataURL('image/png');
+                performOCR(dataUrl);
+            } catch (error) {
+                console.error('Convert Text Error:', error);
+                alert('Error starting text conversion. Please try again.');
+            }
+        });
+
         document.getElementById('selectArea').addEventListener('click', () => {
             currentTool = 'select';
+            isSelecting = true;
             document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('selectArea').classList.add('active');
             canvas.style.cursor = 'crosshair';
         });
 
-        async function performOCROnSelection(imageData) {
+        // OCR function
+        async function performOCR(imageData) {
             try {
                 // Show loading overlay
                 const overlay = document.createElement('div');
                 overlay.className = 'loading-overlay';
-                overlay.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Converting...</div>';
+                overlay.innerHTML = '<div class="spinner-border text-light" role="status"><span class="visually-hidden">Converting...</span></div>';
                 document.body.appendChild(overlay);
 
                 // Show progress bar
-                const progressBar = document.querySelector('#ocrProgress .progress-bar');
-                document.getElementById('ocrProgress').classList.remove('d-none');
-                progressBar.style.width = '0%';
+                const progressBar = document.querySelector('#ocrProgress');
+                progressBar.classList.remove('d-none');
+                const progressElement = progressBar.querySelector('.progress-bar');
 
-                console.log('Starting OCR process...');
+                // Create a temporary canvas with larger dimensions
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                
+                // Scale up the image for better OCR (2x)
+                const scaleFactor = 2;
+                if (selectionRect) {
+                    tempCanvas.width = selectionRect.width * scaleFactor;
+                    tempCanvas.height = selectionRect.height * scaleFactor;
+                    tempCtx.scale(scaleFactor, scaleFactor);
+                    tempCtx.drawImage(
+                        canvas,
+                        selectionRect.x, selectionRect.y,
+                        selectionRect.width, selectionRect.height,
+                        0, 0,
+                        selectionRect.width, selectionRect.height
+                    );
+                } else {
+                    tempCanvas.width = canvas.width * scaleFactor;
+                    tempCanvas.height = canvas.height * scaleFactor;
+                    tempCtx.scale(scaleFactor, scaleFactor);
+                    tempCtx.drawImage(canvas, 0, 0);
+                }
 
-                // Initialize Tesseract worker
-                const worker = Tesseract.createWorker({
+                // Enhance image contrast
+                const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+                const data = imageData.data;
+                
+                // Advanced image processing
+                for (let i = 0; i < data.length; i += 4) {
+                    // Convert to grayscale with weighted RGB
+                    const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                    
+                    // Increase contrast
+                    const contrast = 1.5; // Increase this for more contrast
+                    const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+                    const newValue = factor * (gray - 128) + 128;
+                    
+                    // Threshold to pure black or white
+                    const threshold = 180;
+                    const final = newValue > threshold ? 255 : 0;
+                    
+                    data[i] = data[i + 1] = data[i + 2] = final;
+                }
+                
+                tempCtx.putImageData(imageData, 0, 0);
+
+                // Initialize Tesseract with specific configuration
+                const worker = await Tesseract.createWorker({
                     logger: progress => {
-                        console.log('OCR progress:', progress);
+                        console.log('Progress:', progress);
                         if (progress.status === 'recognizing text') {
-                            progressBar.style.width = `${progress.progress * 100}%`;
+                            progressElement.style.width = `${progress.progress * 100}%`;
                         }
                     }
                 });
@@ -868,392 +863,100 @@
                 await worker.loadLanguage('eng');
                 await worker.initialize('eng');
 
-                console.log('OCR worker initialized, starting recognition...');
-                const result = await worker.recognize(imageData);
-                console.log('OCR completed:', result);
+                // Set parameters optimized for handwriting
+                await worker.setParameters({
+                    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,!?()-:;"\'/ ',
+                    tessedit_pageseg_mode: '6', // Assume uniform block of text
+                    tessedit_ocr_engine_mode: '2', // LSTM only
+                    preserve_interword_spaces: '1',
+                    textord_heavy_nr: '1', // Handle noisy images better
+                    textord_min_linesize: '2.5', // Better handle small text
+                    tessedit_do_invert: '0'
+                });
 
-                // Display results
-                document.getElementById('ocrResult').value = result.data.text;
+                // Perform OCR with confidence check
+                const result = await worker.recognize(tempCanvas.toDataURL());
+                
+                if (!result.data.text.trim()) {
+                    throw new Error('No text detected');
+                }
+
+                // Filter out low-confidence results
+                const words = result.data.words || [];
+                const confidenceThreshold = 60; // Minimum confidence percentage
+                const filteredText = words
+                    .filter(word => word.confidence > confidenceThreshold)
+                    .map(word => word.text)
+                    .join(' ');
+
+                // Display the result
+                document.getElementById('ocrResult').value = filteredText || result.data.text;
 
                 // Clean up
                 await worker.terminate();
-                document.getElementById('ocrProgress').classList.add('d-none');
                 overlay.remove();
+                progressBar.classList.add('d-none');
 
-                // Show modal with results
-                const modal = new bootstrap.Modal(document.getElementById('ocrModal'));
-                modal.show();
+                // Show results modal
+                ocrModal.show();
+
             } catch (error) {
                 console.error('OCR Error:', error);
-                alert('Error converting handwriting to text: ' + error.message);
+                alert('Error converting handwriting to text. Please ensure:\n- Write larger and clearer\n- Use dark ink on light background\n- Write in print rather than cursive\n- Keep text horizontal');
                 document.querySelector('.loading-overlay')?.remove();
                 document.getElementById('ocrProgress').classList.add('d-none');
             }
         }
 
-        document.getElementById('export').addEventListener('click', () => {
-            const format = prompt("Enter format to export (png, pdf, svg):").toLowerCase();
-            switch (format) {
-                case 'png':
-                    exportAsPNG();
-                    break;
-                case 'pdf':
-                    exportAsPDF();
-                    break;
-                case 'svg':
-                    exportAsSVG();
-                    break;
-                default:
-                    alert('Unsupported format. Please use png, pdf, or svg.');
+        // Copy OCR text
+        document.getElementById('copyOcrText').addEventListener('click', () => {
+            const textarea = document.getElementById('ocrResult');
+            textarea.select();
+            document.execCommand('copy');
+            
+            const copyBtn = document.getElementById('copyOcrText');
+            copyBtn.textContent = 'Copied!';
+            setTimeout(() => {
+                copyBtn.textContent = 'Copy Text';
+            }, 2000);
+        });
+
+        // Insert OCR text
+        document.getElementById('insertOcrText').addEventListener('click', () => {
+            const text = document.getElementById('ocrResult').value;
+            if (text) {
+                const fontSize = 20;
+                ctx.font = `${fontSize}px Arial`;
+                ctx.fillStyle = currentColor;
+                
+                // Calculate position
+                const x = selectionRect ? selectionRect.x : 50;
+                const y = selectionRect ? selectionRect.y + fontSize : 50;
+                
+                // Draw text with word wrap
+                const words = text.split(' ');
+                let line = '';
+                let posY = y;
+                const lineHeight = fontSize * 1.2;
+                const maxWidth = selectionRect ? selectionRect.width : canvas.width - 100;
+
+                for (const word of words) {
+                    const testLine = line + (line ? ' ' : '') + word;
+                    const metrics = ctx.measureText(testLine);
+                    
+                    if (metrics.width > maxWidth && line) {
+                        ctx.fillText(line, x, posY);
+                        line = word;
+                        posY += lineHeight;
+                    } else {
+                        line = testLine;
+                    }
+                }
+                ctx.fillText(line, x, posY);
+                
+                saveState();
+                ocrModal.hide();
             }
-        });
-
-        // Export as PNG
-        function exportAsPNG() {
-            const link = document.createElement('a');
-            link.download = 'drawing.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-        }
-
-        // Export as PDF
-        function exportAsPDF() {
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF();
-            const imgData = canvas.toDataURL('image/png');
-            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 4, canvas.height / 4); // Adjust size as needed
-            pdf.save('drawing.pdf');
-        }
-
-        // Export as SVG
-        function exportAsSVG() {
-            const svgData = `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas.width}" height="${canvas.height}">
-                <foreignObject width="100%" height="100%">
-                    <div xmlns="http://www.w3.org/1999/xhtml">
-                        <canvas id="tempCanvas" width="${canvas.width}" height="${canvas.height}"></canvas>
-                    </div>
-                </foreignObject>
-            </svg>`;
-            
-            const tempCanvas = document.getElementById('tempCanvas');
-            const ctx = tempCanvas.getContext('2d');
-            ctx.drawImage(canvas, 0, 0);
-            
-            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-            const url = URL.createObjectURL(svgBlob);
-            
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'drawing.svg';
-            link.click();
-            URL.revokeObjectURL(url); // Clean up
-        }
-
-        document.getElementById('backToDashboard').addEventListener('click', () => {
-            window.location.href = 'student_dashboard'; // Update with the actual path
-        });
-
-        function drawGrid() {
-            if (showGrid) {
-                const canvasWidth = canvas.width;
-                const canvasHeight = canvas.height;
-                
-                ctx.save();
-                ctx.strokeStyle = gridColor;
-                ctx.lineWidth = 0.5;
-
-                // Draw vertical lines
-                for (let x = 0; x < canvasWidth; x += gridSpacing) {
-                    ctx.beginPath();
-                    ctx.moveTo(x, 0);
-                    ctx.lineTo(x, canvasHeight);
-                    ctx.stroke();
-                }
-
-                // Draw horizontal lines
-                for (let y = 0; y < canvasHeight; y += gridSpacing) {
-                    ctx.beginPath();
-                    ctx.moveTo(0, y);
-                    ctx.lineTo(canvasWidth, y);
-                    ctx.stroke();
-                }
-                
-                ctx.restore();
-            }
-        }
-
-        document.getElementById('toggleGrid').addEventListener('click', () => {
-            showGrid = !showGrid;
-            document.getElementById('toggleGrid').classList.toggle('active');
-            redrawCanvas();
-        });
-
-        function toggleTheme() {
-            document.body.classList.toggle('dark-mode');
-            document.body.classList.toggle('light-mode'); // Ensure light mode is also toggled
-        }
-
-        function saveAction(action) {
-            actions.push(action);
-        }
-
-        function replayActions() {
-            let index = 0;
-
-            const interval = setInterval(() => {
-                if (index < actions.length) {
-                    const action = actions[index];
-                    // Execute the action (e.g., draw line, shape, etc.)
-                    // Implement your drawing logic here based on the action
-                    index++;
-                } else {
-                    clearInterval(interval);
-                }
-            }, 100); // Adjust speed as needed
-        }
-
-        function addLayer() {
-            const newLayer = document.createElement('canvas');
-            newLayer.width = canvas.width;
-            newLayer.height = canvas.height;
-            layers.push(newLayer);
-        }
-
-        function drawOnLayer(layerIndex, drawingFunction) {
-            const layer = layers[layerIndex];
-            const ctx = layer.getContext('2d');
-            drawingFunction(ctx); // Pass the drawing function to draw on the layer
-        }
-
-        // Example of toggling layer visibility
-        function toggleLayerVisibility(layerIndex) {
-            const layer = layers[layerIndex];
-            layer.style.display = layer.style.display === 'none' ? 'block' : 'none';
-        }
-
-        function applyGridSettings() {
-            showGrid = document.getElementById('showGrid').checked;
-            gridColor = document.getElementById('gridColor').value;
-            gridSpacing = parseInt(document.getElementById('gridSpacing').value);
-            
-            // Close the modal
-            const gridModal = bootstrap.Modal.getInstance(document.getElementById('gridCustomizeModal'));
-            gridModal.hide();
-            
-            // Redraw the canvas with new grid settings
-            redrawCanvas();
-        }
-
-        // Add event listener for grid spacing range input
-        document.getElementById('gridSpacing').addEventListener('input', (e) => {
-            document.getElementById('gridSpacingValue').textContent = e.target.value + 'px';
-        });
-
-        function drawGrid() {
-            if (showGrid) {
-                ctx.strokeStyle = gridColor;
-                ctx.lineWidth = 0.5;
-
-                // Draw vertical lines
-                for (let x = 0; x < canvas.width; x += gridSpacing) {
-                    ctx.beginPath();
-                    ctx.moveTo(x, 0);
-                    ctx.lineTo(x, canvas.height);
-                    ctx.stroke();
-                }
-
-                // Draw horizontal lines
-                for (let y = 0; y < canvas.height; y += gridSpacing) {
-                    ctx.beginPath();
-                    ctx.moveTo(0, y);
-                    ctx.lineTo(canvas.width, y);
-                    ctx.stroke();
-                }
-            }
-        }
-
-        // Add these styles for dark mode compatibility
-        function redrawCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawGrid();
-            // Redraw your existing canvas content here
-        }
-
-        // Add color preset functionality
-        document.querySelectorAll('.color-preset').forEach(button => {
-            button.addEventListener('click', () => {
-                const color = button.dataset.color;
-                document.getElementById('gridColor').value = color;
-                
-                // Remove active class from all presets
-                document.querySelectorAll('.color-preset').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                
-                // Add active class to clicked preset
-                button.classList.add('active');
-                
-                // Update grid color immediately if grid is showing
-                gridColor = color;
-                if (showGrid) {
-                    redrawCanvas();
-                }
-            });
-        });
-
-        // Make sure the modal exists in your HTML
-        if (!document.getElementById('gridCustomizeModal')) {
-            // Add the modal HTML if it doesn't exist
-            const modalHTML = `
-                <div class="modal fade" id="gridCustomizeModal" tabindex="-1">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Customize Grid</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="mb-3">
-                                    <label class="form-label">Grid Color</label>
-                                    <div class="d-flex gap-2 mb-2">
-                                        <button class="color-preset" style="background-color: #e0e0e0" data-color="#e0e0e0"></button>
-                                        <button class="color-preset" style="background-color: #90caf9" data-color="#90caf9"></button>
-                                        <button class="color-preset" style="background-color: #a5d6a7" data-color="#a5d6a7"></button>
-                                        <button class="color-preset" style="background-color: #ffcc80" data-color="#ffcc80"></button>
-                                        <button class="color-preset" style="background-color: #ef9a9a" data-color="#ef9a9a"></button>
-                                    </div>
-                                    <input type="color" class="form-control form-control-color" id="gridColor" value="#e0e0e0">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="gridSpacing" class="form-label">Grid Spacing (px)</label>
-                                    <input type="range" class="form-range" id="gridSpacing" min="10" max="50" value="20">
-                                    <span id="gridSpacingValue">20px</span>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="showGrid">
-                                    <label class="form-check-label" for="showGrid">
-                                        Show Grid
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                <button type="button" class="btn btn-primary" onclick="applyGridSettings()">Apply</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalHTML);
-        }
-
-        // Add necessary styles if they don't exist
-        if (!document.querySelector('style#gridCustomizeStyles')) {
-            const styleSheet = `
-                <style id="gridCustomizeStyles">
-                    .color-preset {
-                        width: 40px;
-                        height: 40px;
-                        border: none;
-                        border-radius: 4px;
-                        cursor: pointer;
-                        transition: transform 0.2s;
-                    }
-
-                    .color-preset:hover {
-                        transform: scale(1.1);
-                    }
-
-                    .color-preset.active {
-                        outline: 2px solid #007bff;
-                    }
-
-                    body.dark-mode .color-preset {
-                        border: 1px solid #ffffff3d;
-                    }
-                </style>
-            `;
-            document.head.insertAdjacentHTML('beforeend', styleSheet);
-        }
-
-        // Initialize color preset functionality
-        function initializeColorPresets() {
-            document.querySelectorAll('.color-preset').forEach(button => {
-                button.addEventListener('click', () => {
-                    const color = button.dataset.color;
-                    document.getElementById('gridColor').value = color;
-                    
-                    // Remove active class from all presets
-                    document.querySelectorAll('.color-preset').forEach(btn => {
-                        btn.classList.remove('active');
-                    });
-                    
-                    // Add active class to clicked preset
-                    button.classList.add('active');
-                    
-                    // Update grid color immediately if grid is showing
-                    gridColor = color;
-                    if (showGrid) {
-                        redrawCanvas();
-                    }
-                });
-            });
-        }
-
-        // Call initialize function when the document is ready
-        document.addEventListener('DOMContentLoaded', initializeColorPresets);
-
-        // Add this code to your existing JavaScript
-        document.addEventListener('DOMContentLoaded', function() {
-            // Get the toggle button and modal elements
-            const toggleGridBtn = document.getElementById('toggleGrid');
-            const gridModal = document.getElementById('gridCustomizeModal');
-            
-            // Initialize the Bootstrap modal
-            const modal = new bootstrap.Modal(gridModal);
-            
-            // Add click event listener to the toggle button
-            toggleGridBtn.addEventListener('click', function() {
-                modal.show(); // Show the modal when the button is clicked
-            });
-
-            // Initialize the grid settings
-            function applyGridSettings() {
-                showGrid = document.getElementById('showGrid').checked;
-                gridColor = document.getElementById('gridColor').value;
-                gridSpacing = parseInt(document.getElementById('gridSpacing').value);
-                
-                // Close the modal
-                modal.hide();
-                
-                // Redraw the canvas with new grid settings
-                redrawCanvas();
-            }
-
-            // Make applyGridSettings available globally
-            window.applyGridSettings = applyGridSettings;
-
-            // Add event listener for grid spacing range input
-            document.getElementById('gridSpacing').addEventListener('input', function(e) {
-                document.getElementById('gridSpacingValue').textContent = e.target.value + 'px';
-            });
-
-            // Initialize color presets
-            document.querySelectorAll('.color-preset').forEach(button => {
-                button.addEventListener('click', function() {
-                    const color = this.dataset.color;
-                    document.getElementById('gridColor').value = color;
-                    gridColor = color;
-                    
-                    // Remove active class from all presets
-                    document.querySelectorAll('.color-preset').forEach(btn => {
-                        btn.classList.remove('active');
-                    });
-                    
-                    // Add active class to clicked preset
-                    this.classList.add('active');
-                });
-            });
         });
     </script>
 </body>

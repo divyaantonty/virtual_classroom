@@ -230,6 +230,8 @@ urlpatterns = [
 
     path('process-ocr/', views.process_ocr, name='process_ocr'),
 
+    path('check-plagiarism/<int:submission_id>/', views.check_plagiarism, name='check_plagiarism'),
+    path('check-ai-content/<int:submission_id>/', views.check_ai_content, name='check_ai_content'),
 
 ]
 if settings.DEBUG:

@@ -19144,7 +19144,10 @@ def parent_dashboard(request):
             Q(teacher_courses__course__students__username=parent.student_username)
         ).prefetch_related('teacher_courses').distinct()
 
-        messages_list = ParentTeacherMessage.objects.filter(parent=parent).order_by('-date')
+        messages_list = ParentTeacherMessage.objects.filter(
+            Q(parent=parent, message_type='parent_to_teacher') |  # Messages sent by parent
+            Q(parent=parent, message_type='teacher_to_parent')    # Messages received by parent
+        ).select_related('teacher').order_by('-date')
         
         context = {
             'parent': parent,
@@ -19210,14 +19213,20 @@ def parent_dashboard(request):
         grades = []
         assignment_submissions = []
 
-    # Get all messages for this parent
     messages_list = ParentTeacherMessage.objects.filter(
-        parent=parent,
-        message_type='parent_to_teacher'  # Only get messages sent by parent
-    ).select_related('teacher').order_by('-date')
+            Q(parent=parent, message_type='parent_to_teacher') |  # Messages sent by parent
+            Q(parent=parent, message_type='teacher_to_parent')    # Messages received by parent
+        ).select_related('teacher').order_by('-date')
+
+    # Get unread count for notifications
+    unread_count = messages_list.filter(
+        is_read=False, 
+        message_type='teacher_to_parent'
+    ).count()
 
     context.update({
-        'sent_messages': messages_list,
+        'messages_page': messages_list,  # Changed from sent_messages to messages_page
+        'unread_count': unread_count
     })
 
     return render(request, 'parent_dashboard.html', {
@@ -19230,6 +19239,8 @@ def parent_dashboard(request):
         'present_count': present_count,
         'absent_count': absent_count,
         'attendance_percentage': attendance_percentage,
+        'messages_page': messages_list,  # Add messages to the final context
+        'unread_count': unread_count
     })
 
 
@@ -24424,8 +24435,10 @@ def parent_message_center(request):
 
     parent = get_object_or_404(Parent, id=parent_id)
     
-    # Get all messages for this parent
-    messages_list = ParentTeacherMessage.objects.filter(parent=parent).order_by('-date')
+    # Get all messages (both sent and received) for this parent
+    messages_list = ParentTeacherMessage.objects.filter(
+        parent=parent
+    ).select_related('teacher').order_by('-date')
     
     # Get unique teachers this parent has communicated with
     teachers = Teacher.objects.filter(
@@ -24433,15 +24446,20 @@ def parent_message_center(request):
         Q(teachercourse__course__students__username=parent.student_username)
     ).distinct()
 
+    # Add sender_type to each message for template rendering
+    for message in messages_list:
+        message.sender_type = 'teacher' if message.message_type == 'teacher_to_parent' else 'parent'
+
     # Pagination
     paginator = Paginator(messages_list, 10)
     page = request.GET.get('page')
     messages_page = paginator.get_page(page)
 
     context = {
-        'messages_page': messages_page,
+        'messages': messages_page,  # Changed from messages_page to match template
         'teachers': teachers,
         'parent': parent,
+        'courses': parent.student.enrollments.all(),  # Add courses for the message form
         'unread_count': messages_list.filter(is_read=False, message_type='teacher_to_parent').count()
     }
     return render(request, 'parent_message_center.html', context)
@@ -25433,3 +25451,53 @@ def check_material_exists(request):
     return JsonResponse({'exists': exists})
 
 
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+import requests
+import json
+
+@require_POST
+def check_plagiarism(request, submission_id):
+    submission = get_object_or_404(AssignmentSubmission, id=submission_id)
+    
+    # Read the content from the submitted file
+    content = submission.file.read().decode('utf-8')
+    
+    # Here you would integrate with a plagiarism detection service
+    # This is a placeholder - replace with actual plagiarism detection API
+    try:
+        # Example using a hypothetical plagiarism detection API
+        response = requests.post('https://your-plagiarism-api.com/check', 
+                               json={'content': content})
+        result = response.json()
+        
+        # Store the results
+        submission.plagiarism_percentage = result['percentage']
+        submission.plagiarism_details = json.dumps(result['details'])
+        submission.save()
+        
+        return JsonResponse({'success': True, 'percentage': result['percentage']})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@require_POST
+def check_ai_content(request, submission_id):
+    submission = get_object_or_404(AssignmentSubmission, id=submission_id)
+    
+    # Read the content from the submitted file
+    content = submission.file.read().decode('utf-8')
+    
+    # Here you would integrate with an AI content detection service
+    # This is a placeholder - replace with actual AI detection API
+    try:
+        # Example using a hypothetical AI detection API
+        response = requests.post('https://your-ai-detection-api.com/check', 
+                               json={'content': content})
+        result = response.json()
+        
+        return JsonResponse({
+            'success': True,
+            'ai_probability': result['ai_probability']
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
