@@ -25451,32 +25451,57 @@ def check_material_exists(request):
     return JsonResponse({'exists': exists})
 
 
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-import requests
-import json
+from .plagiarism_checker import PlagiarismAIChecker
+from django.core.cache import cache
+
+# Initialize the checker
+checker = PlagiarismAIChecker()
 
 @require_POST
 def check_plagiarism(request, submission_id):
     submission = get_object_or_404(AssignmentSubmission, id=submission_id)
     
-    # Read the content from the submitted file
-    content = submission.file.read().decode('utf-8')
-    
-    # Here you would integrate with a plagiarism detection service
-    # This is a placeholder - replace with actual plagiarism detection API
     try:
-        # Example using a hypothetical plagiarism detection API
-        response = requests.post('https://your-plagiarism-api.com/check', 
-                               json={'content': content})
-        result = response.json()
+        # Extract text from current submission
+        current_text = extract_text_from_file(submission.file)
+        if not current_text:
+            return JsonResponse({'success': False, 'error': 'Could not extract text from file'})
         
-        # Store the results
-        submission.plagiarism_percentage = result['percentage']
-        submission.plagiarism_details = json.dumps(result['details'])
+        # Get all other submissions for the same assignment
+        other_submissions = AssignmentSubmission.objects.filter(
+            assignment=submission.assignment
+        ).exclude(id=submission_id)
+        
+        highest_similarity = 0
+        plagiarism_details = []
+        
+        # Compare with each other submission
+        for other_submission in other_submissions:
+            other_text = extract_text_from_file(other_submission.file)
+            if other_text:
+                result = checker.check_plagiarism(current_text, other_text)
+                
+                if result['plagiarism_score'] > highest_similarity:
+                    highest_similarity = result['plagiarism_score']
+                    
+                if result['plagiarism_score'] > 0.3:  # Threshold for recording matches
+                    plagiarism_details.append({
+                        'compared_with': other_submission.student.username,
+                        'similarity_score': result['plagiarism_score'],
+                        'matching_passages': result['matching_passages']
+                    })
+        
+        # Store results
+        submission.plagiarism_percentage = highest_similarity * 100
+        submission.plagiarism_details = plagiarism_details
         submission.save()
         
-        return JsonResponse({'success': True, 'percentage': result['percentage']})
+        return JsonResponse({
+            'success': True,
+            'percentage': submission.plagiarism_percentage,
+            'details': plagiarism_details
+        })
+        
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
@@ -25484,20 +25509,32 @@ def check_plagiarism(request, submission_id):
 def check_ai_content(request, submission_id):
     submission = get_object_or_404(AssignmentSubmission, id=submission_id)
     
-    # Read the content from the submitted file
-    content = submission.file.read().decode('utf-8')
-    
-    # Here you would integrate with an AI content detection service
-    # This is a placeholder - replace with actual AI detection API
     try:
-        # Example using a hypothetical AI detection API
-        response = requests.post('https://your-ai-detection-api.com/check', 
-                               json={'content': content})
-        result = response.json()
+        # Extract text
+        text = extract_text_from_file(submission.file)
+        if not text:
+            return JsonResponse({'success': False, 'error': 'Could not extract text from file'})
+        
+        # Check for cached results
+        cache_key = f'ai_detection_{submission_id}'
+        result = cache.get(cache_key)
+        
+        if not result:
+            # Perform AI content detection
+            result = checker.detect_ai_content(text)
+            # Cache the result for 24 hours
+            cache.set(cache_key, result, 60 * 60 * 24)
+        
+        # Store results
+        submission.ai_indicators = result
+        submission.save()
         
         return JsonResponse({
             'success': True,
-            'ai_probability': result['ai_probability']
+            'ai_probability': result['ai_probability'],
+            'metrics': result['metrics'],
+            'interpretation': result['interpretation']
         })
+        
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
