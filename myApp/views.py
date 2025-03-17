@@ -25435,8 +25435,6 @@ def get_message_history(request, message_id):
         }, status=500)
 
 
-
-
 from django.http import JsonResponse
 
 def check_material_exists(request):
@@ -25451,90 +25449,85 @@ def check_material_exists(request):
     return JsonResponse({'exists': exists})
 
 
-from .plagiarism_checker import PlagiarismAIChecker
-from django.core.cache import cache
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from .models import MaterialNotes, CustomUser
+from django.shortcuts import redirect
+from django.contrib import messages
+import json
 
-# Initialize the checker
-checker = PlagiarismAIChecker()
-
-@require_POST
-def check_plagiarism(request, submission_id):
-    submission = get_object_or_404(AssignmentSubmission, id=submission_id)
+@require_http_methods(["POST"])
+def save_notes(request):
+    # Get the custom user ID from the session
+    custom_user_id = request.session.get('custom_user_id')
     
-    try:
-        # Extract text from current submission
-        current_text = extract_text_from_file(submission.file)
-        if not current_text:
-            return JsonResponse({'success': False, 'error': 'Could not extract text from file'})
-        
-        # Get all other submissions for the same assignment
-        other_submissions = AssignmentSubmission.objects.filter(
-            assignment=submission.assignment
-        ).exclude(id=submission_id)
-        
-        highest_similarity = 0
-        plagiarism_details = []
-        
-        # Compare with each other submission
-        for other_submission in other_submissions:
-            other_text = extract_text_from_file(other_submission.file)
-            if other_text:
-                result = checker.check_plagiarism(current_text, other_text)
-                
-                if result['plagiarism_score'] > highest_similarity:
-                    highest_similarity = result['plagiarism_score']
-                    
-                if result['plagiarism_score'] > 0.3:  # Threshold for recording matches
-                    plagiarism_details.append({
-                        'compared_with': other_submission.student.username,
-                        'similarity_score': result['plagiarism_score'],
-                        'matching_passages': result['matching_passages']
-                    })
-        
-        # Store results
-        submission.plagiarism_percentage = highest_similarity * 100
-        submission.plagiarism_details = plagiarism_details
-        submission.save()
-        
+    if not custom_user_id:
         return JsonResponse({
-            'success': True,
-            'percentage': submission.plagiarism_percentage,
-            'details': plagiarism_details
+            'success': False, 
+            'error': "You are not logged in."
         })
-        
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
-@require_POST
-def check_ai_content(request, submission_id):
-    submission = get_object_or_404(AssignmentSubmission, id=submission_id)
-    
     try:
-        # Extract text
-        text = extract_text_from_file(submission.file)
-        if not text:
-            return JsonResponse({'success': False, 'error': 'Could not extract text from file'})
+        # Fetch the student (CustomUser) based on the custom user ID
+        student = CustomUser.objects.get(id=custom_user_id)
         
-        # Check for cached results
-        cache_key = f'ai_detection_{submission_id}'
-        result = cache.get(cache_key)
+        data = json.loads(request.body)
+        material_id = data.get('material_id')
+        notes_text = data.get('notes')
         
-        if not result:
-            # Perform AI content detection
-            result = checker.detect_ai_content(text)
-            # Cache the result for 24 hours
-            cache.set(cache_key, result, 60 * 60 * 24)
+        # Save the note to your database using the student instead of request.user
+        MaterialNotes.objects.create(
+            material_id=material_id,
+            user=student,
+            text=notes_text
+        )
         
-        # Store results
-        submission.ai_indicators = result
-        submission.save()
-        
+        return JsonResponse({'success': True})
+    except CustomUser.DoesNotExist:
         return JsonResponse({
-            'success': True,
-            'ai_probability': result['ai_probability'],
-            'metrics': result['metrics'],
-            'interpretation': result['interpretation']
+            'success': False, 
+            'error': "Student not found."
         })
-        
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+        return JsonResponse({
+            'success': False, 
+            'error': str(e)
+        })
+
+@require_http_methods(["GET"])
+def get_notes(request, material_id):
+    # Get the custom user ID from the session
+    custom_user_id = request.session.get('custom_user_id')
+    
+    if not custom_user_id:
+        return JsonResponse({
+            'success': False, 
+            'error': "You are not logged in."
+        })
+
+    try:
+        # Fetch the student (CustomUser) based on the custom user ID
+        student = CustomUser.objects.get(id=custom_user_id)
+        
+        # Get notes using the student instead of request.user
+        notes = MaterialNotes.objects.filter(
+            material_id=material_id,
+            user=student
+        ).order_by('-created_at')
+        
+        notes_data = [{
+            'text': note.text,
+            'timestamp': note.created_at.isoformat()
+        } for note in notes]
+        
+        return JsonResponse({'success': True, 'notes': notes_data})
+    except CustomUser.DoesNotExist:
+        return JsonResponse({
+            'success': False, 
+            'error': "Student not found."
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'error': str(e)
+        })

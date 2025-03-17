@@ -694,6 +694,132 @@
             max-height: calc(100vh - 200px);
             overflow-y: auto;
         }
+
+        .pdf-preview-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pdf-preview-container {
+            width: 90%;
+            height: 90%;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pdf-preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .pdf-preview-content {
+            flex: 1;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .pdf-preview-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        #pdfCanvas {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .reader-layout {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        .pdf-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .notes-panel {
+            width: 300px;
+            background: #f8f9fa;
+            border-left: 1px solid #ddd;
+            display: none;
+            flex-direction: column;
+            padding: 15px;
+        }
+
+        .notes-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .notes-header h3 {
+            margin: 0;
+            color: #2c3e50;
+        }
+
+        #notesArea {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            resize: vertical;
+        }
+
+        .saved-notes {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .note-item {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .note-item .timestamp {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .btn-save {
+            padding: 5px 10px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-save:hover {
+            background: #218838;
+        }
     </style>
 </head>
 
@@ -843,23 +969,65 @@
     <!-- Add this modal for PDF reader with TTS -->
     <div class="pdf-reader-modal" id="pdfReaderModal" style="display: none;">
         <div class="pdf-reader-container">
-            <div class="pdf-controls">
-                <button class="btn-control" onclick="toggleReading()" id="playPauseBtn">
-                    <i class="fas fa-play"></i> Play
-                </button>
-                <button class="btn-control" onclick="stopReading()">
-                    <i class="fas fa-stop"></i> Stop
-                </button>
-                <select id="voiceSelect" class="voice-select">
-                    <!-- Voices will be populated here -->
-                </select>
-                <button class="btn-close" onclick="closePdfReader()">
+            <div class="reader-layout">
+                <div class="pdf-section">
+                    <div class="pdf-controls">
+                        <button class="btn-control" onclick="toggleReading()" id="playPauseBtn">
+                            <i class="fas fa-play"></i> Play
+                        </button>
+                        <button class="btn-control" onclick="stopReading()">
+                            <i class="fas fa-stop"></i> Stop
+                        </button>
+                        <select id="voiceSelect" class="voice-select">
+                            <!-- Voices will be populated here -->
+                        </select>
+                        <button class="btn-control" onclick="toggleNotesPanel()">
+                            <i class="fas fa-sticky-note"></i> Toggle Notes
+                        </button>
+                        <button class="btn-close" onclick="closePdfReader()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="pdf-content">
+                        <div id="pdfViewer" class="pdf-viewer"></div>
+                        <div id="currentPage" class="current-page"></div>
+                    </div>
+                </div>
+                <div class="notes-panel" id="notesPanel">
+                    <div class="notes-header">
+                        <h3>My Notes</h3>
+                        <button class="btn-save" onclick="saveNotes()">
+                            <i class="fas fa-save"></i> Save Notes
+                        </button>
+                    </div>
+                    <textarea id="notesArea" placeholder="Take your notes here..."></textarea>
+                    <div class="saved-notes" id="savedNotes">
+                        <!-- Saved notes will appear here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="pdf-preview-modal" id="pdfPreviewModal" style="display: none;">
+        <div class="pdf-preview-container">
+            <div class="pdf-preview-header">
+                <h3 id="pdfPreviewTitle"></h3>
+                <button class="btn-close" onclick="closePdfPreview()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="pdf-content">
-                <div id="pdfViewer" class="pdf-viewer"></div>
-                <div id="currentPage" class="current-page"></div>
+            <div class="pdf-preview-content">
+                <canvas id="pdfCanvas"></canvas>
+            </div>
+            <div class="pdf-preview-controls">
+                <button class="btn-control" onclick="previousPage()">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </button>
+                <span id="pageInfo"></span>
+                <button class="btn-control" onclick="nextPage()">
+                    Next <i class="fas fa-chevron-right"></i>
+                </button>
             </div>
         </div>
     </div>
@@ -1225,6 +1393,218 @@
 
         // Initialize voices when they are loaded
         speechSynthesis.onvoiceschanged = populateVoiceSelect;
+
+        function previewPDF(fileUrl, description) {
+            // Show the modal
+            document.getElementById('pdfPreviewModal').style.display = 'flex';
+            document.getElementById('pdfPreviewTitle').textContent = description;
+
+            // Initialize PDF.js
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+
+            // Load the PDF
+            pdfjsLib.getDocument(fileUrl).promise.then(function(pdf) {
+                pdfDoc = pdf;
+                document.getElementById('pageInfo').textContent = `Page ${pageNum} of ${pdf.numPages}`;
+                renderPage(pageNum);
+            });
+        }
+
+        let pdfDoc = null;
+        let pageNum = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
+        let scale = 1.5;
+
+        function renderPage(num) {
+            pageRendering = true;
+            pdfDoc.getPage(num).then(function(page) {
+                const canvas = document.getElementById('pdfCanvas');
+                const ctx = canvas.getContext('2d');
+                const viewport = page.getViewport({scale: scale});
+
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+
+                page.render(renderContext).promise.then(function() {
+                    pageRendering = false;
+                    if (pageNumPending !== null) {
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                });
+            });
+
+            document.getElementById('pageInfo').textContent = `Page ${num} of ${pdfDoc.numPages}`;
+        }
+
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
+
+        function previousPage() {
+            if (pageNum <= 1) return;
+            pageNum--;
+            queueRenderPage(pageNum);
+        }
+
+        function nextPage() {
+            if (pageNum >= pdfDoc.numPages) return;
+            pageNum++;
+            queueRenderPage(pageNum);
+        }
+
+        function closePdfPreview() {
+            document.getElementById('pdfPreviewModal').style.display = 'none';
+            pdfDoc = null;
+            pageNum = 1;
+        }
+
+        let currentMaterialId = null;
+
+        function toggleNotesPanel() {
+            const notesPanel = document.getElementById('notesPanel');
+            notesPanel.style.display = notesPanel.style.display === 'none' ? 'flex' : 'none';
+        }
+
+        function saveNotes() {
+            const notesText = document.getElementById('notesArea').value;
+            if (!notesText.trim()) return;
+
+            fetch('{% url "save_notes" %}', {  // Use Django's URL template tag
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    material_id: currentMaterialId,
+                    notes: notesText
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    addNoteToPanel(notesText, new Date());
+                    document.getElementById('notesArea').value = '';
+                    alert('Notes saved successfully!');
+                } else {
+                    if (data.error === "You are not logged in.") {
+                        window.location.href = '{% url "login" %}';
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to save notes. Please try again.');
+            });
+        }
+
+        function addNoteToPanel(noteText, timestamp) {
+            const savedNotes = document.getElementById('savedNotes');
+            const noteElement = document.createElement('div');
+            noteElement.className = 'note-item';
+            
+            noteElement.innerHTML = `
+                <div class="timestamp">${timestamp.toLocaleString()}</div>
+                <div class="note-text">${noteText}</div>
+            `;
+            
+            savedNotes.insertBefore(noteElement, savedNotes.firstChild);
+        }
+
+        // Update the openPdfReader function to include notes initialization
+        async function openPdfReader(materialId, pdfUrl) {
+            currentMaterialId = materialId;
+            
+            // Show the modal and notes panel
+            const modal = document.getElementById('pdfReaderModal');
+            modal.style.display = 'flex';
+            
+            // Load existing notes for this material
+            fetch(`/get-notes/${materialId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    const savedNotes = document.getElementById('savedNotes');
+                    savedNotes.innerHTML = ''; // Clear existing notes
+                    
+                    if (data.notes) {
+                        data.notes.forEach(note => {
+                            addNoteToPanel(note.text, new Date(note.timestamp));
+                        });
+                    }
+                })
+                .catch(error => console.error('Error loading notes:', error));
+
+            try {
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+                
+                // Load PDF
+                const loadingTask = pdfjsLib.getDocument(pdfUrl);
+                currentPdf = await loadingTask.promise;
+                
+                // Clear previous content
+                const pdfViewer = document.getElementById('pdfViewer');
+                pdfViewer.innerHTML = '';
+                pdfText = [];
+                
+                // Load all pages
+                for (let pageNum = 1; pageNum <= currentPdf.numPages; pageNum++) {
+                    const page = await currentPdf.getPage(pageNum);
+                    const textContent = await page.getTextContent();
+                    
+                    // Create page container
+                    const pageContainer = document.createElement('div');
+                    pageContainer.className = 'pdf-page';
+                    pageContainer.setAttribute('data-page-number', pageNum);
+                    
+                    // Create text container
+                    const textContainer = document.createElement('div');
+                    textContainer.className = 'text-content';
+                    
+                    // Process text items
+                    let lastY;
+                    let currentParagraph;
+                    
+                    textContent.items.forEach((item) => {
+                        if (lastY !== item.transform[5] || !currentParagraph) {
+                            currentParagraph = document.createElement('p');
+                            textContainer.appendChild(currentParagraph);
+                            lastY = item.transform[5];
+                        }
+                        
+                        const span = document.createElement('span');
+                        span.className = 'text-item';
+                        span.textContent = item.str + ' ';
+                        currentParagraph.appendChild(span);
+                        
+                        // Add to text array for TTS
+                        pdfText.push(item.str);
+                    });
+                    
+                    pageContainer.appendChild(textContainer);
+                    pdfViewer.appendChild(pageContainer);
+                }
+                
+                // Populate voice select
+                populateVoiceSelect();
+                
+            } catch (error) {
+                console.error('Error loading PDF:', error);
+                alert('Error loading PDF. Please try again.');
+            }
+        }
     </script>
 </body>
 

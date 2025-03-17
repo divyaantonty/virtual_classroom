@@ -18,7 +18,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = ['*']  
-
+CSRF_TRUSTED_ORIGINS = ['https://6272-117-193-79-225.ngrok-free.app']
 # API Keys
 LIBRARY_API_KEY = os.getenv('LIBRARY_API_KEY')
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')

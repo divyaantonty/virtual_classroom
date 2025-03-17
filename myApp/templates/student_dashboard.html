@@ -647,8 +647,8 @@
                             <a class="dropdown-item" href="{% url 'quiz_marks' %}">View Marks</a>
                         </div>
                     </div>
-                    <div class="dashboard-box">
-                        <a href="#" onclick="showMindMapModal(); return false;">
+                    <div class="dashboard-box" id="mind-map-box">
+                        <a href="#" onclick="showMindMapModal(); return false;" id="create-mind-map">
                             <i class="fas fa-project-diagram"></i>
                             Create Mind Maps
                         </a>
@@ -775,7 +775,7 @@
             <div class="mind-map-header">
                 <h2><i class="fas fa-project-diagram"></i> Concept Mapping</h2>
                 <div class="mind-map-controls">
-                    <button onclick="addNode()" class="control-btn">
+                    <button onclick="addNode()" class="control-btn" id="add-node-btn">
                         <i class="fas fa-plus"></i> Add Node
                     </button>
                     <button onclick="saveMindMap()" class="control-btn">

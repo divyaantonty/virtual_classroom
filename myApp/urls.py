@@ -229,9 +229,8 @@ urlpatterns = [
     path('send-message-to-parent/', views.send_message_to_parent, name='send_message_to_parent'),
 
     path('process-ocr/', views.process_ocr, name='process_ocr'),
-
-    path('check-plagiarism/<int:submission_id>/', views.check_plagiarism, name='check_plagiarism'),
-    path('check-ai-content/<int:submission_id>/', views.check_ai_content, name='check_ai_content'),
+    path('save_notes/', views.save_notes, name='save_notes'),
+    path('get-notes/<int:material_id>/', views.get_notes, name='get_notes'),
 
 ]
 if settings.DEBUG:
