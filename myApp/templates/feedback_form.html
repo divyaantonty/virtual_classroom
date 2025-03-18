@@ -215,6 +215,50 @@
                 margin-top: 10px;
             }
         }
+
+        /* Add these dropdown styles */
+        .custom-dropdown {
+            position: relative;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .custom-dropdown .dashboard-box {
+            width: 100%;
+            display: block;
+            margin: 0;
+        }
+
+        .custom-dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            margin-top: 5px;
+            width: 100%;
+        }
+
+        .custom-dropdown:hover .custom-dropdown-content {
+            display: block;
+        }
+
+        .custom-dropdown-content a {
+            display: block;
+            padding: 10px 20px;
+            color: #333;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+
+        .custom-dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
     </style>
 </head>
 
@@ -255,9 +299,15 @@
                     <a href="{% url 'discussion_forum' %}" class="dashboard-box">
                         <i class="fas fa-comments mr-2"></i>Discussion Forum
                     </a>
-                    <a href="{% url 'available_quizzes' %}" class="dashboard-box">
-                        <i class="fas fa-question-circle mr-2"></i>View Quizzes
-                    </a>
+                    <div class="custom-dropdown">
+                        <a href="#" class="dashboard-box">
+                            <i class="fas fa-question-circle mr-2"></i>View Quizzes
+                        </a>
+                        <div class="custom-dropdown-content">
+                            <a href="{% url 'available_quizzes' %}">Available Quizzes</a>
+                            <a href="{% url 'quiz_marks' %}">View Marks</a>
+                        </div>
+                    </div>
                     <a href="{% url 'feedback_form' %}" class="dashboard-box">
                         <i class="fas fa-comment-alt mr-2"></i>Feedback
                     </a>
@@ -267,9 +317,19 @@
                     <a href="{% url 'available_courses' %}" class="dashboard-box">
                         <i class="fas fa-graduation-cap mr-2"></i>Available Courses
                     </a>
-                    <a href="{% url 'student_dashboard' %}" class="dashboard-box">
-                        <i class="fas fa-tachometer-alt mr-2"></i>Back to Dashboard
+                    <div class="custom-dropdown">
+                        <a href="#" class="dashboard-box">
+                            <i class="fas fa-calendar-alt mr-2"></i>Leave
+                        </a>
+                        <div class="custom-dropdown-content">
+                            <a href="{% url 'apply_leave' %}">Apply for Leave</a>
+                            <a href="{% url 'student_leave_requests' %}">View Leave Status</a>
+                        </div>
+                    </div>
+                    <a href="{% url 'search_books' %}" class="dashboard-box">
+                        <i class="fas fa-graduation-cap mr-2"></i>Library
                     </a>
+                    
                 </div>
             </div>
 

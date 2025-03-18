@@ -232,6 +232,8 @@ urlpatterns = [
     path('save_notes/', views.save_notes, name='save_notes'),
     path('get-notes/<int:material_id>/', views.get_notes, name='get_notes'),
 
+    path('mark-suggestion-read/', views.mark_suggestion_read, name='mark_suggestion_read'), 
+
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

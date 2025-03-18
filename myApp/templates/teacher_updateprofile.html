@@ -136,6 +136,7 @@
             padding: 80px;
             box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
             height: 100%;
+            overflow-y: auto;
         }
         .dashboard-options {
             display: flex;
@@ -238,6 +239,19 @@
                 margin-top: 10px;
             }
         }
+        .dashboard-sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .dashboard-sidebar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .dashboard-sidebar::-webkit-scrollbar-thumb {
+            background: #3498db;
+            border-radius: 4px;
+        }
+        .dashboard-sidebar::-webkit-scrollbar-thumb:hover {
+            background: #2980b9;
+        }
     </style>
     <script type="text/javascript">
         function preventBack() { window.history.forward(); }
@@ -315,6 +329,15 @@
                     </div>
                     <div class="dropdown">
                         <button class="dropdown-btn">
+                            <i class="fas fa-sticky-note mr-2"></i>Manage Notes
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'create_note' %}"><i class="fas fa-plus mr-2"></i>Create Note</a>
+                            <a href="{% url 'view_notes' %}"><i class="fas fa-list mr-2"></i>View Notes</a>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
                             <i class="fas fa-calendar-alt mr-2"></i>Manage Events
                         </button>
                         <div class="dropdown-content">
@@ -330,6 +353,18 @@
                     </a>
                     <a href="{% url 'view_attendance' %}" class="dashboard-box">
                         <i class="fas fa-clipboard-check mr-2"></i>Attendance
+                    </a>
+                    <a href="{% url 'question_generator' %}" class="dashboard-box">
+                        <i class="fas fa-plus mr-2"></i>Generate Question
+                    </a>
+                    <a href="{% url 'whiteboard' %}" class="dashboard-box">
+                        <i class="fas fa-chalkboard mr-2"></i>Live Whiteboard
+                    </a>
+                    <a href="{% url 'teacher_messages' %}" class="dashboard-box">
+                        <i class="fas fa-envelope mr-2"></i>Parent Communication
+                        {% if unread_messages > 0 %}
+                            <span class="badge badge-light ml-2">{{ unread_messages }}</span>
+                        {% endif %}
                     </a>
                 </div>
             </div>
@@ -687,6 +722,11 @@
                     event.preventDefault();
                 }
             });
+
+            // Disable fields that should not be updated
+            document.getElementById("email").disabled = true; // Example: Disable email field
+            document.getElementById("contact").disabled = true; // Example: Disable contact field
+            // Add more fields as necessary
         });
     </script>
 </body>

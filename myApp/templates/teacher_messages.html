@@ -668,6 +668,191 @@
         .reply-btn:hover i {
             animation: bounceIcon 1s infinite;
         }
+
+        .profile-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .profile-dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background-color: #fff;
+            min-width: 160px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            z-index: 1001;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .profile-dropdown-content.show {
+            display: block;
+        }
+
+        .profile-dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            transition: background-color 0.3s;
+        }
+
+        .profile-dropdown-content a:hover {
+            background-color: #f8f9fa;
+            color: #3498db;
+        }
+
+        .profile-dropdown-content a:first-child {
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+
+        .profile-dropdown-content a:last-child {
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+
+        .nav-link {
+            cursor: pointer;
+            padding: 8px 15px;
+            border-radius: 20px;
+            transition: background-color 0.3s;
+        }
+
+        .nav-link:hover {
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+
+        .fa-chevron-down {
+            font-size: 12px;
+            transition: transform 0.3s;
+        }
+
+        .profile-dropdown.active .fa-chevron-down {
+            transform: rotate(180deg);
+        }
+
+        @media (max-width: 768px) {
+            .profile-dropdown-content {
+                position: fixed;
+                top: auto;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                border-radius: 15px 15px 0 0;
+                box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
+            }
+        }
+
+        .main-content {
+            display: flex;
+            flex-grow: 1;
+            height: calc(100vh - 60px);
+        }
+
+        .dashboard-sidebar {
+            width: 400px;
+            background-color: #ffffff;
+            padding: 80px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            height: 100%;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #3498db #ffffff;
+        }
+
+        .dashboard-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .dropdown {
+            position: relative;
+        }
+
+        .dropdown-btn {
+            background-color: #3498db;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            z-index: 1;
+            width: 100%;
+            top: 60px;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.3s;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dashboard-box {
+            background-color: #3498db;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .dashboard-box:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .dashboard-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+
+            .dashboard-sidebar {
+                width: 100%;
+                height: auto;
+                padding: 20px;
+                order: 2;
+            }
+
+            .dashboard-content {
+                order: 1;
+            }
+        }
     </style>
 </head>
 <body>
@@ -682,75 +867,174 @@
                 </div>
                 <h2 class="dashboard-heading">Teacher Dashboard</h2>
                 <div class="profile-dropdown">
-                    <a href="#" class="nav-link text-right d-flex align-items-center">
+                    <a href="#" class="nav-link text-right d-flex align-items-center" onclick="toggleProfileDropdown(event)">
                         <i class="fas fa-user-circle mr-2"></i>
                         <span>{{ first_name }} {{ last_name }}</span>
+                        <i class="fas fa-chevron-down ml-2"></i>
                     </a>
+                    <div class="profile-dropdown-content" id="profileDropdown">
+                        
+                        <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+                    </div>
                 </div>
             </div>
         </header>
 
-        <!-- Messages Content -->
-        <div class="messages-grid">
-            <button class="new-message-btn" data-toggle="modal" data-target="#newMessageModal">
-                <i class="fas fa-envelope"></i>
-                New Message to Parent
-            </button>
+        <div class="main-content">
+            <!-- Sidebar -->
+            <div class="dashboard-sidebar">
+                <div class="dashboard-options">
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-chalkboard-teacher mr-2"></i>Manage Classes
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'schedule_class' %}"><i class="fas fa-plus mr-2"></i>Schedule Class</a>
+                            <a href="{% url 'view_teacher_schedule_class' %}"><i class="fas fa-list mr-2"></i>View Classes</a>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-tasks mr-2"></i>Manage Assignments
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'create_assignment' %}"><i class="fas fa-plus mr-2"></i>Create Assignment</a>
+                            <a href="{% url 'view_assignment' %}"><i class="fas fa-list mr-2"></i>View Assignments</a>
+                            <a href="{% url 'evaluate_assignment' %}"><i class="fas fa-check mr-2"></i>Evaluate Assignments</a>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-book mr-2"></i>Study Materials
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'upload_material' %}"><i class="fas fa-upload mr-2"></i>Upload Materials</a>
+                            <a href="{% url 'view_uploaded_materials' %}"><i class="fas fa-list mr-2"></i>View Materials</a>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-sticky-note mr-2"></i>Manage Notes
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'create_note' %}"><i class="fas fa-plus mr-2"></i>Create Note</a>
+                            <a href="{% url 'view_notes' %}"><i class="fas fa-list mr-2"></i>View Notes</a>
+                        </div>
+                    </div>
+                    <a href="{% url 'teacher_discussion_forum' %}" class="dashboard-box">
+                        <i class="fas fa-comments mr-2"></i>Discussion Forum
+                    </a>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-question-circle mr-2"></i>Manage Quizzes
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'create_quiz' %}"><i class="fas fa-plus mr-2"></i>Create Quiz</a>
+                            <a href="{% url 'view_quiz_questions' %}"><i class="fas fa-list mr-2"></i>View Questions</a>
+                            <a href="{% url 'evaluate_answers' %}"><i class="fas fa-check mr-2"></i>Evaluate Answer<a/>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-calendar-alt mr-2"></i>Manage Events
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'add_event' %}"><i class="fas fa-plus mr-2"></i>Create Event</a>
+                            <a href="{% url 'view_events' %}"><i class="fas fa-list mr-2"></i>View Events</a>
+                            <a href="{% url 'view_event_registrations' %}"><i class="fas fa-users mr-2"></i>View Registrations</a>
+                        </div>
+                    </div>
+                    <a href="{% url 'view_profile' %}" class="dashboard-box">
+                        <i class="fas fa-user mr-2"></i>View Profile
+                    </a>
+                    <a href="{% url 'student_list' %}" class="dashboard-box">
+                        <i class="fas fa-users mr-2"></i>Student List
+                    </a>
+                    <a href="{% url 'view_attendance' %}" class="dashboard-box">
+                        <i class="fas fa-clipboard-check mr-2"></i>Attendance
+                    </a>
+                    <a href="{% url 'manage_leave' %}" class="dashboard-box">
+                        <i class="fas fa-clipboard-check mr-2"></i>Manage Leave
+                    </a>
+                    <a href="{% url 'question_generator' %}" class="dashboard-box">
+                        <i class="fas fa-plus mr-2"></i>Generate question
+                    </a>
+                    <a href="{% url 'whiteboard' %}" class="dashboard-box">
+                        <i class="fas fa-chalkboard mr-2"></i>Live Whiteboard
+                    </a>
+                    <a href="{% url 'teacher_messages' %}" class="dashboard-box">
+                        <i class="fas fa-envelope mr-2"></i>Parent Communication
+                        {% if unread_messages > 0 %}
+                            <span class="badge badge-light ml-2">{{ unread_messages }}</span>
+                        {% endif %}
+                    </a>
+                </div>
+            </div>
 
-            {% if messages %}
-                {% for message in messages %}
-                    {% if message.message_type == 'parent_to_teacher' %}
-                        <div class="message-card {% if not message.is_read %}unread{% endif %}">
-                            <div class="message-header">
-                                <div class="message-icon">
-                                    <i class="fas fa-user"></i>
-                                </div>
-                                <div class="message-info">
-                                    <div class="message-sender">Parent of {{ message.parent.student_username }}</div>
-                                    <div class="message-time">{{ message.date|date:"M d, Y H:i" }}</div>
-                                </div>
-                            </div>
-                            <div class="message-subject">{{ message.subject }}</div>
-                            <div class="message-content">{{ message.content }}</div>
-                            <div class="message-actions">
-                                <div>
-                                    <button class="view-history-btn" onclick="viewHistory({{ message.id }}, '{{ message.parent.student_username }}')">
-                                        <i class="fas fa-history"></i> View Conversation
-                                    </button>
-                                    <button class="reply-btn" 
-                                            onclick="toggleReplyForm('reply-form-{{ message.id }}')"
-                                            data-message-id="{{ message.id }}"
-                                            {% if message.has_reply %}
-                                            disabled
-                                            class="reply-btn replied-btn"
-                                            {% endif %}>
-                                        {% if message.has_reply %}
-                                            <i class="fas fa-check"></i> Replied
-                                        {% else %}
-                                            <i class="fas fa-reply"></i> Reply
-                                        {% endif %}
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="reply-form" id="reply-form-{{ message.id }}">
-                                <form onsubmit="sendReply(event, {{ message.id }})">
-                                    <textarea class="reply-textarea" placeholder="Write your reply..."></textarea>
-                                    <div>
-                                        <button type="submit" class="reply-submit">Send</button>
-                                        <button type="button" class="reply-cancel" onclick="toggleReplyForm('reply-form-{{ message.id }}')">Cancel</button>
+            <!-- Messages Content -->
+            <div class="dashboard-content">
+                <div class="messages-grid">
+                    <button class="new-message-btn" data-toggle="modal" data-target="#newMessageModal">
+                        <i class="fas fa-envelope"></i>
+                        New Message to Parent
+                    </button>
+
+                    {% if messages %}
+                        {% for message in messages %}
+                            {% if message.message_type == 'parent_to_teacher' %}
+                                <div class="message-card {% if not message.is_read %}unread{% endif %}">
+                                    <div class="message-header">
+                                        <div class="message-icon">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        <div class="message-info">
+                                            <div class="message-sender">Parent of {{ message.parent.student_username }}</div>
+                                            <div class="message-time">{{ message.date|date:"M d, Y H:i" }}</div>
+                                        </div>
                                     </div>
-                                </form>
-                            </div>
+                                    <div class="message-subject">{{ message.subject }}</div>
+                                    <div class="message-content">{{ message.content }}</div>
+                                    <div class="message-actions">
+                                        <div>
+                                            <button class="view-history-btn" onclick="viewHistory({{ message.id }}, '{{ message.parent.student_username }}')">
+                                                <i class="fas fa-history"></i> View Conversation
+                                            </button>
+                                            <button class="reply-btn" 
+                                                    onclick="toggleReplyForm('reply-form-{{ message.id }}')"
+                                                    data-message-id="{{ message.id }}"
+                                                    {% if message.has_reply %}
+                                                    disabled
+                                                    class="reply-btn replied-btn"
+                                                    {% endif %}>
+                                                {% if message.has_reply %}
+                                                    <i class="fas fa-check"></i> Replied
+                                                {% else %}
+                                                    <i class="fas fa-reply"></i> Reply
+                                                {% endif %}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="reply-form" id="reply-form-{{ message.id }}">
+                                        <form onsubmit="sendReply(event, {{ message.id }})">
+                                            <textarea class="reply-textarea" placeholder="Write your reply..."></textarea>
+                                            <div>
+                                                <button type="submit" class="reply-submit">Send</button>
+                                                <button type="button" class="reply-cancel" onclick="toggleReplyForm('reply-form-{{ message.id }}')">Cancel</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-messages">
+                            <i class="far fa-envelope"></i>
+                            <h3>No Messages</h3>
+                            <p>You don't have any messages yet.</p>
                         </div>
                     {% endif %}
-                {% endfor %}
-            {% else %}
-                <div class="no-messages">
-                    <i class="far fa-envelope"></i>
-                    <h3>No Messages</h3>
-                    <p>You don't have any messages yet.</p>
                 </div>
-            {% endif %}
+            </div>
         </div>
     </div>
 
@@ -997,6 +1281,34 @@
             alert('Failed to send message');
         });
     }
+
+    function toggleProfileDropdown(event) {
+        event.preventDefault();
+        const dropdown = document.getElementById('profileDropdown');
+        const profileDropdown = event.currentTarget.closest('.profile-dropdown');
+        
+        dropdown.classList.toggle('show');
+        profileDropdown.classList.toggle('active');
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function closeDropdown(e) {
+            if (!profileDropdown.contains(e.target)) {
+                dropdown.classList.remove('show');
+                profileDropdown.classList.remove('active');
+                document.removeEventListener('click', closeDropdown);
+            }
+        });
+    }
+
+    // Close dropdown when pressing escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const dropdown = document.getElementById('profileDropdown');
+            const profileDropdown = dropdown.closest('.profile-dropdown');
+            dropdown.classList.remove('show');
+            profileDropdown.classList.remove('active');
+        }
+    });
     </script>
 </body>
 </html> 

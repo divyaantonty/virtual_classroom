@@ -106,8 +106,25 @@
             background-color: #ffffff;
             padding: 80px;
             box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-            height: 100%;
+            height: 100vh;
             overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #3498db #ffffff;
+        }
+
+        .dashboard-sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .dashboard-sidebar::-webkit-scrollbar-track {
+            background: #ffffff;
+            border-radius: 4px;
+        }
+
+        .dashboard-sidebar::-webkit-scrollbar-thumb {
+            background-color: #3498db;
+            border-radius: 4px;
+            border: 2px solid #ffffff;
         }
 
         .dashboard-options {
@@ -116,7 +133,7 @@
             gap: 15px;
         }
 
-        .dashboard-box, .dropdown-btn {
+        .dropdown-btn {
             background-color: #3498db;
             color: white;
             padding: 15px;
@@ -128,6 +145,17 @@
             cursor: pointer;
             border: none;
             width: 100%;
+        }
+
+        .dashboard-box {
+            background-color: #3498db;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            transition: all 0.3s ease;
         }
 
         .dashboard-box:hover, .dropdown-btn:hover {
@@ -263,6 +291,7 @@
             .dashboard-sidebar {
                 width: 100%;
                 height: auto;
+                padding: 20px;
             }
 
             .dashboard-content {
@@ -278,7 +307,7 @@
         <header class="site-navbar js-sticky-header site-navbar-target" role="banner">
             <div class="header-container">
                 <div class="site-logo">
-                    <a href="{% url 'index' %}" class="d-block">
+                    <a href="{% url 'teacher_dashboard' %}" class="d-block">
                         <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid">
                     </a>
                 </div>
@@ -327,6 +356,15 @@
                             <a href="{% url 'view_uploaded_materials' %}"><i class="fas fa-list mr-2"></i>View Materials</a>
                         </div>
                     </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-sticky-note mr-2"></i>Manage Notes
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'create_note' %}"><i class="fas fa-plus mr-2"></i>Create Note</a>
+                            <a href="{% url 'view_notes' %}"><i class="fas fa-list mr-2"></i>View Notes</a>
+                        </div>
+                    </div>
                     <a href="{% url 'teacher_discussion_forum' %}" class="dashboard-box">
                         <i class="fas fa-comments mr-2"></i>Discussion Forum
                     </a>
@@ -360,8 +398,17 @@
                     <a href="{% url 'manage_leave' %}" class="dashboard-box">
                         <i class="fas fa-clipboard-check mr-2"></i>Manage Leave
                     </a>
+                    <a href="{% url 'whiteboard' %}" class="dashboard-box">
+                        <i class="fas fa-chalkboard mr-2"></i>Live Whiteboard
+                    </a>
                     <a href="{% url 'question_generator' %}" class="dashboard-box">
                         <i class="fas fa-plus mr-2"></i>Generate question
+                    </a>
+                    <a href="{% url 'teacher_messages' %}" class="dashboard-box">
+                        <i class="fas fa-envelope mr-2"></i>Parent Communication
+                        {% if unread_messages > 0 %}
+                            <span class="badge badge-light ml-2">{{ unread_messages }}</span>
+                        {% endif %}
                     </a>
                 </div>
             </div>
@@ -431,71 +478,142 @@
     <script src="{% static 'js/main.js' %}"></script>
 
     <script>
-        document.getElementById('assignmentForm').addEventListener('submit', function (e) {
-            let isValid = true;
-
-            // Course validation
-            const course = document.querySelector('select[name="course"]').value;
-            if (!course) {
-                document.getElementById('courseError').textContent = 'Please select a course.';
-                isValid = false;
-            } else {
-                document.getElementById('courseError').textContent = '';
+        // Add these functions at the start of your script section
+        function validateCourse(select) {
+            const errorElement = document.getElementById('courseError');
+            if (!select.value) {
+                errorElement.textContent = 'Please select a course.';
+                return false;
             }
+            errorElement.textContent = '';
+            return true;
+        }
 
-            // Title validation
-            const title = document.getElementById('title').value;
+        function validateTitle(input) {
+            const errorElement = document.getElementById('titleError');
             const titlePattern = /^[A-Z][a-zA-Z\s]{2,}$/;
-            if (!titlePattern.test(title)) {
-                document.getElementById('titleError').textContent = 'Title must start with a capital letter and be at least 3 characters long.';
-                isValid = false;
-            } else {
-                document.getElementById('titleError').textContent = '';
+            if (!titlePattern.test(input.value)) {
+                errorElement.textContent = 'Title must start with a capital letter and be at least 3 characters long.';
+                return false;
             }
+            errorElement.textContent = '';
+            return true;
+        }
 
-            // Description validation
-            const description = document.getElementById('description').value;
-            if (description.length < 10) {
-                document.getElementById('descriptionError').textContent = 'Description must be at least 10 characters long.';
-                isValid = false;
-            } else {
-                document.getElementById('descriptionError').textContent = '';
+        function validateDescription(input) {
+            const errorElement = document.getElementById('descriptionError');
+            if (input.value.length < 10) {
+                errorElement.textContent = 'Description must be at least 10 characters long.';
+                return false;
             }
+            errorElement.textContent = '';
+            return true;
+        }
 
-            // Date and Time validation
+        function validateDates() {
             const startDate = new Date(document.getElementById('start_date').value);
             const endDate = new Date(document.getElementById('end_date').value);
+            const startDateError = document.getElementById('startDateError');
+            const endDateError = document.getElementById('endDateError');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // Validate start date
+            if (startDate < today) {
+                startDateError.textContent = 'Start date cannot be in the past';
+                return false;
+            }
+            startDateError.textContent = '';
+
+            // Validate end date
+            if (endDate < startDate) {
+                endDateError.textContent = 'End date must be after start date';
+                return false;
+            }
+            endDateError.textContent = '';
+
+            return true;
+        }
+
+        function validateTimes() {
             const startTime = document.getElementById('start_time').value;
             const endTime = document.getElementById('end_time').value;
-
-            if (startDate > endDate) {
-                document.getElementById('endDateError').textContent = 'End Date must be after Start Date.';
-                isValid = false;
-            } else {
-                document.getElementById('endDateError').textContent = '';
-            }
+            const timeError = document.getElementById('timeError');
 
             if (startTime && endTime) {
                 const [startHour, startMinute] = startTime.split(':').map(Number);
                 const [endHour, endMinute] = endTime.split(':').map(Number);
 
-                // Creating Date objects to compare
-                const startDateTime = new Date(startDate);
+                // Validate time range (9 AM to 4:30 PM)
+                if (startHour < 9 || (startHour === 16 && startMinute > 30) || startHour > 16) {
+                    timeError.textContent = 'Start time must be between 9:00 AM and 4:30 PM';
+                    return false;
+                }
+
+                if (endHour < 9 || (endHour === 16 && endMinute > 30) || endHour > 16) {
+                    timeError.textContent = 'End time must be between 9:00 AM and 4:30 PM';
+                    return false;
+                }
+
+                // Check if start time is before end time
+                const startDateTime = new Date();
                 startDateTime.setHours(startHour, startMinute);
-                const endDateTime = new Date(endDate);
+                const endDateTime = new Date();
                 endDateTime.setHours(endHour, endMinute);
 
                 if (startDateTime >= endDateTime) {
-                    document.getElementById('timeError').textContent = 'End Time must be after Start Time.';
-                    isValid = false;
-                } else {
-                    document.getElementById('timeError').textContent = '';
+                    timeError.textContent = 'End time must be after start time';
+                    return false;
                 }
             }
+            timeError.textContent = '';
+            return true;
+        }
 
-            if (!isValid) {
-                e.preventDefault(); // Prevent form submission if not valid
-            }
+        // Add event listeners for real-time validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('assignmentForm');
+
+            // Set minimum date to today for start_date and end_date
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('start_date').min = today;
+            document.getElementById('end_date').min = today;
+
+            // Set time input steps to 30 minutes
+            document.getElementById('start_time').step = "1800";
+            document.getElementById('end_time').step = "1800";
+
+            // Add validation listeners
+            document.querySelector('select[name="course"]').addEventListener('change', function() {
+                validateCourse(this);
+            });
+
+            document.getElementById('title').addEventListener('input', function() {
+                validateTitle(this);
+            });
+
+            document.getElementById('description').addEventListener('input', function() {
+                validateDescription(this);
+            });
+
+            document.getElementById('start_date').addEventListener('change', validateDates);
+            document.getElementById('end_date').addEventListener('change', validateDates);
+            document.getElementById('start_time').addEventListener('change', validateTimes);
+            document.getElementById('end_time').addEventListener('change', validateTimes);
+
+            // Form submission validation
+            form.addEventListener('submit', function(e) {
+                const isValid = 
+                    validateCourse(document.querySelector('select[name="course"]')) &&
+                    validateTitle(document.getElementById('title')) &&
+                    validateDescription(document.getElementById('description')) &&
+                    validateDates() &&
+                    validateTimes();
+
+                if (!isValid) {
+                    e.preventDefault();
+                }
+            });
         });
     </script>
 </body>

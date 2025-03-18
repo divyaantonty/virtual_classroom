@@ -310,6 +310,12 @@ def enroll_course(request, course_id):
     return redirect('available_courses')  # Redirect to the course list page
 
 from datetime import datetime
+from django.db.models import Q
+from django.shortcuts import redirect, render
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from .models import Course, CustomUser, FeedbackQuestion, Feedback, EventSuggestion
+
 def student_dashboard(request):
     custom_user_id = request.session.get('custom_user_id')
     if not custom_user_id:
@@ -333,13 +339,55 @@ def student_dashboard(request):
     # Identify new feedback questions (not answered by the user)
     new_feedback_questions = feedback_questions.exclude(id__in=answered_questions)
 
+    # Get all suggestions for the student
+    all_suggestions = EventSuggestion.objects.filter(
+        student=custom_user
+    ).select_related('event', 'parent').order_by('-created_at')
+
+    # Get latest 5 suggestions for the dropdown
+    latest_suggestions = all_suggestions[:5]
+    
+    # Get unread suggestions count for the notification badge
+    unread_suggestions_count = all_suggestions.filter(is_read=False).count()
+
     return render(request, 'student_dashboard.html', {
         'enrolled_courses': enrolled_courses,
         'custom_user': custom_user,
-        'new_feedback_questions': new_feedback_questions,  # This will contain unanswered questions
-        'today': today,  # Pass today's date to the template
+        'new_feedback_questions': new_feedback_questions,
+        'today': today,
+        'unread_suggestions_count': unread_suggestions_count,
+        'latest_suggestions': latest_suggestions,  # For dropdown display
+        'parent_suggestions': all_suggestions,  # For main suggestions section
     })
 
+
+
+@require_POST
+def mark_suggestion_read(request, suggestion_id):
+    try:
+        suggestion = EventSuggestion.objects.get(
+            id=suggestion_id,
+            student_id=request.session.get('custom_user_id'),
+            is_read=False
+        )
+        suggestion.is_read = True
+        suggestion.save()
+        
+        # Get updated unread count for this student
+        unread_count = EventSuggestion.objects.filter(
+            student_id=request.session.get('custom_user_id'),
+            is_read=False
+        ).count()
+        
+        return JsonResponse({
+            'success': True,
+            'unread_count': unread_count
+        })
+    except EventSuggestion.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Suggestion not found'
+        })
 
 def teacher_dashboard(request):
     teacher_id = request.session.get('teacher_id')

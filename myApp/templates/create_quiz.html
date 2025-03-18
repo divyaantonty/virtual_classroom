@@ -311,6 +311,15 @@
                     </div>
                     <div class="dropdown">
                         <button class="dropdown-btn">
+                            <i class="fas fa-sticky-note mr-2"></i>Manage Notes
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'create_note' %}"><i class="fas fa-plus mr-2"></i>Create Note</a>
+                            <a href="{% url 'view_notes' %}"><i class="fas fa-list mr-2"></i>View Notes</a>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
                             <i class="fas fa-calendar-alt mr-2"></i>Manage Events
                         </button>
                         <div class="dropdown-content">
@@ -333,9 +342,16 @@
                     <a href="{% url 'question_generator' %}" class="dashboard-box">
                         <i class="fas fa-plus mr-2"></i>Generate question
                     </a>
-                    <a href="{% url 'logout' %}" class="dashboard-box">
-                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    <a href="{% url 'whiteboard' %}" class="dashboard-box">
+                        <i class="fas fa-chalkboard mr-2"></i>Live Whiteboard
                     </a>
+                    <a href="{% url 'teacher_messages' %}" class="dashboard-box">
+                        <i class="fas fa-envelope mr-2"></i>Parent Communication
+                        {% if unread_messages > 0 %}
+                            <span class="badge badge-light ml-2">{{ unread_messages }}</span>
+                        {% endif %}
+                    </a>
+
                 </div>
             </div>
 
@@ -386,7 +402,8 @@
                         <div class="form-group"> 
                             <label for="duration">Duration (minutes):</label>
                             <input type="number" name="duration" id="duration" min="1" required>
-                        <div>    
+                            <div class="error" id="durationError"></div>
+                        </div>
                         <button type="submit">Create Quiz</button>
                     </form>
                     <a href="{% url 'teacher_dashboard' %}" class="back-link">Back to Teacher Dashboard</a>
@@ -411,58 +428,109 @@
     <script src="{% static 'js/main.js' %}"></script>
 
     <script>
-        document.getElementById('quizForm').addEventListener('submit', function(event) {
-            let isValid = true;
-
-            // Clear previous error messages
-            document.querySelectorAll('.error').forEach(function(error) {
-                error.textContent = '';
-            });
-
-            // Validate Quiz Title: first character should be uppercase
+        // Function to validate title
+        function validateTitle() {
             const titleInput = document.getElementById('title');
+            const titleError = document.getElementById('titleError');
             const titleValue = titleInput.value.trim();
+            
             if (titleValue === '' || titleValue.charAt(0) !== titleValue.charAt(0).toUpperCase()) {
-                document.getElementById('titleError').textContent = 'Title must start with a capital letter.';
-                isValid = false;
+                titleError.textContent = 'Title must start with a capital letter.';
+                return false;
             }
+            titleError.textContent = '';
+            return true;
+        }
 
-            // Validate Start Date: must be in the future
+        // Function to validate dates and times
+        function validateDateTime() {
             const startDateInput = document.getElementById('start_date');
-            const startDateValue = new Date(startDateInput.value);
+            const endDateInput = document.getElementById('end_date');
+            const startTimeInput = document.getElementById('start_time');
+            const endTimeInput = document.getElementById('end_time');
+            
+            const startDateError = document.getElementById('startDateError');
+            const endDateError = document.getElementById('endDateError');
+            const startTimeError = document.getElementById('startTimeError');
+            const endTimeError = document.getElementById('endTimeError');
+            
             const today = new Date();
             today.setHours(0, 0, 0, 0);
+            
+            let isValid = true;
+            
+            // Validate Start Date
+            const startDateValue = new Date(startDateInput.value);
             if (startDateValue <= today) {
-                document.getElementById('startDateError').textContent = 'Start date must be in the future.';
+                startDateError.textContent = 'Start date must be in the future.';
                 isValid = false;
+            } else {
+                startDateError.textContent = '';
             }
 
-            // Validate End Date: must be after Start Date
-            const endDateInput = document.getElementById('end_date');
-            const endDateValue = new Date(endDateInput.value);
-            if (endDateValue < startDateValue) {
-                document.getElementById('endDateError').textContent = 'End date must be after Start date.';
-                isValid = false;
+            // Validate End Date
+            if (endDateInput.value) {
+                const endDateValue = new Date(endDateInput.value);
+                if (endDateValue < startDateValue) {
+                    endDateError.textContent = 'End date must be after Start date.';
+                    isValid = false;
+                } else {
+                    endDateError.textContent = '';
+                }
             }
 
-            // Validate Start Time: must be in the future
-            const startTimeInput = document.getElementById('start_time');
-            const startTimeValue = new Date(startDateInput.value + 'T' + startTimeInput.value);
-            if (startTimeValue <= today) {
-                document.getElementById('startTimeError').textContent = 'Start time must be in the future.';
-                isValid = false;
+            // Validate Times if both dates are valid
+            if (startDateInput.value && endDateInput.value && startTimeInput.value && endTimeInput.value) {
+                const startDateTime = new Date(startDateInput.value + 'T' + startTimeInput.value);
+                const endDateTime = new Date(endDateInput.value + 'T' + endTimeInput.value);
+                const now = new Date();
+
+                if (startDateTime <= now) {
+                    startTimeError.textContent = 'Start time must be in the future.';
+                    isValid = false;
+                } else {
+                    startTimeError.textContent = '';
+                }
+
+                if (endDateTime <= startDateTime) {
+                    endTimeError.textContent = 'End time must be after Start time.';
+                    isValid = false;
+                } else {
+                    endTimeError.textContent = '';
+                }
             }
 
-            // Validate End Time: must be after Start Time
-            const endTimeInput = document.getElementById('end_time');
-            const endTimeValue = new Date(endDateInput.value + 'T' + endTimeInput.value);
-            if (endTimeValue <= startTimeValue) {
-                document.getElementById('endTimeError').textContent = 'End time must be after Start time.';
-                isValid = false;
-            }
+            return isValid;
+        }
 
-            // Prevent form submission if validation fails
-            if (!isValid) {
+        // Function to validate duration
+        function validateDuration() {
+            const durationInput = document.getElementById('duration');
+            const durationError = document.getElementById('durationError');
+            
+            if (durationInput.value < 1) {
+                durationError.textContent = 'Duration must be at least 1 minute.';
+                return false;
+            }
+            durationError.textContent = '';
+            return true;
+        }
+
+        // Add event listeners for live validation
+        document.getElementById('title').addEventListener('input', validateTitle);
+        document.getElementById('start_date').addEventListener('change', validateDateTime);
+        document.getElementById('end_date').addEventListener('change', validateDateTime);
+        document.getElementById('start_time').addEventListener('change', validateDateTime);
+        document.getElementById('end_time').addEventListener('change', validateDateTime);
+        document.getElementById('duration').addEventListener('input', validateDuration);
+
+        // Form submission validation
+        document.getElementById('quizForm').addEventListener('submit', function(event) {
+            const isTitleValid = validateTitle();
+            const isDateTimeValid = validateDateTime();
+            const isDurationValid = validateDuration();
+
+            if (!isTitleValid || !isDateTimeValid || !isDurationValid) {
                 event.preventDefault();
             }
         });

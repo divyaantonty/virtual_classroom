@@ -106,8 +106,25 @@
             background-color: #ffffff;
             padding: 80px;
             box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-            height: 100%;
+            height: 100vh;
             overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #3498db #ffffff;
+        }
+
+        .dashboard-sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .dashboard-sidebar::-webkit-scrollbar-track {
+            background: #ffffff;
+            border-radius: 4px;
+        }
+
+        .dashboard-sidebar::-webkit-scrollbar-thumb {
+            background-color: #3498db;
+            border-radius: 4px;
+            border: 2px solid #ffffff;
         }
 
         .dashboard-options {
@@ -116,7 +133,7 @@
             gap: 15px;
         }
 
-        .dashboard-box, .dropdown-btn {
+        .dropdown-btn {
             background-color: #3498db;
             color: white;
             padding: 15px;
@@ -130,14 +147,21 @@
             width: 100%;
         }
 
+        .dashboard-box {
+            background-color: #3498db;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
         .dashboard-box:hover, .dropdown-btn:hover {
             background-color: #2980b9;
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .dropdown {
-            position: relative;
         }
 
         .dropdown-content {
@@ -307,6 +331,7 @@
             .dashboard-sidebar {
                 width: 100%;
                 height: auto;
+                padding: 20px;
             }
 
             .dashboard-content {
@@ -328,17 +353,19 @@
         <header class="site-navbar js-sticky-header site-navbar-target" role="banner">
             <div class="header-container">
                 <div class="site-logo">
-                    <a href="{% url 'index' %}" class="d-block">
+                    <a href="{% url 'teacher_dashboard' %}" class="d-block">
                         <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid">
                     </a>
                 </div>
                 <h2 class="dashboard-heading">View Scheduled Classes</h2>
                 <div class="profile-dropdown">
-                    <a href="#" class="nav-link text-right d-flex align-items-center">
+                    <a href="#" class="nav-link text-right d-flex align-items-center" onclick="toggleProfileDropdown(event)">
                         <i class="fas fa-user-circle mr-2"></i>
                         <span>{{ first_name }} {{ last_name }}</span>
+                        <i class="fas fa-chevron-down ml-2"></i>
                     </a>
-                    <div class="profile-dropdown-content">
+                    <div class="profile-dropdown-content" id="profileDropdown">
+                        <a href="{% url 'view_profile' %}"><i class="fas fa-user mr-2"></i>Profile</a>
                         <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
                     </div>
                 </div>
@@ -377,6 +404,15 @@
                             <a href="{% url 'view_uploaded_materials' %}"><i class="fas fa-list mr-2"></i>View Materials</a>
                         </div>
                     </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-sticky-note mr-2"></i>Manage Notes
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'create_note' %}"><i class="fas fa-plus mr-2"></i>Create Note</a>
+                            <a href="{% url 'view_notes' %}"><i class="fas fa-list mr-2"></i>View Notes</a>
+                        </div>
+                    </div>
                     <a href="{% url 'teacher_discussion_forum' %}" class="dashboard-box">
                         <i class="fas fa-comments mr-2"></i>Discussion Forum
                     </a>
@@ -387,6 +423,7 @@
                         <div class="dropdown-content">
                             <a href="{% url 'create_quiz' %}"><i class="fas fa-plus mr-2"></i>Create Quiz</a>
                             <a href="{% url 'view_quiz_questions' %}"><i class="fas fa-list mr-2"></i>View Questions</a>
+                            <a href="{% url 'evaluate_answers' %}"><i class="fas fa-check mr-2"></i>Evaluate Answer</a>
                         </div>
                     </div>
                     <div class="dropdown">
@@ -396,6 +433,7 @@
                         <div class="dropdown-content">
                             <a href="{% url 'add_event' %}"><i class="fas fa-plus mr-2"></i>Create Event</a>
                             <a href="{% url 'view_events' %}"><i class="fas fa-list mr-2"></i>View Events</a>
+                            <a href="{% url 'view_event_registrations' %}"><i class="fas fa-users mr-2"></i>View Registrations</a>
                         </div>
                     </div>
                     <a href="{% url 'view_profile' %}" class="dashboard-box">
@@ -412,6 +450,15 @@
                     </a>
                     <a href="{% url 'question_generator' %}" class="dashboard-box">
                         <i class="fas fa-plus mr-2"></i>Generate question
+                    </a>
+                    <a href="{% url 'whiteboard' %}" class="dashboard-box">
+                        <i class="fas fa-chalkboard mr-2"></i>Live Whiteboard
+                    </a>
+                    <a href="{% url 'teacher_messages' %}" class="dashboard-box">
+                        <i class="fas fa-envelope mr-2"></i>Parent Communication
+                        {% if unread_messages > 0 %}
+                            <span class="badge badge-light ml-2">{{ unread_messages }}</span>
+                        {% endif %}
                     </a>
                 </div>
             </div>
@@ -566,6 +613,34 @@
             if (!valid) {
                 event.preventDefault(); // Prevent form submission
                 alert(errorMessage); // Show error messages
+            }
+        });
+
+        function toggleProfileDropdown(event) {
+            event.preventDefault();
+            const dropdown = document.getElementById('profileDropdown');
+            const profileDropdown = event.currentTarget.closest('.profile-dropdown');
+            
+            dropdown.classList.toggle('show');
+            profileDropdown.classList.toggle('active');
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function closeDropdown(e) {
+                if (!profileDropdown.contains(e.target)) {
+                    dropdown.classList.remove('show');
+                    profileDropdown.classList.remove('active');
+                    document.removeEventListener('click', closeDropdown);
+                }
+            });
+        }
+
+        // Close dropdown when pressing escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const dropdown = document.getElementById('profileDropdown');
+                const profileDropdown = dropdown.closest('.profile-dropdown');
+                dropdown.classList.remove('show');
+                profileDropdown.classList.remove('active');
             }
         });
     </script>

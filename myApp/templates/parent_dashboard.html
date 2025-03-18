@@ -2454,26 +2454,19 @@
 
         .suggestion-input {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
             resize: vertical;
-            font-family: inherit;
-            transition: border-color 0.3s ease;
-        }
-
-        .suggestion-input:focus {
-            border-color: #3498db;
-            outline: none;
         }
 
         .suggest-btn {
-            align-self: flex-end;
-            background: #3498db;
+            background-color: #3498db;
             color: white;
             border: none;
             padding: 10px 20px;
-            border-radius: 20px;
+            border-radius: 5px;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -2482,78 +2475,41 @@
         }
 
         .suggest-btn:hover {
-            background: #2980b9;
+            background-color: #2980b9;
             transform: translateY(-2px);
-        }
-
-        .suggest-btn i {
-            font-size: 14px;
-        }
-
-        .previous-suggestions {
-            margin-top: 20px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 12px;
-        }
-
-        .suggestions-list {
-            margin-top: 15px;
         }
 
         .suggestion-item {
             background: white;
             padding: 15px;
             border-radius: 8px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            transition: transform 0.3s ease;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        .suggestion-item:hover {
-            transform: translateY(-2px);
-        }
-
-        .suggestion-header {
+        .suggestion-footer {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 10px;
+            align-items: center;
+            margin-top: 10px;
+            font-size: 0.9em;
             color: #666;
-            font-size: 0.9rem;
-        }
-
-        .suggestion-header i {
-            margin-right: 5px;
-            color: #3498db;
-        }
-
-        .suggestion-content {
-            color: #2c3e50;
-            margin-bottom: 10px;
-            line-height: 1.5;
-        }
-
-        .suggestion-status {
-            text-align: right;
         }
 
         .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
             padding: 4px 8px;
             border-radius: 12px;
-            font-size: 0.8rem;
-        }
-
-        .status-badge.read {
-            background: rgba(39, 174, 96, 0.1);
-            color: #27ae60;
+            font-size: 0.8em;
         }
 
         .status-badge.unread {
-            background: rgba(52, 152, 219, 0.1);
-            color: #3498db;
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .status-badge.read {
+            background: #e8f5e9;
+            color: #2e7d32;
         }
 
         .no-suggestions {
@@ -4304,6 +4260,125 @@
     });
     </script>
 
+    <!-- Add this JavaScript code -->
+    <script>
+    function sendSuggestion() {
+        const suggestionText = document.getElementById('suggestionText').value.trim();
+        const modal = document.getElementById('eventDetailsModal');
+        const eventId = modal.getAttribute('data-event-id');
+        
+        if (!suggestionText) {
+            alert('Please write a suggestion first.');
+            return;
+        }
+
+        if (!eventId) {
+            alert('Event ID not found.');
+            return;
+        }
+
+        // Get CSRF token
+        const csrftoken = getCookie('csrftoken');
+
+        // Create FormData object
+        const formData = new FormData();
+        formData.append('event_id', eventId);
+        formData.append('suggestion_text', suggestionText);
+
+        // Send suggestion to server
+        fetch('/send-event-suggestion/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Clear the textarea
+                document.getElementById('suggestionText').value = '';
+                
+                // Show success message
+                alert(data.message);
+                
+                // Add the new suggestion to the list
+                const suggestionsContainer = document.getElementById('previousSuggestions');
+                
+                // Create new suggestion HTML
+                const newSuggestion = `
+                    <div class="suggestion-item">
+                        <div class="suggestion-header">
+                            <span class="suggestion-date">
+                                <i class="fas fa-calendar"></i>
+                                ${data.suggestion.created_at}
+                            </span>
+                        </div>
+                        <div class="suggestion-content">
+                            ${suggestionText}
+                        </div>
+                        <div class="suggestion-status">
+                            <span class="status-badge unread">
+                                <i class="fas fa-check"></i> Sent
+                            </span>
+                        </div>
+                    </div>
+                `;
+
+                // Check if there's a "No suggestions" message and remove it
+                const noSuggestions = suggestionsContainer.querySelector('.no-suggestions');
+                if (noSuggestions) {
+                    noSuggestions.remove();
+                }
+
+                // Add the new suggestion at the top of the list
+                const suggestionsList = suggestionsContainer.querySelector('.suggestions-list');
+                if (suggestionsList) {
+                    suggestionsList.insertAdjacentHTML('afterbegin', newSuggestion);
+                } else {
+                    // If no suggestions list exists, create one
+                    suggestionsContainer.innerHTML = `
+                        <div class="card-header">
+                            <h4><i class="fas fa-history"></i> Previous Suggestions</h4>
+                        </div>
+                        <div class="suggestions-list">
+                            ${newSuggestion}
+                        </div>
+                    `;
+                }
+
+                // Refresh suggestions list
+                fetchEventSuggestions(eventId);
+            } else {
+                alert(data.message || 'Failed to send suggestion');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to send suggestion. Please try again.');
+        });
+    }
+
+    // Keep the existing getCookie function
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    </script>
+
+    <!-- Make sure you have the CSRF token in your template -->
+    {% csrf_token %}
 </body>
 
 </html>

@@ -93,6 +93,9 @@
             padding: 80px;
             box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
             height: 100%;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #3498db #ffffff;
         }
         .dashboard-options {
             display: flex;
@@ -215,8 +218,9 @@
         }
         .error-message {
             color: #dc3545;
-            font-size: 0.875em;
-            margin-top: 0.25rem;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
         }
         @media (max-width: 768px) {
             .main-content {
@@ -239,6 +243,21 @@
             .profile-dropdown {
                 margin-top: 10px;
             }
+        }
+        .dashboard-sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .dashboard-sidebar::-webkit-scrollbar-track {
+            background: #ffffff;
+            border-radius: 4px;
+        }
+        .dashboard-sidebar::-webkit-scrollbar-thumb {
+            background-color: #3498db;
+            border-radius: 4px;
+            border: 2px solid #ffffff;
+        }
+        .dashboard-sidebar::-webkit-scrollbar-thumb:hover {
+            background-color: #2980b9;
         }
     </style>
     <script type="text/javascript">
@@ -317,6 +336,15 @@
                     </div>
                     <div class="dropdown">
                         <button class="dropdown-btn">
+                            <i class="fas fa-sticky-note mr-2"></i>Manage Notes
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'create_note' %}"><i class="fas fa-plus mr-2"></i>Create Note</a>
+                            <a href="{% url 'view_notes' %}"><i class="fas fa-list mr-2"></i>View Notes</a>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
                             <i class="fas fa-calendar-alt mr-2"></i>Manage Events
                         </button>
                         <div class="dropdown-content">
@@ -339,6 +367,15 @@
                     <a href="{% url 'question_generator' %}" class="dashboard-box">
                         <i class="fas fa-plus mr-2"></i>Generate question
                     </a>
+                    <a href="{% url 'whiteboard' %}" class="dashboard-box">
+                        <i class="fas fa-chalkboard mr-2"></i>Live Whiteboard
+                    </a>
+                    <a href="{% url 'teacher_messages' %}" class="dashboard-box">
+                        <i class="fas fa-envelope mr-2"></i>Parent Communication
+                        {% if unread_messages > 0 %}
+                            <span class="badge badge-light ml-2">{{ unread_messages }}</span>
+                        {% endif %}
+                    </a>
                 </div>
             </div>
 
@@ -346,7 +383,7 @@
             <div class="dashboard-content">
                 <div class="content-wrapper">
                     <h2>Add Event</h2>
-                    <form method="POST" action="{% url 'add_event' %}" onsubmit="return validateForm()">
+                    <form method="POST" action="{% url 'add_event' %}" id="eventForm">
                         {% csrf_token %}
                         <div class="form-group">
                             <label for="course_id">Course:</label>
@@ -356,22 +393,27 @@
                                     <option value="{{ course.id }}">{{ course.course_name }}</option>
                                 {% endfor %}
                             </select>
+                            <div class="error-message" id="courseError"></div>
                         </div>
                         <div class="form-group">
                             <label for="title">Title:</label>
                             <input type="text" name="title" id="title" class="form-control" required>
+                            <div class="error-message" id="titleError"></div>
                         </div>
                         <div class="form-group">
                             <label for="start_time">Start Time:</label>
                             <input type="datetime-local" name="start_time" id="start_time" class="form-control" required>
+                            <div class="error-message" id="startTimeError"></div>
                         </div>
                         <div class="form-group">
                             <label for="end_time">End Time:</label>
                             <input type="datetime-local" name="end_time" id="end_time" class="form-control" required>
+                            <div class="error-message" id="endTimeError"></div>
                         </div>
                         <div class="form-group">
                             <label for="description">Description:</label>
                             <textarea name="description" id="description" class="form-control"></textarea>
+                            <div class="error-message" id="descriptionError"></div>
                         </div>
                         <div class="form-group">
                             <label for="event_type">Event Type:</label>
@@ -383,11 +425,9 @@
                                 <option value="training">Training</option>
                                 <option value="seminar">Seminar</option>
                             </select>
+                            <div class="error-message" id="eventTypeError"></div>
                         </div>
                         <button type="submit" class="btn btn-primary">Add Event</button>
-                        {% if error %}
-                            <div class="error-message">{{ error }}</div>
-                        {% endif %}
                     </form>
                 </div>
             </div>
@@ -410,35 +450,78 @@
     <script src="{% static 'js/main.js' %}"></script>
 
     <script>
-        function validateForm() {
-            const title = document.getElementById('title').value;
+        // Live validation functions
+        function validateTitle() {
+            const title = document.getElementById('title');
+            const titleError = document.getElementById('titleError');
+            const titleRegex = /^[A-Z][a-zA-Z\s]{2,}$/;
+
+            if (!titleRegex.test(title.value)) {
+                titleError.textContent = "Title must start with a capital letter and have at least 3 characters";
+                titleError.style.display = 'block';
+                return false;
+            }
+            titleError.style.display = 'none';
+            return true;
+        }
+
+        function validateDateTime() {
             const startTime = new Date(document.getElementById('start_time').value);
             const endTime = new Date(document.getElementById('end_time').value);
-            const description = document.getElementById('description').value;
-
-            // Validate title: first letter capital and at least 3 characters
-            const titleRegex = /^[A-Z][a-zA-Z\s]{2,}$/;
-            if (!titleRegex.test(title)) {
-                alert("Title must start with a capital letter and have at least 3 characters.");
-                return false;
-            }
-
-            // Validate that end time is in the future compared to start time
+            const startTimeError = document.getElementById('startTimeError');
+            const endTimeError = document.getElementById('endTimeError');
             const now = new Date();
+            let isValid = true;
+
+            if (startTime <= now) {
+                startTimeError.textContent = "Start time must be in the future";
+                startTimeError.style.display = 'block';
+                isValid = false;
+            } else {
+                startTimeError.style.display = 'none';
+            }
+
             if (endTime <= startTime) {
-                alert("End time must be after start time.");
-                return false;
+                endTimeError.textContent = "End time must be after start time";
+                endTimeError.style.display = 'block';
+                isValid = false;
+            } else {
+                endTimeError.style.display = 'none';
             }
 
-            // Validate description: only characters
-            const descriptionRegex = /^[a-zA-Z\s]*$/;
-            if (!descriptionRegex.test(description)) {
-                alert("Description can only contain letters.");
-                return false;
-            }
-
-            return true; // If all validations pass
+            return isValid;
         }
+
+        function validateDescription() {
+            const description = document.getElementById('description');
+            const descriptionError = document.getElementById('descriptionError');
+            const descriptionRegex = /^[a-zA-Z\s]*$/;
+
+            if (description.value && !descriptionRegex.test(description.value)) {
+                descriptionError.textContent = "Description can only contain letters and spaces";
+                descriptionError.style.display = 'block';
+                return false;
+            }
+            descriptionError.style.display = 'none';
+            return true;
+        }
+
+        // Add event listeners for live validation
+        document.getElementById('title').addEventListener('input', validateTitle);
+        document.getElementById('start_time').addEventListener('change', validateDateTime);
+        document.getElementById('end_time').addEventListener('change', validateDateTime);
+        document.getElementById('description').addEventListener('input', validateDescription);
+
+        // Form submission validation
+        document.getElementById('eventForm').addEventListener('submit', function(event) {
+            const isTitleValid = validateTitle();
+            const isDateTimeValid = validateDateTime();
+            const isDescriptionValid = validateDescription();
+
+            if (!isTitleValid || !isDateTimeValid || !isDescriptionValid) {
+                event.preventDefault();
+            }
+        });
     </script>
 </body>
 

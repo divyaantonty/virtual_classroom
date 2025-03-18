@@ -426,6 +426,15 @@
                     </div>
                     <div class="dropdown">
                         <button class="dropdown-btn">
+                            <i class="fas fa-sticky-note mr-2"></i>Manage Notes
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'create_note' %}"><i class="fas fa-plus mr-2"></i>Create Note</a>
+                            <a href="{% url 'view_notes' %}"><i class="fas fa-list mr-2"></i>View Notes</a>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
                             <i class="fas fa-calendar-alt mr-2"></i>Manage Events
                         </button>
                         <div class="dropdown-content">
@@ -447,6 +456,15 @@
                     </a>
                     <a href="{% url 'question_generator' %}" class="dashboard-box">
                         <i class="fas fa-plus mr-2"></i>Generate question
+                    </a>
+                    <a href="{% url 'whiteboard' %}" class="dashboard-box">
+                        <i class="fas fa-chalkboard mr-2"></i>Live Whiteboard
+                    </a>
+                    <a href="{% url 'teacher_messages' %}" class="dashboard-box">
+                        <i class="fas fa-envelope mr-2"></i>Parent Communication
+                        {% if unread_messages > 0 %}
+                            <span class="badge badge-light ml-2">{{ unread_messages }}</span>
+                        {% endif %}
                     </a>
                 </div>
             </div>
@@ -555,6 +573,106 @@
             }
             return true; // Allow form submission
         }
+
+        // Add live validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const descriptionInput = document.getElementById('description');
+            const courseSelect = document.getElementById('course');
+            const fileInput = document.getElementById('file');
+            const form = document.querySelector('form');
+
+            function validateDescription(value) {
+                const regex = /^[A-Za-z\s]{5,100}$/;
+                if (!regex.test(value)) {
+                    return 'Description must be 5-100 characters long and contain only letters and spaces';
+                }
+                return '';
+            }
+
+            function validateFile(file) {
+                if (!file) {
+                    return 'Please select a file';
+                }
+                if (!file.name.toLowerCase().endsWith('.pdf')) {
+                    return 'Only PDF files are allowed';
+                }
+                if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                    return 'File size must be less than 10MB';
+                }
+                return '';
+            }
+
+            function showError(input, message) {
+                const errorDiv = input.nextElementSibling?.classList.contains('error-message') 
+                    ? input.nextElementSibling 
+                    : document.createElement('div');
+                
+                if (!input.nextElementSibling?.classList.contains('error-message')) {
+                    errorDiv.className = 'error-message text-danger';
+                    input.parentNode.insertBefore(errorDiv, input.nextSibling);
+                }
+                
+                errorDiv.textContent = message;
+                input.classList.add('is-invalid');
+            }
+
+            function clearError(input) {
+                const errorDiv = input.nextElementSibling;
+                if (errorDiv?.classList.contains('error-message')) {
+                    errorDiv.remove();
+                }
+                input.classList.remove('is-invalid');
+            }
+
+            // Live validation for description
+            descriptionInput.addEventListener('input', function() {
+                const error = validateDescription(this.value);
+                if (error) {
+                    showError(this, error);
+                } else {
+                    clearError(this);
+                }
+            });
+
+            // Live validation for file
+            fileInput.addEventListener('change', function() {
+                const error = validateFile(this.files[0]);
+                if (error) {
+                    showError(this, error);
+                } else {
+                    clearError(this);
+                }
+            });
+
+            // Form submission validation
+            form.addEventListener('submit', function(e) {
+                let isValid = true;
+
+                // Validate course selection
+                if (!courseSelect.value) {
+                    showError(courseSelect, 'Please select a course');
+                    isValid = false;
+                }
+
+                // Validate description
+                const descError = validateDescription(descriptionInput.value);
+                if (descError) {
+                    showError(descriptionInput, descError);
+                    isValid = false;
+                }
+
+                // Validate file
+                const fileError = validateFile(fileInput.files[0]);
+                if (fileError) {
+                    showError(fileInput, fileError);
+                    isValid = false;
+                }
+
+                if (!isValid) {
+                    e.preventDefault();
+                }
+            });
+        });
     </script>
 </body>
 

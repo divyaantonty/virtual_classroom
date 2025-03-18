@@ -110,6 +110,7 @@
             padding: 80px;
             box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
             height: 100%;
+            overflow-y: auto;
         }
 
         .dashboard-options {
@@ -512,7 +513,7 @@
                             <a href="{% url 'view_uploaded_materials' %}"><i class="fas fa-list mr-2"></i>View Materials</a>
                         </div>
                     </div>
-                    <a href="#" class="dashboard-box">
+                    <a href="{% url 'teacher_discussion_forum' %}" class="dashboard-box">
                         <i class="fas fa-comments mr-2"></i>Discussion Forum
                     </a>
                     <div class="dropdown">
@@ -541,6 +542,21 @@
                     </a>
                     <a href="{% url 'view_attendance' %}" class="dashboard-box">
                         <i class="fas fa-clipboard-check mr-2"></i>Attendance
+                    </a>
+                    <a href="{% url 'manage_leave' %}" class="dashboard-box">
+                        <i class="fas fa-clipboard-check mr-2"></i>Manage Leave
+                    </a>
+                    <a href="{% url 'question_generator' %}" class="dashboard-box">
+                        <i class="fas fa-plus mr-2"></i>Generate Question
+                    </a>
+                    <a href="{% url 'whiteboard' %}" class="dashboard-box">
+                        <i class="fas fa-chalkboard mr-2"></i>Live Whiteboard
+                    </a>
+                    <a href="{% url 'teacher_messages' %}" class="dashboard-box">
+                        <i class="fas fa-envelope mr-2"></i>Parent Communication
+                        {% if unread_messages > 0 %}
+                            <span class="badge badge-light ml-2">{{ unread_messages }}</span>
+                        {% endif %}
                     </a>
                 </div>
             </div>

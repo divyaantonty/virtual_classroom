@@ -5,19 +5,147 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leave Requests</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script type="text/javascript">
+        function preventBack() { window.history.forward(); }
+        setTimeout("preventBack()", 0);
+        window.onunload = function () { null };
+    </script>
+    <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    
     <style>
         body {
             font-family: 'Poppins', sans-serif;
+            color: #333;
+            margin: 0;
             background-image: url("{% static 'images/bk.jpg' %}");
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
-            color: #333;
         }
 
-        .leave-container {
+        .site-wrap {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .site-navbar {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 10px 20px;
+        }
+
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            width: 100%;
+        }
+
+        .site-logo img {
+            max-height: 50px;
+            width: auto;
+        }
+
+        .dashboard-heading {
+            flex: 1;
+            text-align: center;
+            color: #3498db;
+            margin: 0;
+            font-size: 24px;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .profile-dropdown {
+            position: relative;
+        }
+
+        .profile-dropdown a {
+            color: #3498db;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .profile-dropdown a:hover {
+            background: rgba(52, 152, 219, 0.1);
+        }
+
+        .profile-dropdown-content {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: none;
+            min-width: 150px;
+            z-index: 1000;
+        }
+
+        .profile-dropdown:hover .profile-dropdown-content {
+            display: block;
+        }
+
+        .dashboard-sidebar {
+            width: 350px;
+            background-color: #ffffff;
+            padding: 20px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            height: calc(100vh - 64px); /* Subtract header height */
+            overflow-y: auto; /* Make it scrollable */
+            position: fixed;
+            top: 64px; /* Header height */
+            left: 0;
+        }
+
+        .dashboard-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .dashboard-box {
+            background-color: #3498db;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .dashboard-box:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .main-content {
+            margin-left: 350px; /* Sidebar width */
+            padding: 20px;
+            flex-grow: 1;
+            height: calc(100vh - 64px); /* Subtract header height */
+            overflow-y: auto; /* Make it scrollable */
+        }
+
+        .content-wrapper {
             max-width: 1200px;
             margin: 40px auto;
             padding: 30px;
@@ -153,57 +281,192 @@
         .leave-container {
             animation: fadeIn 0.5s ease-out;
         }
+
+        .dropdown-menu {
+            display: none; /* Initially hide the dropdown */
+            position: absolute;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            min-width: 150px;
+        }
+
+        .dropdown:hover .dropdown-menu {
+            display: block; /* Show dropdown on hover */
+        }
+
+        .dropdown-item {
+            padding: 10px 15px;
+            color: #333;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-item:hover {
+            background-color: rgba(52, 152, 219, 0.1); /* Highlight on hover */
+        }
+
+        .btn-secondary {
+            background-color: #3498db; /* Match the dashboard box color */
+            color: white;
+            padding: 12px 20px;
+            border-radius: 5px;
+            text-align: left;
+            width: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .btn-secondary:hover {
+            background-color: #2980b9; /* Darker shade on hover */
+        }
     </style>
 </head>
-<body>
-    <div class="leave-container">
-        <div class="page-header">
-            <h2><i class="fas fa-calendar-check"></i> Your Leave Requests</h2>
-            <p>Track and manage your leave applications</p>
+<body data-spy="scroll" data-target=".site-navbar-target" data-offset="300" onload="noBack();" onpageshow="if (event.persisted) noBack();">
+    <div class="site-wrap">
+        <header class="site-navbar js-sticky-header site-navbar-target" role="banner">
+            <div class="header-container">
+                <div class="site-logo">
+                    <a href="#" class="d-block">
+                        <img src="{% static 'images/logo.png' %}" alt="Logo" class="img-fluid">
+                    </a>
+                </div>
+                <h2 class="dashboard-heading">Student Dashboard</h2>
+                <div class="header-actions">
+                    <div class="profile-dropdown">
+                        <a href="#" class="nav-link text-right d-flex align-items-center">
+                            <i class="fas fa-user-circle mr-2"></i>
+                            <span>{{ custom_user.username }}</span>
+                        </a>
+                        <div class="profile-dropdown-content">
+                            <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="dashboard-sidebar">
+                <div class="dashboard-options">
+                    <a href="{% url 'view_scheduled_classes' %}" class="dashboard-box">
+                        <i class="fas fa-chalkboard-teacher mr-2"></i>Join Classes
+                    </a>
+                    <a href="{% url 'assignment_detail' %}" class="dashboard-box">
+                        <i class="fas fa-tasks mr-2"></i>Submit Assignments
+                    </a>
+                    <a href="{% url 'view_materials' %}" class="dashboard-box">
+                        <i class="fas fa-book mr-2"></i>Study Materials
+                    </a>
+                    <a href="{% url 'discussion_forum' %}" class="dashboard-box">
+                        <i class="fas fa-comments mr-2"></i>Discussion Forum
+                    </a>
+                    <a href="{% url 'feedback_form' %}" class="dashboard-box">
+                        <i class="fas fa-comment-alt mr-2"></i>Feedback
+                    </a>
+                    <div class="dropdown dashboard-box">
+                        <a href="#" class="btn btn-secondary dropdown-toggle" id="quizDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-question-circle mr-2"></i>View Quizzes
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="quizDropdown">
+                            <a class="dropdown-item" href="{% url 'available_quizzes' %}">Available Quizzes</a>
+                            <a class="dropdown-item" href="{% url 'quiz_marks' %}">View Marks</a>
+                        </div>
+                    </div>
+                    <a href="{% url 'student_event' %}" class="dashboard-box">
+                        <i class="fas fa-calendar-alt mr-2"></i>Events
+                    </a>
+                    <div class="dropdown dashboard-box">
+                        <a href="#" class="btn btn-secondary dropdown-toggle" id="leaveDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-calendar-alt mr-2"></i>Leave
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="leaveDropdown">
+                            <a class="dropdown-item" href="{% url 'apply_leave' %}">Apply for Leave</a>
+                            <a class="dropdown-item" href="{% url 'student_leave_requests' %}">View Leave Status</a>
+                        </div>
+                    </div>
+                    <a href="{% url 'available_courses' %}" class="dashboard-box">
+                        <i class="fas fa-graduation-cap mr-2"></i>Available Courses
+                    </a>
+                    <a href="{% url 'search_books' %}" class="dashboard-box">
+                        <i class="fas fa-graduation-cap mr-2"></i>Library
+                    </a>
+                </div>
+            </div>
+
+            <div class="content-wrapper">
+                <h2>Your Leave Requests</h2>
+                <div class="leave-container">
+                    <div class="page-header">
+                        <h2><i class="fas fa-calendar-check"></i> Your Leave Requests</h2>
+                        <p>Track and manage your leave applications</p>
+                    </div>
+
+                    <a href="{% url 'apply_leave' %}" class="new-request-btn">
+                        <i class="fas fa-plus"></i> New Leave Request
+                    </a>
+
+                    {% if leave_requests %}
+                        <div class="table-responsive">
+                            <table class="leave-table">
+                                <thead>
+                                    <tr>
+                                        <th><i class="fas fa-tag"></i> Leave Type</th>
+                                        <th><i class="fas fa-comment"></i> Reason</th>
+                                        <th><i class="fas fa-calendar-plus"></i> Start Date</th>
+                                        <th><i class="fas fa-calendar-minus"></i> End Date</th>
+                                        <th><i class="fas fa-info-circle"></i> Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for leave in leave_requests %}
+                                    <tr>
+                                        <td>{{ leave.get_leave_type_display }}</td>
+                                        <td>{{ leave.reason }}</td>
+                                        <td>{{ leave.start_date|date:"M d, Y" }}</td>
+                                        <td>{{ leave.end_date|date:"M d, Y" }}</td>
+                                        <td>
+                                            <span class="status-badge status-{{ leave.status|lower }}">
+                                                {{ leave.get_status_display }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-folder-open"></i>
+                            <h3>No Leave Requests</h3>
+                            <p>You haven't submitted any leave requests yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-
-        <a href="{% url 'apply_leave' %}" class="new-request-btn">
-            <i class="fas fa-plus"></i> New Leave Request
-        </a>
-
-        {% if leave_requests %}
-            <div class="table-responsive">
-                <table class="leave-table">
-                    <thead>
-                        <tr>
-                            <th><i class="fas fa-tag"></i> Leave Type</th>
-                            <th><i class="fas fa-comment"></i> Reason</th>
-                            <th><i class="fas fa-calendar-plus"></i> Start Date</th>
-                            <th><i class="fas fa-calendar-minus"></i> End Date</th>
-                            <th><i class="fas fa-info-circle"></i> Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for leave in leave_requests %}
-                        <tr>
-                            <td>{{ leave.get_leave_type_display }}</td>
-                            <td>{{ leave.reason }}</td>
-                            <td>{{ leave.start_date|date:"M d, Y" }}</td>
-                            <td>{{ leave.end_date|date:"M d, Y" }}</td>
-                            <td>
-                                <span class="status-badge status-{{ leave.status|lower }}">
-                                    {{ leave.get_status_display }}
-                                </span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <div class="empty-state">
-                <i class="fas fa-folder-open"></i>
-                <h3>No Leave Requests</h3>
-                <p>You haven't submitted any leave requests yet.</p>
-            </div>
-        {% endif %}
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropdownToggle = document.getElementById('leaveDropdown');
+            const dropdownMenu = dropdownToggle.nextElementSibling;
+
+            dropdownToggle.addEventListener('click', function(event) {
+                event.preventDefault();
+                dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
+            });
+
+            // Close dropdown if clicked outside
+            window.addEventListener('click', function(event) {
+                if (!dropdownToggle.contains(event.target) && !dropdownMenu.contains(event.target)) {
+                    dropdownMenu.style.display = 'none';
+                }
+            });
+        });
+    </script>
 </body>
 </html>

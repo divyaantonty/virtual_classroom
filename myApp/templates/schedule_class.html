@@ -109,7 +109,32 @@
             background-color: #ffffff;
             padding: 80px;
             box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-            height: 100%;
+            height: 100vh;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #3498db #ffffff;
+            position: sticky;
+            top: 0;
+        }
+
+        /* Webkit scrollbar styles (for Chrome, Safari, etc) */
+        .dashboard-sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .dashboard-sidebar::-webkit-scrollbar-track {
+            background: #ffffff;
+            border-radius: 4px;
+        }
+
+        .dashboard-sidebar::-webkit-scrollbar-thumb {
+            background-color: #3498db;
+            border-radius: 4px;
+            border: 2px solid #ffffff;
+        }
+
+        .dashboard-sidebar::-webkit-scrollbar-thumb:hover {
+            background-color: #2980b9;
         }
 
         .dashboard-options {
@@ -182,8 +207,12 @@
         .dashboard-content {
             flex-grow: 1;
             padding: 20px;
+            height: 100vh;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #3498db #ffffff;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
         }
 
@@ -192,23 +221,29 @@
             background-color: rgba(255, 255, 255, 0.9);
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            max-width: 600px;
+            max-width: 800px;  /* Increased max-width for better form display */
             width: 100%;
+            margin-top: 20px;  /* Add some space from the top */
         }
 
         .content-wrapper h2 {
             color: #2c3e50;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 600;
         }
 
-        /* Additional styles for the schedule class form */
+        /* Style for the form container */
         form {
             background-color: white;
-            padding: 20px;
+            padding: 25px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
         }
 
+        /* Style for the table */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -216,58 +251,108 @@
         }
 
         th, td {
-            padding: 10px;
+            padding: 12px;
             text-align: left;
+            border-bottom: 1px solid #eee;
         }
 
         th {
-            background-color: #f2f2f2;
+            background-color: #f8f9fa;
+            color: #2c3e50;
+            font-weight: 600;
         }
 
+        /* Style for form inputs */
         input[type="text"],
         input[type="url"],
         input[type="date"],
         input[type="time"],
         select {
             width: 100%;
-            padding: 8px;
-            border: 1px solid #ccc;
+            padding: 10px;
+            border: 1px solid #ddd;
             border-radius: 4px;
             box-sizing: border-box;
+            margin: 5px 0;
         }
 
+        /* Style for buttons */
         button {
             background-color: #3498db;
             color: white;
-            padding: 10px 20px;
+            padding: 12px 25px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: background-color 0.3s;
+            font-weight: 500;
         }
 
         button:hover {
             background-color: #2980b9;
         }
 
+        /* Style for the Generate Link button */
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px 0;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+            text-decoration: none;
+            color: white;
+        }
+
+        /* Style for back link */
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            color: #2980b9;
+        }
+
         .error-message {
-            color: red;
-            margin-top: 10px;
+            color: #dc3545;
+            font-size: 12px;
+            margin-top: 5px;
+            display: block;
+        }
+
+        input.invalid {
+            border-color: #dc3545;
+        }
+
+        input.valid {
+            border-color: #28a745;
         }
 
         @media (max-width: 768px) {
             .main-content {
                 flex-direction: column;
+                height: auto;
+                overflow: visible;
             }
 
             .dashboard-sidebar {
                 width: 100%;
                 height: auto;
-                order: 2;
+                position: relative;
+                padding: 20px;
             }
             .dashboard-content {
-                width: 100%;
-                order: 1;
+                height: auto;
             }
 
             .header-container {
@@ -278,6 +363,20 @@
 
             .profile-dropdown {
                 margin-top: 10px;
+            }
+
+            .content-wrapper {
+                margin: 10px;
+                padding: 15px;
+            }
+
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+
+            th, td {
+                min-width: 120px;
             }
         }
     </style>
@@ -344,6 +443,15 @@
                             <a href="{% url 'view_uploaded_materials' %}"><i class="fas fa-list mr-2"></i>View Materials</a>
                         </div>
                     </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-sticky-note mr-2"></i>Manage Notes
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'create_note' %}"><i class="fas fa-plus mr-2"></i>Create Note</a>
+                            <a href="{% url 'view_notes' %}"><i class="fas fa-list mr-2"></i>View Notes</a>
+                        </div>
+                    </div>
                     <a href="{% url 'teacher_discussion_forum' %}" class="dashboard-box">
                         <i class="fas fa-comments mr-2"></i>Discussion Forum
                     </a>
@@ -380,6 +488,15 @@
                     <a href="{% url 'question_generator' %}" class="dashboard-box">
                         <i class="fas fa-plus mr-2"></i>Generate question
                     </a>
+                    <a href="{% url 'whiteboard' %}" class="dashboard-box">
+                        <i class="fas fa-chalkboard mr-2"></i>Live Whiteboard
+                    </a>
+                    <a href="{% url 'teacher_messages' %}" class="dashboard-box">
+                        <i class="fas fa-envelope mr-2"></i>Parent Communication
+                        {% if unread_messages > 0 %}
+                            <span class="badge badge-light ml-2">{{ unread_messages }}</span>
+                        {% endif %}
+                    </a>
                 </div>
             </div>
 
@@ -388,7 +505,7 @@
                 <div class="content-wrapper">
                     <h2>Schedule a New Class</h2>
                     
-                    <form method="POST" onsubmit="return validateForm();">
+                    <form method="POST" onsubmit="return validateForm();" id="scheduleClassForm">
                         {% csrf_token %}
                         {% if error_message %}
                             <p class="error-message">{{ error_message }}</p>
@@ -404,7 +521,11 @@
                             </tr>
                             <tr>
                                 <td><label for="class_name">Class Name:</label></td>
-                                <td><input type="text" id="class_name" name="class_name" required></td>
+                                <td>
+                                    <input type="text" id="class_name" name="class_name" required 
+                                           oninput="validateClassName(this)" pattern="[A-Za-z0-9\s]{3,50}">
+                                    <span class="error-message" id="class-name-error"></span>
+                                </td>
                             </tr>
                             <tr>
                                 <td><label for="assigned_course">Assigned Course:</label></td>
@@ -420,16 +541,26 @@
                             <tr>
                                 <td><label for="date">Date:</label></td>
                                 <td>
-                                    <input type="date" id="date" name="date" required min="{{ today }}">
+                                    <input type="date" id="date" name="date" required 
+                                           onchange="validateDate(this)">
+                                    <span class="error-message" id="date-error"></span>
                                 </td>
                             </tr>
                             <tr>
                                 <td><label for="start_time">Start Time:</label></td>
-                                <td><input type="time" id="start_time" name="start_time" required></td>
+                                <td>
+                                    <input type="time" id="start_time" name="start_time" required 
+                                           min="09:00" max="16:30" step="1800">
+                                    <span class="error-message" id="start-time-error"></span>
+                                </td>
                             </tr>
                             <tr>
                                 <td><label for="end_time">End Time:</label></td>
-                                <td><input type="time" id="end_time" name="end_time" required></td>
+                                <td>
+                                    <input type="time" id="end_time" name="end_time" required 
+                                           min="09:00" max="16:30" step="1800">
+                                    <span class="error-message" id="end-time-error"></span>
+                                </td>
                             </tr>
                             <tr>
                                 <td><label for="meeting_link">Meeting Link:</label></td>
@@ -463,10 +594,166 @@
     <script src="{% static 'js/main.js' %}"></script>
 
     <script>
-        function validateForm() {
-            // Add any client-side validation logic here
+        // Set minimum date to today
+        window.onload = function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date').min = today;
+        }
+
+        function validateClassName(input) {
+            const nameRegex = /^[A-Za-z0-9\s]{3,50}$/;
+            const errorElement = document.getElementById('class-name-error');
+            
+            if (!nameRegex.test(input.value)) {
+                errorElement.textContent = 'Class name must be 3-50 characters long and contain only letters, numbers, and spaces';
+                input.classList.add('invalid');
+                input.classList.remove('valid');
+                return false;
+            } else {
+                errorElement.textContent = '';
+                input.classList.add('valid');
+                input.classList.remove('invalid');
+                return true;
+            }
+        }
+
+        function validateDate(input) {
+            const selectedDate = new Date(input.value);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const errorElement = document.getElementById('date-error');
+
+            if (selectedDate < today) {
+                errorElement.textContent = 'Cannot schedule class for past dates';
+                input.classList.add('invalid');
+                input.classList.remove('valid');
+                return false;
+            } else {
+                errorElement.textContent = '';
+                input.classList.add('valid');
+                input.classList.remove('invalid');
+                return true;
+            }
+        }
+
+        function convertTimeToMinutes(timeString) {
+            if (!timeString) return 0;
+            const [hours, minutes] = timeString.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        function validateStartTime() {
+            const startTimeInput = document.getElementById('start_time');
+            const startTime = startTimeInput.value;
+            const errorElement = document.getElementById('start-time-error');
+            
+            // Convert to minutes for comparison
+            const timeInMinutes = convertTimeToMinutes(startTime);
+            const startLimit = 9 * 60; // 9:00 AM
+            const endLimit = 16 * 60 + 30; // 4:30 PM
+
+            if (!startTime) {
+                errorElement.textContent = 'Start time is required';
+                startTimeInput.classList.add('invalid');
+                startTimeInput.classList.remove('valid');
+                return false;
+            }
+
+            if (timeInMinutes < startLimit || timeInMinutes > endLimit) {
+                errorElement.textContent = 'Start time must be between 9:00 AM and 4:30 PM';
+                startTimeInput.classList.add('invalid');
+                startTimeInput.classList.remove('valid');
+                return false;
+            }
+
+            errorElement.textContent = '';
+            startTimeInput.classList.add('valid');
+            startTimeInput.classList.remove('invalid');
             return true;
         }
+
+        function validateEndTime() {
+            const startTimeInput = document.getElementById('start_time');
+            const endTimeInput = document.getElementById('end_time');
+            const errorElement = document.getElementById('end-time-error');
+            
+            const startTime = startTimeInput.value;
+            const endTime = endTimeInput.value;
+
+            if (!endTime) {
+                errorElement.textContent = 'End time is required';
+                endTimeInput.classList.add('invalid');
+                endTimeInput.classList.remove('valid');
+                return false;
+            }
+
+            const startMinutes = convertTimeToMinutes(startTime);
+            const endMinutes = convertTimeToMinutes(endTime);
+            const startLimit = 9 * 60; // 9:00 AM
+            const endLimit = 16 * 60 + 30; // 4:30 PM
+
+            if (endMinutes < startLimit || endMinutes > endLimit) {
+                errorElement.textContent = 'End time must be between 9:00 AM and 4:30 PM';
+                endTimeInput.classList.add('invalid');
+                endTimeInput.classList.remove('valid');
+                return false;
+            }
+
+            if (endMinutes <= startMinutes) {
+                errorElement.textContent = 'End time must be after start time';
+                endTimeInput.classList.add('invalid');
+                endTimeInput.classList.remove('valid');
+                return false;
+            }
+
+            errorElement.textContent = '';
+            endTimeInput.classList.add('valid');
+            endTimeInput.classList.remove('invalid');
+            return true;
+        }
+
+        function validateForm() {
+            const isClassNameValid = validateClassName(document.getElementById('class_name'));
+            const isDateValid = validateDate(document.getElementById('date'));
+            const isStartTimeValid = validateStartTime();
+            const isEndTimeValid = validateEndTime();
+
+            return isClassNameValid && isDateValid && isStartTimeValid && isEndTimeValid;
+        }
+
+        // Add event listeners for real-time validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('scheduleClassForm');
+            const startTimeInput = document.getElementById('start_time');
+            const endTimeInput = document.getElementById('end_time');
+
+            form.addEventListener('input', function(e) {
+                if (e.target.id === 'class_name') {
+                    validateClassName(e.target);
+                }
+            });
+
+            form.addEventListener('change', function(e) {
+                switch(e.target.id) {
+                    case 'date':
+                        validateDate(e.target);
+                        break;
+                    case 'start_time':
+                        validateStartTime();
+                        if (endTimeInput.value) {
+                            validateEndTime();
+                        }
+                        break;
+                    case 'end_time':
+                        validateEndTime();
+                        break;
+                }
+            });
+
+            // Set time input steps to 30 minutes
+            startTimeInput.step = "1800"; // 30 minutes in seconds
+            endTimeInput.step = "1800";
+        });
     </script>
 </body>
 

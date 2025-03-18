@@ -43,6 +43,15 @@
         </div>
         <div class="dropdown">
             <button class="dropdown-btn">
+                <i class="fas fa-sticky-note mr-2"></i>Manage Notes
+            </button>
+            <div class="dropdown-content">
+                <a href="{% url 'create_note' %}"><i class="fas fa-plus mr-2"></i>Create Note</a>
+                <a href="{% url 'view_notes' %}"><i class="fas fa-list mr-2"></i>View Notes</a>
+            </div>
+        </div>
+        <div class="dropdown">
+            <button class="dropdown-btn">
                 <i class="fas fa-calendar-alt mr-2"></i>Manage Events
             </button>
             <div class="dropdown-content">
@@ -64,6 +73,15 @@
         </a>
         <a href="{% url 'question_generator' %}" class="dashboard-box">
             <i class="fas fa-plus mr-2"></i>Generate question
+        </a>
+        <a href="{% url 'whiteboard' %}" class="dashboard-box">
+            <i class="fas fa-chalkboard mr-2"></i>Live Whiteboard
+        </a>
+        <a href="{% url 'teacher_messages' %}" class="dashboard-box">
+            <i class="fas fa-envelope mr-2"></i>Parent Communication
+            {% if unread_messages > 0 %}
+                <span class="badge badge-light ml-2">{{ unread_messages }}</span>
+            {% endif %}
         </a>
         <a href="{% url 'teacher_dashboard' %}" class="back-btn">
             <i class="fas fa-arrow-left"></i> Back to Teacher Dashboard

@@ -489,6 +489,77 @@
             cursor: not-allowed;
             transform: none;
         }
+
+        /* Update these dropdown-specific styles */
+        .dropdown {
+            position: relative;
+            display: block;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            left: 0;
+            top: 100%;
+            background-color: white;
+            min-width: 200px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border-radius: 5px;
+            z-index: 1000;
+            padding: 8px 0;
+            margin-top: 5px;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            display: block;
+            width: 100%;
+            padding: 8px 20px;
+            clear: both;
+            font-weight: 400;
+            color: #333;
+            text-align: left;
+            white-space: nowrap;
+            background-color: transparent;
+            border: 0;
+            text-decoration: none;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+            color: #16181b;
+            text-decoration: none;
+        }
+
+        /* Update the dashboard box dropdown toggle styles */
+        .dashboard-box.dropdown {
+            padding: 0;
+        }
+
+        .dashboard-box .dropdown-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 20px;
+            width: 100%;
+            color: white;
+            text-decoration: none;
+            background-color: #3498db;
+        }
+
+        .dashboard-box .dropdown-toggle:hover,
+        .dashboard-box .dropdown-toggle:focus {
+            background-color: #2980b9;
+            color: white;
+            text-decoration: none;
+        }
+
+        .dashboard-box .dropdown-toggle::after {
+            margin-left: auto;
+        }
     </style>
 </head>
 <body>
@@ -528,9 +599,18 @@
                     <a href="{% url 'discussion_forum' %}" class="dashboard-box">
                         <i class="fas fa-comments mr-2"></i>Discussion Forum
                     </a>
-                    <a href="{% url 'available_quizzes' %}" class="dashboard-box">
-                        <i class="fas fa-question-circle mr-2"></i>View Quizzes
-                    </a>
+                    <div class="dropdown dashboard-box">
+                        <a href="#" class="btn btn-secondary dropdown-toggle" id="quizDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-question-circle mr-2"></i>View Quizzes
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="quizDropdown">
+                            <!-- Option to view quizzes -->
+                            <a class="dropdown-item" href="{% url 'available_quizzes' %}">Available Quizzes</a>
+                            
+                            <!-- Option to view marks -->
+                            <a class="dropdown-item" href="{% url 'quiz_marks' %}">View Marks</a>
+                        </div>
+                    </div>
                     <a href="{% url 'feedback_form' %}" class="dashboard-box">
                         <i class="fas fa-comment-alt mr-2"></i>Feedback
                     </a>
@@ -540,9 +620,23 @@
                     <a href="{% url 'available_courses' %}" class="dashboard-box">
                         <i class="fas fa-graduation-cap mr-2"></i>Available Courses
                     </a>
-                    <a href="{% url 'student_dashboard' %}" class="dashboard-box">
-                        <i class="fas fa-tachometer-alt mr-2"></i>Back to Dashboard
+                    <div class="dropdown dashboard-box">
+                        <a href="#" class="btn btn-secondary dropdown-toggle" id="leaveDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-calendar-alt mr-2"></i>Leave
+                        </a>
+                    
+                        <div class="dropdown-menu" aria-labelledby="leaveDropdown">
+                            <!-- Option to apply for leave -->
+                            <a class="dropdown-item" href="{% url 'apply_leave' %}">Apply for Leave</a>
+                    
+                            <!-- Option to view leave status -->
+                            <a class="dropdown-item" href="{% url 'student_leave_requests' %}">View Leave Status</a>
+                        </div>
+                    </div>
+                    <a href="{% url 'search_books' %}" class="dashboard-box">
+                        <i class="fas fa-graduation-cap mr-2"></i>Library
                     </a>
+                    
                 </div>
             </div>
 
@@ -652,6 +746,7 @@
     </div>
 
     <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'js/popper.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.min.js' %}"></script>
     <script type="text/javascript">
         // Remove or comment out these lines:
@@ -712,6 +807,28 @@
             });
         });
     });
+    </script>
+    <script>
+        $(document).ready(function() {
+            // Handle dropdown toggle for both quiz and leave dropdowns
+            $('.dropdown-toggle').on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Close all other dropdowns
+                $('.dropdown-menu').not($(this).siblings('.dropdown-menu')).removeClass('show');
+                
+                // Toggle current dropdown
+                $(this).siblings('.dropdown-menu').toggleClass('show');
+            });
+
+            // Close dropdowns when clicking outside
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.dropdown').length) {
+                    $('.dropdown-menu').removeClass('show');
+                }
+            });
+        });
     </script>
 </body>
 </html>

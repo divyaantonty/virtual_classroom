@@ -316,6 +316,15 @@
                             <a href="{% url 'view_uploaded_materials' %}"><i class="fas fa-list mr-2"></i>View Materials</a>
                         </div>
                     </div>
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <i class="fas fa-sticky-note mr-2"></i>Manage Notes
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="{% url 'create_note' %}"><i class="fas fa-plus mr-2"></i>Create Note</a>
+                            <a href="{% url 'view_notes' %}"><i class="fas fa-list mr-2"></i>View Notes</a>
+                        </div>
+                    </div>
                     <a href="{% url 'teacher_discussion_forum' %}" class="dashboard-box">
                         <i class="fas fa-comments mr-2"></i>Discussion Forum
                     </a>
@@ -326,6 +335,7 @@
                         <div class="dropdown-content">
                             <a href="{% url 'create_quiz' %}"><i class="fas fa-plus mr-2"></i>Create Quiz</a>
                             <a href="{% url 'view_quiz_questions' %}"><i class="fas fa-list mr-2"></i>View Questions</a>
+                            <a href="{% url 'evaluate_answers' %}"><i class="fas fa-check mr-2"></i>Evaluate Answer</a>
                         </div>
                     </div>
                     <div class="dropdown">
@@ -335,6 +345,7 @@
                         <div class="dropdown-content">
                             <a href="{% url 'add_event' %}"><i class="fas fa-plus mr-2"></i>Create Event</a>
                             <a href="{% url 'view_events' %}"><i class="fas fa-list mr-2"></i>View Events</a>
+                            <a href="{% url 'view_event_registrations' %}"><i class="fas fa-users mr-2"></i>View Registrations</a>
                         </div>
                     </div>
                     <a href="{% url 'view_profile' %}" class="dashboard-box">
@@ -351,6 +362,15 @@
                     </a>
                     <a href="{% url 'question_generator' %}" class="dashboard-box">
                         <i class="fas fa-plus mr-2"></i>Generate question
+                    </a>
+                    <a href="{% url 'whiteboard' %}" class="dashboard-box">
+                        <i class="fas fa-chalkboard mr-2"></i>Live Whiteboard
+                    </a>
+                    <a href="{% url 'teacher_messages' %}" class="dashboard-box">
+                        <i class="fas fa-envelope mr-2"></i>Parent Communication
+                        {% if unread_messages > 0 %}
+                            <span class="badge badge-light ml-2">{{ unread_messages }}</span>
+                        {% endif %}
                     </a>
                 </div>
             </div>
