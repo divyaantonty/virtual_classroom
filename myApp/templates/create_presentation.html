@@ -1,0 +1,79 @@
+{% block content %}
+<div class="container mt-4">
+    <h2>Create New Presentation</h2>
+    
+    <div class="card">
+        <div class="card-body">
+            <div id="presentationForm">
+                <div class="mb-3">
+                    <label class="form-label">Title</label>
+                    <input type="text" class="form-control" id="title" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-control" id="description" rows="3"></textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Course</label>
+                    <select class="form-control" id="course" required>
+                        <option value="">Select Course</option>
+                        {% for course in courses %}
+                        <option value="{{ course.id }}">{{ course.course_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Material</label>
+                    <select class="form-control" id="material" required>
+                        <option value="">Select Material</option>
+                        {% for material in materials %}
+                        <option value="{{ material.id }}">{{ material.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Presentation File (PPT/PDF)</label>
+                    <input type="file" class="form-control" id="presentationFile" 
+                           accept=".pdf,.ppt,.pptx">
+                </div>
+                
+                <button type="button" class="btn btn-primary" onclick="submitPresentation()">
+                    Create Presentation
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function submitPresentation() {
+    const formData = new FormData();
+    formData.append('title', document.getElementById('title').value);
+    formData.append('description', document.getElementById('description').value);
+    formData.append('course', document.getElementById('course').value);
+    formData.append('material', document.getElementById('material').value);
+    
+    const presentationFile = document.getElementById('presentationFile').files[0];
+    if (presentationFile) {
+        formData.append('presentation_file', presentationFile);
+    }
+    
+    fetch('/presentations/create/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = `/presentations/${data.id}/`;
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+</script>

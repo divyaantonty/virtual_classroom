@@ -5,6 +5,7 @@ from django.utils import timezone # type: ignore
 from datetime import timedelta
 import os
 
+
 class CustomUserManager(BaseUserManager):
     def create_user(self, username, email, password=None):
         if not email:
@@ -633,3 +634,4 @@ class MaterialNotes(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+

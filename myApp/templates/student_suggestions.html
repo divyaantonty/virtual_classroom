@@ -1,0 +1,361 @@
+{% load static %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="container mt-4">
+        <!-- Header Section -->
+        <div class="header-section">
+            <div class="header-icon">
+                <i class="fas fa-lightbulb"></i>
+            </div>
+            <h2>Parent Suggestions</h2>
+            <p class="subtitle">Review and manage your event suggestions</p>
+        </div>
+
+        <!-- Messages Section -->
+        {% if messages %}
+        <div class="messages-container">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} fade-in">
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert">
+                    <span>&times;</span>
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Suggestions List -->
+        <div class="suggestions-container">
+            {% if suggestions %}
+                {% for suggestion in suggestions %}
+                    <div class="suggestion-card slide-up">
+                        <!-- Event Header -->
+                        <div class="event-header">
+                            <div class="event-title">
+                                <i class="fas fa-calendar-check"></i>
+                                <h3>{{ suggestion.event.title }}</h3>
+                            </div>
+                            <span class="event-date">
+                                <i class="far fa-clock pulse"></i>
+                                {{ suggestion.created_at|date:"F d, Y" }}
+                            </span>
+                        </div>
+
+                        <!-- Event Content -->
+                        <div class="event-content">
+                            <p class="suggestion-text">
+                                <i class="fas fa-quote-left quote-icon"></i>
+                                {{ suggestion.suggestion_text }}
+                            </p>
+                            
+                            <div class="event-details">
+                                <div class="detail-item">
+                                    <i class="fas fa-clock"></i>
+                                    {{ suggestion.event.start_time|date:"g:i A" }} - {{ suggestion.event.end_time|date:"g:i A" }}
+                                </div>
+                                <div class="detail-item">
+                                    <i class="fas fa-map-marker-alt bounce"></i>
+                                    {{ suggestion.event.location }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Footer -->
+                        <div class="card-footer">
+                            <div class="parent-info">
+                                <i class="fas fa-user-circle"></i>
+                                Suggested by: {{ suggestion.parent.auto_generated_username }}
+                            </div>
+                            <div class="action-buttons">
+                                <a href="{% url 'student_dashboard' %}" class="btn btn-primary">
+                                    <i class="fas fa-check-circle"></i>
+                                    Register
+                                </a>
+                                <button class="btn btn-outline-info" onclick="viewDetails('{{ suggestion.event.id }}')">
+                                    <i class="fas fa-info-circle"></i>
+                                    Details
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-suggestions">
+                    <i class="far fa-folder-open floating"></i>
+                    <p>No suggestions available at this time.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Back Button -->
+        <div class="back-section">
+            <a href="{% url 'student_dashboard' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Root Variables */
+    :root {
+        --primary-color: #4a90e2;
+        --secondary-color: #2ecc71;
+        --accent-color: #f39c12;
+        --text-color: #2c3e50;
+        --background-color: #f5f6fa;
+        --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --hover-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Page Wrapper */
+    .page-wrapper {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+
+    /* Header Section */
+    .header-section {
+        text-align: center;
+        margin-bottom: 3rem;
+        animation: fadeDown 0.8s ease-out;
+    }
+
+    .header-icon {
+        font-size: 3rem;
+        color: var(--accent-color);
+        margin-bottom: 1rem;
+        animation: pulse 2s infinite;
+    }
+
+    .subtitle {
+        color: #666;
+        font-size: 1.1rem;
+    }
+
+    /* Card Styles */
+    .suggestion-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: var(--card-shadow);
+        transition: all 0.3s ease;
+        animation: slideUp 0.5s ease-out forwards;
+        opacity: 0;
+    }
+
+    .suggestion-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--hover-shadow);
+    }
+
+    /* Event Header */
+    .event-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #eee;
+    }
+
+    .event-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .event-title h3 {
+        margin: 0;
+        color: var(--text-color);
+    }
+
+    /* Event Content */
+    .event-content {
+        padding: 1rem 0;
+    }
+
+    .suggestion-text {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: var(--text-color);
+        position: relative;
+        padding-left: 1.5rem;
+    }
+
+    .quote-icon {
+        position: absolute;
+        left: 0;
+        top: 0;
+        color: var(--primary-color);
+        opacity: 0.5;
+    }
+
+    /* Event Details */
+    .event-details {
+        display: flex;
+        gap: 2rem;
+        margin-top: 1rem;
+    }
+
+    .detail-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #666;
+    }
+
+    .detail-item i {
+        color: var(--primary-color);
+    }
+
+    /* Card Footer */
+    .card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #eee;
+    }
+
+    .parent-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #666;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+    }
+
+    /* Button Styles */
+    .btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .btn i {
+        font-size: 1.1rem;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+    }
+
+    /* Animations */
+    @keyframes fadeDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+
+    @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+    }
+
+    .bounce {
+        animation: bounce 2s infinite;
+    }
+
+    .pulse {
+        animation: pulse 2s infinite;
+    }
+
+    /* No Suggestions */
+    .no-suggestions {
+        text-align: center;
+        padding: 3rem;
+        background: white;
+        border-radius: 15px;
+        box-shadow: var(--card-shadow);
+        animation: fadeDown 0.8s ease-out;
+    }
+
+    .no-suggestions i {
+        font-size: 3rem;
+        color: var(--accent-color);
+        margin-bottom: 1rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .event-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .event-details {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .card-footer {
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+
+        .action-buttons {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn {
+            flex: 1;
+            justify-content: center;
+        }
+    }
+</style>
+
+<script>
+    // Function to handle details view
+    function viewDetails(eventId) {
+        // You can customize this based on your needs
+        alert('Event details will be available soon!');
+    }
+
+    // Existing animation code
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.suggestion-card');
+        cards.forEach((card, index) => {
+            card.style.animationDelay = `${index * 0.2}s`;
+        });
+    });
+</script>
+{% endblock %}

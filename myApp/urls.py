@@ -142,7 +142,6 @@ urlpatterns = [
     path('course-enrollment/', views.course_enrollment_view, name='course_enrollment'),  # New URL for course enrollment
     path('evaluate-answers/', views.evaluate_answers, name='evaluate_answers'),
     
-
     # path('student_performance_dashboard/', views.student_performance_dashboard, name='student_performance_dashboard'),
     path('chatbot/', views.chatbot_response, name='chatbot_response'),
     path('generate-image/', views.generate_image, name='generate_image'),
@@ -233,6 +232,16 @@ urlpatterns = [
     path('get-notes/<int:material_id>/', views.get_notes, name='get_notes'),
 
     path('mark-suggestion-read/', views.mark_suggestion_read, name='mark_suggestion_read'), 
+
+    path('upload_pdf_material/', views.upload_pdf_material, name='upload_pdf_material'),
+    path('questions/', views.questions_list, name='questions_list'),
+    path('questions/<int:paper_id>/', views.question_paper_detail, name='question_paper_detail'),
+
+    path('mannuel_generate_summary/', views.mannuel_generate_summary, name='mannuel_generate_summary'),
+    path('preview_document_content/', views.preview_document_content, name='preview_document_content'),
+
+    path('student_suggestions/', views.student_suggestions, name='student_suggestions'),
+
 
 ]
 if settings.DEBUG:

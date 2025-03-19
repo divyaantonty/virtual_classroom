@@ -23566,6 +23566,7 @@ def final_exam_setup(request, course_id):
     
     return render(request, 'final_exam_setup.html', context)
 
+
 def start_final_exam(request, course_id):
     try:
         course = get_object_or_404(Course, id=course_id)
@@ -25579,3 +25580,352 @@ def get_notes(request, material_id):
             'success': False, 
             'error': str(e)
         })
+
+
+from django.shortcuts import render, redirect
+from .models import Material, GeneratedQuestionPaper, Question
+from .utils import PDFProcessor
+import os
+
+def upload_pdf_material(request):
+    if request.method == 'POST' and request.FILES.get('material'):
+        # Save uploaded material
+        material = Material.objects.create(
+            file=request.FILES['material'],
+            processed=False
+        )
+        
+        # Process PDF
+        processor = PDFProcessor()
+        try:
+            # Extract text from PDF
+            text = processor.extract_text_from_pdf(material.file.path)
+            
+            # Generate questions
+            generated_questions = processor.generate_questions(text)
+            
+            # Create question paper
+            question_paper = GeneratedQuestionPaper.objects.create(
+                material=material,
+                title=f"Question Paper - {os.path.basename(material.file.name)}",
+                total_marks=sum(q['marks'] for q in generated_questions),
+                created_by=None  # Remove user reference if login is not required
+            )
+            
+            # Save individual questions
+            for q_data in generated_questions:
+                Question.objects.create(
+                    question_paper=question_paper,
+                    text=q_data['text'],
+                    marks=q_data['marks'],
+                    question_type=q_data['type']
+                )
+            
+            # Mark material as processed
+            material.processed = True
+            material.save()
+            
+            return redirect('questions_list')
+        
+        except Exception as e:
+            # Handle processing errors
+            material.delete()
+            return render(request, 'upload_pdf_material.html', {
+                'error': f"Error processing PDF: {str(e)}"
+            })
+    
+    return render(request, 'upload_pdf_material.html')
+
+def questions_list(request):
+    # Get all question papers
+    question_papers = GeneratedQuestionPaper.objects.all().order_by('-created_at')
+    return render(request, 'questions_list.html', {'question_papers': question_papers})
+
+def question_paper_detail(request, paper_id):
+    # Get specific question paper details
+    question_paper = GeneratedQuestionPaper.objects.get(id=paper_id)
+    questions = question_paper.questions.all()
+    return render(request, 'question_paper_detail.html', {
+        'question_paper': question_paper,
+        'questions': questions
+    })
+
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from PyPDF2 import PdfReader
+import io
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.probability import FreqDist
+from .models import Material, MaterialSummary
+import re
+import traceback
+
+class AdvancedTextSummarizer:
+    def __init__(self, language='english'):
+        self.stop_words = set(stopwords.words(language))
+
+    def clean_text(self, text):
+        """
+        Clean and preprocess text
+        """
+        # Remove special characters and digits
+        text = re.sub(r'[^a-zA-Z\s]', '', text)
+        
+        # Convert to lowercase
+        text = text.lower()
+        
+        # Remove extra whitespaces
+        text = re.sub(r'\s+', ' ', text).strip()
+        
+        return text
+
+    def extract_summary(self, text, max_length=500):
+        """
+        Extract summary using multiple techniques
+        """
+        # Clean the text
+        cleaned_text = self.clean_text(text)
+        
+        # Tokenize sentences
+        sentences = sent_tokenize(cleaned_text)
+        
+        # Calculate word frequencies
+        words = word_tokenize(cleaned_text)
+        filtered_words = [
+            word for word in words 
+            if word.isalpha() and word not in self.stop_words
+        ]
+        word_freq = FreqDist(filtered_words)
+        
+        # Score sentences
+        sentence_scores = {}
+        for sentence in sentences:
+            for word in word_tokenize(sentence.lower()):
+                if word in word_freq:
+                    if sentence not in sentence_scores:
+                        sentence_scores[sentence] = word_freq[word]
+                    else:
+                        sentence_scores[sentence] += word_freq[word]
+        
+        # Sort sentences by score
+        ranked_sentences = sorted(
+            sentence_scores, 
+            key=sentence_scores.get, 
+            reverse=True
+        )
+        
+        # Construct summary
+        summary_sentences = []
+        current_length = 0
+        for sentence in ranked_sentences:
+            if current_length + len(sentence) <= max_length:
+                summary_sentences.append(sentence)
+                current_length += len(sentence)
+            else:
+                break
+        
+        return ' '.join(summary_sentences)
+
+    def extract_key_concepts(self, text, num_concepts=5):
+        """
+        Extract key concepts and their importance
+        """
+        # Clean the text
+        cleaned_text = self.clean_text(text)
+        
+        # Tokenize words
+        words = word_tokenize(cleaned_text)
+        filtered_words = [
+            word for word in words 
+            if word.isalpha() and word not in self.stop_words and len(word) > 3
+        ]
+        
+        # Calculate word frequencies
+        word_freq = FreqDist(filtered_words)
+        
+        # Get top concepts with their frequencies
+        top_concepts = word_freq.most_common(num_concepts)
+        
+        return [
+            {
+                'concept': concept, 
+                'importance': freq
+            } 
+            for concept, freq in top_concepts
+        ]
+
+def mannuel_generate_summary(request):
+    """
+    Enhanced summary generation with multiple processing options
+    """
+    if request.method == 'POST':
+        try:
+            # Flexible input handling
+            if request.content_type == 'application/json':
+                data = json.loads(request.body)
+                material_id = data.get('material_id')
+                processing_mode = data.get('mode', 'default')
+            else:
+                material_id = request.POST.get('material_id')
+                processing_mode = request.POST.get('mode', 'default')
+
+            # Retrieve material
+            material = get_object_or_404(Material, id=material_id)
+
+            # Extract text from PDF
+            pdf_content = ""
+            pdf_reader = PdfReader(io.BytesIO(material.file.read()))
+            for page in pdf_reader.pages:
+                pdf_content += page.extract_text()
+
+            # Initialize summarizer
+            summarizer = AdvancedTextSummarizer()
+
+            # Process based on mode
+            if processing_mode == 'concepts':
+                # Focus on key concepts
+                key_concepts = summarizer.extract_key_concepts(pdf_content)
+                return JsonResponse({
+                    'success': True,
+                    'mode': 'concepts',
+                    'concepts': key_concepts
+                })
+            
+            elif processing_mode == 'detailed':
+                # More comprehensive summary
+                summary = summarizer.extract_summary(pdf_content, max_length=1000)
+                key_concepts = summarizer.extract_key_concepts(pdf_content)
+                
+                return JsonResponse({
+                    'success': True,
+                    'mode': 'detailed',
+                    'summary': summary,
+                    'key_concepts': key_concepts
+                })
+            
+            else:
+                # Default summary generation
+                summary = summarizer.extract_summary(pdf_content)
+                
+                # Optional: Save to database
+                MaterialSummary.objects.update_or_create(
+                    material=material,
+                    defaults={
+                        'summary_text': summary,
+                        'key_points': json.dumps(
+                            summarizer.extract_key_concepts(pdf_content)
+                        )
+                    }
+                )
+
+                return JsonResponse({
+                    'success': True,
+                    'mode': 'default',
+                    'summary': summary
+                })
+
+        except Exception as e:
+            # Comprehensive error handling
+            return JsonResponse({
+                'success': False,
+                'error': str(e),
+                'details': {
+                    'type': type(e).__name__,
+                    'traceback': str(traceback.format_exc())
+                }
+            }, status=500)
+
+    return JsonResponse({
+        'success': False, 
+        'error': 'Invalid request method'
+    }, status=405)
+
+# Optional: Add a utility function for text preview
+def preview_document_content(request):
+    """
+    Provide a preview of document content
+    """
+    if request.method == 'POST':
+        try:
+            material_id = request.POST.get('material_id')
+            material = get_object_or_404(Material, id=material_id)
+            
+            # Extract text from PDF
+            pdf_content = ""
+            pdf_reader = PdfReader(io.BytesIO(material.file.read()))
+            
+            # Get first few pages
+            for page in pdf_reader.pages[:3]:
+                pdf_content += page.extract_text()
+            
+            return JsonResponse({
+                'success': True,
+                'preview': pdf_content[:1000],  # First 1000 characters
+                'total_pages': len(pdf_reader.pages)
+            })
+        
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+    
+    return JsonResponse({
+        'success': False, 
+        'error': 'Invalid request method'
+    }, status=405)
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import EventSuggestion, CustomUser, Enrollment
+from django.contrib import messages
+
+def student_suggestions(request):
+    # Get custom_user_id from session
+    custom_user_id = request.session.get('custom_user_id')
+    
+    if not custom_user_id:
+        messages.error(request, 'You must be logged in as a student to view suggestions.')
+        return redirect('login')  # Redirect to login page if no session
+
+    # Fetch the CustomUser (student) object using the session ID
+    custom_user = get_object_or_404(CustomUser, id=custom_user_id)
+
+    # Ensure the student is registered for any courses
+    enrollments = Enrollment.objects.filter(student=custom_user)
+    
+    if not enrollments:
+        messages.error(request, 'You are not registered for any course.')
+        return redirect('student_dashboard')  # Redirect if no course is associated
+    
+    try:
+        # Fetch suggestions for the student
+        suggestions = EventSuggestion.objects.filter(
+            student=custom_user
+        ).select_related('event', 'parent').order_by('-created_at')
+        
+        # Print debug information
+        print(f"Found {suggestions.count()} suggestions for student {custom_user.username}")
+        
+        context = {
+            'suggestions': suggestions,
+            'custom_user': custom_user,  # Use consistent naming
+            'first_name': custom_user.first_name,
+            'last_name': custom_user.last_name,
+            'enrolled_courses': [enrollment.course for enrollment in enrollments]
+        }
+        
+        # Mark suggestions as read
+        unread_count = suggestions.filter(is_read=False).count()
+        if unread_count > 0:
+            print(f"Marking {unread_count} suggestions as read")
+            suggestions.filter(is_read=False).update(is_read=True)
+        
+        return render(request, 'student_suggestions.html', context)
+        
+    except Exception as e:
+        print(f"Error in student_suggestions view: {str(e)}")
+        messages.error(request, f"Error: {str(e)}")
+        return redirect('student_dashboard')
